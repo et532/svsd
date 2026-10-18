@@ -66,9 +66,11 @@
   --radius-pill: 999px;
   --gutter: var(--space-4);
 
-  /* Type: Instrument Serif for one display moment per screen, Geist for UI, Geist Mono for meta. */
+  /* Type: Geist for headings (tracked -4%) and UI, Geist Mono for meta. */
   --font-body: 'Geist', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-heading: 'Instrument Serif', 'Iowan Old Style', Georgia, serif;
+  --font-heading: 'Geist', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* Headings: Geist with tight tracking (the serif was dropped) */
+  --heading-tracking: -0.04em;
   --font-mono: 'Geist Mono', ui-monospace, Menlo, monospace;
   font-family: var(--font-body);
   color: var(--ink);
@@ -1227,10 +1229,10 @@ button {
 .capture-title {
   margin: 0;
   font-family: var(--font-heading);
-  font-size: 42px;
+  letter-spacing: var(--heading-tracking);
+  font-size: 34px;
   font-weight: 400;
   line-height: 1.02;
-  letter-spacing: -0.01em;
   text-align: center;
   text-wrap: balance;
   view-transition-name: cap-title;
@@ -1625,7 +1627,8 @@ button {
 .saved-copy h2 {
   margin: 0;
   font-family: var(--font-heading);
-  font-size: 30px;
+  letter-spacing: var(--heading-tracking);
+  font-size: 25px;
   font-weight: 400;
   line-height: 1.05;
   text-wrap: balance;
@@ -1704,7 +1707,8 @@ button {
 .profile-who h2 {
   margin: 0 0 4px;
   font-family: var(--font-heading);
-  font-size: 36px;
+  letter-spacing: var(--heading-tracking);
+  font-size: 30px;
   font-weight: 400;
   line-height: 1;
 }
@@ -2287,7 +2291,8 @@ button {
 .ask-title {
   margin: 0;
   font-family: var(--font-heading);
-  font-size: 32px;
+  letter-spacing: var(--heading-tracking);
+  font-size: 26px;
   font-weight: 400;
   line-height: 1.05;
   text-wrap: balance;
@@ -2340,7 +2345,8 @@ button {
   min-height: 64px;
   margin: 0;
   font-family: var(--font-heading);
-  font-size: 28px;
+  letter-spacing: var(--heading-tracking);
+  font-size: 23px;
   line-height: 1.1;
   text-wrap: balance;
 }
@@ -2623,7 +2629,8 @@ button {
 .sf-sheet h3 {
   margin: 0 0 14px;
   font-family: var(--font-heading);
-  font-size: 30px;
+  letter-spacing: var(--heading-tracking);
+  font-size: 25px;
   font-weight: 400;
 }
 
@@ -2639,4 +2646,135 @@ button {
   color: var(--on-ink);
   font-size: 15px;
   font-weight: 600;
+}
+
+/* Ask: richer results (why, what to say, a drafted next step) and the draft panel */
+.ask-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+}
+
+.ask-group + .ask-group {
+  margin-top: 8px;
+}
+
+.ask-group-label {
+  padding-left: 4px;
+}
+
+.ask-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 6px 12px;
+  border-radius: 18px;
+  background: rgba(22, 18, 28, 0.035);
+}
+
+.ask-card .ask-row {
+  width: 100%;
+  background: none;
+}
+
+.ask-card .ask-row-text span {
+  white-space: normal;
+}
+
+.ask-via,
+.ask-say,
+.ask-action {
+  margin: 0 10px;
+}
+
+.ask-via {
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--work-wash);
+  font-size: 12px;
+}
+
+.ask-say {
+  align-self: stretch;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: var(--ground-200);
+  color: var(--ink-muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.ask-action {
+  height: 34px;
+  padding: 0 16px;
+  border-radius: var(--radius-pill);
+  background: var(--ink);
+  color: var(--on-ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.ask-draft {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border-radius: inherit;
+  background: var(--bg);
+  animation: layer-up 0.35s var(--ios-spring);
+}
+
+.ask-draft-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ask-draft-to {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.ask-draft textarea {
+  flex: 1;
+  min-height: 140px;
+  padding: 14px;
+  border: 0;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.5;
+  resize: none;
+}
+
+.ask-draft-note {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 12.5px;
+}
+
+.ask-draft-actions {
+  display: flex;
+  gap: 10px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ask-draft {
+    animation: none;
+  }
+}
+
+/* While Ask is open, toasts sit at the top so they don't cover its bar */
+.layer:has(.ask) ~ .toast {
+  top: calc(var(--safe-top) + 10px);
+  bottom: auto;
 }

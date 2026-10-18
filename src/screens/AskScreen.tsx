@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { ChevronRightIcon, CloseIcon, KeyboardIcon, MicIcon } from '../components/Icons'
 import type { Person } from '../data/people'
-import { demoRequests, interpret, type AskResult } from '../lib/ask'
+import { interpret, storyRequest, type Action, type AskResult, type Match } from '../lib/ask'
+import { updatePerson } from '../lib/peopleStore'
 import { firstName, initials, orbBackground, orbTextColor } from '../lib/people'
 import type { Tab } from '../components/BottomBar'
 
@@ -13,6 +14,7 @@ type Props = {
   onAdd: () => void
   onLogMoment: (id: string) => void
   onShow: (ids: string[], label: string) => void
+  onToast: (text: string) => void
 }
 
 type Phase = 'idle' | 'listening' | 'thinking' | 'answer'
@@ -22,14 +24,15 @@ const BARS = 26
 
 // Ask Peepl: the voice AI search behind the mic button. Speak (a scripted demo, like capture) or type a request;
 // it finds people or jumps to the right action.
-export function AskScreen({ people, tab, onClose, onOpenProfile, onAdd, onLogMoment, onShow }: Props) {
+export function AskScreen({ people, tab, onClose, onOpenProfile, onAdd, onLogMoment, onShow, onToast }: Props) {
   const [phase, setPhase] = useState<Phase>('idle')
   const [heard, setHeard] = useState('')
   const [typing, setTyping] = useState(false)
   const [draft, setDraft] = useState('')
   const [result, setResult] = useState<AskResult | null>(null)
   const [bars, setBars] = useState<number[]>(() => Array(BARS).fill(4))
-  const nextDemo = useRef(0)
+  // A drafted message / intro open over the results
+  const [drafting, setDrafting] = useState<Action | null>(null)
   const timers = useRef<number[]>([])
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -86,8 +89,7 @@ export function AskScreen({ people, tab, onClose, onOpenProfile, onAdd, onLogMom
 
   function tapMic() {
     if (phase === 'listening') return answer(heard) // stop early: go with what was heard
-    say(demoRequests[nextDemo.current % demoRequests.length])
-    nextDemo.current += 1
+    say(storyRequest(people))
   }
 
   function startTyping() {
@@ -171,10 +173,32 @@ export function AskScreen({ people, tab, onClose, onOpenProfile, onAdd, onLogMom
                 onOpenProfile={onOpenProfile}
                 onShow={onShow}
                 onAgain={reset}
+                onAction={setDrafting}
               />
             </>
           )}
         </div>
+
+        {drafting && (
+          <Draft
+            action={drafting}
+            onCancel={() => setDrafting(null)}
+            onSend={(text) => {
+              const { closes } = drafting
+              if (closes) {
+                const owner = people.find((p) => p.id === closes.personId)
+                if (owner) updatePerson(owner.id, { todos: (owner.todos ?? []).map((t) => (t.id === closes.todoId ? { ...t, done: true } : t)) })
+              }
+              setDrafting(null)
+              onToast(
+                closes
+                  ? `Sent · ticked off “${people.find((p) => p.id === closes.personId)?.todos?.find((t) => t.id === closes.todoId)?.text}”`
+                  : `Sent to ${drafting.to.split(' ')[0]}`,
+              )
+              void text
+            }}
+          />
+        )}
 
         {typing ? (
           <form className="ask-bar is-typing" onSubmit={submitTyped}>
@@ -226,9 +250,10 @@ type AnswerProps = {
   onOpenProfile: (id: string) => void
   onShow: (ids: string[], label: string) => void
   onAgain: () => void
+  onAction: (action: Action) => void
 }
 
-function Answer({ result, tab, onOpenProfile, onShow, onAgain }: AnswerProps) {
+function Answer({ result, tab, onOpenProfile, onShow, onAgain, onAction }: AnswerProps) {
   if (result.kind === 'add') return <h2 className="ask-title">Okay, let’s add someone new.</h2>
   if (result.kind === 'moment') return <h2 className="ask-title">Logging a moment with {firstName(result.person.name)}…</h2>
   if (result.kind === 'profile') return <h2 className="ask-title">Opening {firstName(result.person.name)}’s profile…</h2>
@@ -249,20 +274,16 @@ function Answer({ result, tab, onOpenProfile, onShow, onAgain }: AnswerProps) {
       <h2 className="ask-title is-small">{title}</h2>
       {matches.length > 0 && (
         <>
-          <div className="ask-results">
-            {matches.slice(0, 6).map(({ person, why }) => (
-              <button key={person.id} className="ask-row" onClick={() => onOpenProfile(person.id)}>
-                <span className="avatar avatar-sm" style={{ background: orbBackground(person.id), color: orbTextColor(person.id) }}>
-                  {initials(person.name)}
-                </span>
-                <span className="ask-row-text">
-                  <b>{person.name}</b>
-                  <span>{why}</span>
-                </span>
-                <ChevronRightIcon size={16} />
-              </button>
-            ))}
-          </div>
+          {(result.groups ?? [{ label: '', matches }]).map((g) => (
+            <div key={g.label} className="ask-group">
+              {g.label && <span className="label ask-group-label">{g.label}</span>}
+              <div className="ask-results">
+                {g.matches.slice(0, 6).map((m) => (
+                  <Row key={m.person.id} match={m} onOpenProfile={onOpenProfile} onAction={onAction} />
+                ))}
+              </div>
+            </div>
+          ))}
           {matches.length > 6 && <p className="ask-hint">and {matches.length - 6} more</p>}
           <button
             className="ask-show"
@@ -278,5 +299,70 @@ function Answer({ result, tab, onOpenProfile, onShow, onAgain }: AnswerProps) {
         </>
       )}
     </>
+  )
+}
+
+function Row({ match, onOpenProfile, onAction }: { match: Match; onOpenProfile: (id: string) => void; onAction: (a: Action) => void }) {
+  const { person, why, say, via, action } = match
+  if (!say && !action)
+    return (
+      <button className="ask-row" onClick={() => onOpenProfile(person.id)}>
+        <span className="avatar avatar-sm" style={{ background: orbBackground(person.id), color: orbTextColor(person.id) }}>
+          {initials(person.name)}
+        </span>
+        <span className="ask-row-text">
+          <b>{person.name}</b>
+          <span>{why}</span>
+        </span>
+        <ChevronRightIcon size={16} />
+      </button>
+    )
+  return (
+    <div className="ask-card">
+      <button className="ask-row" onClick={() => onOpenProfile(person.id)}>
+        <span className="avatar avatar-sm" style={{ background: orbBackground(person.id), color: orbTextColor(person.id) }}>
+          {initials(person.name)}
+        </span>
+        <span className="ask-row-text">
+          <b>{person.name}</b>
+          <span>{why}</span>
+        </span>
+        <ChevronRightIcon size={16} />
+      </button>
+      {via && <span className="ask-via">{via}</span>}
+      {say && <p className="ask-say">{say}</p>}
+      {action && (
+        <button className="ask-action" onClick={() => onAction(action)}>
+          {action.label}
+        </button>
+      )}
+    </div>
+  )
+}
+
+// Peepl drafts it; you decide whether to send.
+function Draft({ action, onCancel, onSend }: { action: Action; onCancel: () => void; onSend: (text: string) => void }) {
+  const [text, setText] = useState(action.draft)
+  const title = action.kind === 'intro' ? 'Draft intro' : action.kind === 'coffee' ? 'Plan coffee' : 'Message'
+  return (
+    <div className="ask-draft" role="dialog" aria-label={title}>
+      <div className="ask-draft-head">
+        <span className="label">{title}</span>
+        <button className="round-button glass-button is-sm" onClick={onCancel} aria-label="Back to results">
+          <CloseIcon size={14} />
+        </button>
+      </div>
+      <p className="ask-draft-to">To: {action.to}</p>
+      <textarea value={text} onChange={(e) => setText(e.target.value)} rows={6} aria-label="Message" />
+      {action.closes && <p className="ask-draft-note">Sending this ticks off the follow-up on their profile.</p>}
+      <div className="ask-draft-actions">
+        <button className="pill-button ghost" onClick={onCancel}>
+          Not now
+        </button>
+        <button className="pill-button ink grow" onClick={() => onSend(text)}>
+          Send
+        </button>
+      </div>
+    </div>
   )
 }

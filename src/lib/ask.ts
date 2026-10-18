@@ -6,14 +6,42 @@ import { firstName, timeSince } from './people'
 // moment, opening a profile, and finding people by interests, work, places, how you know them, or how
 // long it's been.
 
-export type Match = { person: Person; why: string }
+// A suggested next step on a result: Peepl drafts the message, the user decides whether to send it.
+export type Action = {
+  kind: 'message' | 'coffee' | 'intro'
+  label: string
+  to: string // who the draft goes to
+  draft: string
+  // Sending it ticks off this follow-up (a to-do on someone's profile), closing the loop.
+  closes?: { personId: string; todoId: string }
+}
+
+export type Match = { person: Person; why: string; say?: string; via?: string; action?: Action }
 
 export type AskResult =
-  | { kind: 'people'; title: string; matches: Match[] }
+  | { kind: 'people'; title: string; matches: Match[]; groups?: { label: string; matches: Match[] }[] }
   | { kind: 'add' }
   | { kind: 'moment'; person: Person }
   | { kind: 'profile'; person: Person }
   | { kind: 'none'; title: string }
+
+// The pitch demo, in story order: add Jordan, log a coffee with him, then three questions (see storyRequest).
+export const storyAsks = [
+  'I want a climbing buddy. Who in the city can I reach out to?',
+  'I’m traveling to SF next month. Who can I grab a coffee with?',
+  'I just met a founder looking for a hardware engineer. Who can I introduce?',
+]
+let storyStep = 0
+
+// What the mic "says" next: follows the demo story while it makes sense, then the other examples.
+export function storyRequest(people: Person[]): string {
+  const jordan = people.find((p) => p.id.startsWith('jordan-lee'))
+  if (!jordan) return 'Add someone new I just met'
+  if ((jordan.moments ?? []).length < 2) return 'Log a moment with Jordan'
+  const next = storyAsks[storyStep % storyAsks.length]
+  storyStep += 1
+  return next
+}
 
 // Example requests, played when the user taps the mic (the voice is a scripted demo, like capture).
 export const demoRequests = [
@@ -74,6 +102,10 @@ export function interpret(input: string, people: Person[]): AskResult {
   if (!text) return { kind: 'none', title: 'I didn’t catch that' }
 
   const named = mentionedPerson(text, people)
+
+  // The richer answers: buddies for an activity, who to see on a trip, who to introduce
+  const special = buddy(text, people) ?? trip(text, people) ?? intro(text, people)
+  if (special) return special
 
   // Actions first
   if (/\b(log|note|record|add)\b.*\b(moment|catch ?up|coffee|chat|call)\b/.test(text) && named) return { kind: 'moment', person: named }
@@ -182,4 +214,151 @@ function mentionedPerson(text: string, people: Person[]): Person | undefined {
     return t.includes(` ${f} `) || t.includes(` ${f}s `)
   })
   return byFirst.length === 1 ? byFirst[0] : undefined
+}
+
+// ---- Richer answers: each result says why, what to say, and offers a drafted next step ----
+
+const HOME = ['brooklyn', 'manhattan', 'new york', 'queens'] // "the city" for this user
+const near = (p: Person) => HOME.some((c) => norm(p.livesNow.city).includes(c))
+const overdue = (p: Person) => (Date.now() - new Date(p.lastContacted).getTime()) / 86_400_000 > 45
+const sentence = (story: string, term: RegExp) => story.split(/(?<=\.)\s+/).find((x) => term.test(norm(x)))?.replace(/\.$/, '')
+const openTodos = (p: Person) => (p.todos ?? []).filter((t) => !t.done)
+
+const activities: [RegExp, RegExp, string, string][] = [
+  [/\b(climb|climbing|boulder|bouldering)\b/, /climb|boulder/, 'climbing', 'climbing buddy'],
+  [/\b(run|running|jog)\b/, /\brun|marathon|jog/, 'running', 'running buddy'],
+  [/\b(hike|hiking)\b/, /hik/, 'hiking', 'hiking buddy'],
+]
+
+// "I want a climbing buddy. Who in the city can I reach out to?"
+function buddy(text: string, people: Person[]): AskResult | null {
+  if (!/\b(buddy|partner|someone to|go with|join me)\b/.test(text)) return null
+  const hit = activities.find(([ask]) => ask.test(text))
+  if (!hit) return null
+  const [, term, activity, label] = hit
+  const inCity = /\b(city|nearby|near me|around here|local|new york|nyc|brooklyn)\b/.test(text)
+  const said = (p: Person) => [p.story, ...p.tags, ...openTodos(p).map((t) => t.text)].some((x) => term.test(norm(x)))
+  const matches = people
+    .filter((p) => said(p) && (!inCity || near(p)))
+    // People who said they want a buddy first, then whoever you talked to most recently
+    .sort((a, b) => Number(wants(b, term)) - Number(wants(a, term)) || b.lastContacted.localeCompare(a.lastContacted))
+    .map((person): Match => {
+      const first = firstName(person.name)
+      const why = wants(person, term) ?? sentence(person.story, term) ?? `Into ${activity}`
+      const hook = wants(person, term) ? `you said you were looking for a ${label}` : `you mentioned getting into ${activity}`
+      return {
+        person,
+        why: `${why} · ${person.livesNow.city.split(',')[0]}`,
+        say: wants(person, term) ? `“Still up for ${activity}? I’m in.”` : `Ask how the ${activity} is going, then invite them along.`,
+        action: { kind: 'message', label: `Message ${first}`, to: person.name, draft: `Hey ${first}! Last time ${hook}. Want to go ${activity} this week?` },
+      }
+    })
+  const where = inCity ? ' in the city' : ''
+  return { kind: 'people', title: matches.length ? `${matches.length} ${matches.length === 1 ? 'person' : 'people'} for ${activity}${where}` : `No one into ${activity}${where} yet`, matches }
+}
+
+// Something they said about wanting a buddy (from their notes or to-dos), if any.
+function wants(p: Person, term: RegExp): string | undefined {
+  return [...openTodos(p).map((t) => t.text), ...p.story.split(/(?<=\.)\s+/)].find((x) => term.test(norm(x)) && /buddy|partner|someone/.test(norm(x)))?.replace(/\.$/, '')
+}
+
+const cityAliases: [RegExp, string[], string][] = [
+  [/\b(sf|san francisco|bay area|the bay)\b/, ['san francisco', 'oakland', 'berkeley'], 'the Bay Area'],
+  [/\b(la|los angeles)\b/, ['los angeles'], 'Los Angeles'],
+  [/\b(london)\b/, ['london'], 'London'],
+  [/\b(austin)\b/, ['austin'], 'Austin'],
+  [/\b(toronto)\b/, ['toronto'], 'Toronto'],
+  [/\b(tokyo)\b/, ['tokyo'], 'Tokyo'],
+  [/\b(boston)\b/, ['boston'], 'Boston'],
+  [/\b(berlin)\b/, ['berlin'], 'Berlin'],
+  [/\b(paris)\b/, ['paris'], 'Paris'],
+]
+
+// "I'm traveling to SF next month. Who can I grab a coffee with?"
+function trip(text: string, people: Person[]): AskResult | null {
+  if (!/\b(travel|traveling|travelling|trip|visiting|heading|going|flying|in town|next (week|month))\b/.test(text)) return null
+  const hit = cityAliases.find(([re]) => re.test(text))
+  if (!hit) return null
+  const [, cities, area] = hit
+  const there = people.filter((p) => cities.some((c) => norm(p.livesNow.city).includes(c)))
+  // Who you owe something to, who you're overdue with
+  const promisedBy = (p: Person) => people.find((o) => o.id !== p.id && openTodos(o).some((t) => norm(t.text).includes(norm(firstName(p.name)))))
+  const matches = there
+    .sort((a, b) => Number(!!promisedBy(b)) - Number(!!promisedBy(a)) || a.lastContacted.localeCompare(b.lastContacted))
+    .map((person): Match => {
+      const first = firstName(person.name)
+      const owed = promisedBy(person)
+      const last = `last talked ${timeSince(person.lastContacted).toLowerCase()}`
+      const why = `${person.profession} · ${person.livesNow.city.split(',')[0]} · ${last}`
+      const say = owed
+        ? `Bring up ${firstName(owed.name)}: you promised them an intro to ${first}.`
+        : overdue(person)
+          ? `It’s been a while. Ask about ${sentence(person.story, /./)?.toLowerCase() ?? person.tags[0]}.`
+          : `Ask about ${person.tags[0]}.`
+      const todo = owed ? openTodos(owed).find((t) => norm(t.text).includes(norm(first))) : undefined
+      return {
+        person,
+        why,
+        say,
+        via: owed ? `${firstName(owed.name)}’s follow-up` : overdue(person) ? 'Overdue to catch up' : undefined,
+        action: {
+          kind: 'coffee',
+          label: 'Plan coffee',
+          to: person.name,
+          draft: `Hi ${first}! I’m in ${area === 'the Bay Area' ? 'SF' : area} next month and would love to grab a coffee.${owed ? ` I also want to introduce you to ${owed.name}, who I think you’d get along with.` : ''} Any morning free?`,
+          closes: owed && todo ? { personId: owed.id, todoId: todo.id } : undefined,
+        },
+      }
+    })
+  return { kind: 'people', title: matches.length ? `${matches.length} ${matches.length === 1 ? 'person' : 'people'} in ${area}` : `No one in ${area} yet`, matches }
+}
+
+// "I just met a founder looking for a hardware engineer. Who can I introduce?"
+function intro(text: string, people: Person[]): AskResult | null {
+  if (!/\b(introduce|intro|connect|refer)\b/.test(text)) return null
+  const role = text.match(/\b(?:looking for|needs?|hiring|wants?|searching for) (?:an? )?([a-z ]+?)(?: who| that| can|$| i | what)/)?.[1]?.trim()
+  if (!role) return null
+  const words = role.split(' ').filter((w) => !filler.has(w))
+  const key = words.find((w) => !/^(engineer|designer|person|someone|developer|expert)$/.test(w)) ?? words[0]
+  if (!key) return null
+  const has = (p: Person, w: string) => [p.profession, ...p.tags].some((x) => norm(x).includes(w))
+  // The person asking: someone with an open intro to-do that mentions the role, most recently met first
+  const asker = people
+    .filter((p) => openTodos(p).some((t) => /intro/.test(norm(t.text)) && norm(t.text).includes(key)))
+    .sort((a, b) => b.lastContacted.localeCompare(a.lastContacted))[0]
+  const askerTodo = asker ? openTodos(asker).find((t) => /intro/.test(norm(t.text)) && norm(t.text).includes(key)) : undefined
+  const direct = people.filter((p) => p.id !== asker?.id && words.every((w) => has(p, w) || norm(p.story).includes(w)))
+  const connectors = people.filter((p) => p.id !== asker?.id && !direct.includes(p) && norm(p.story).includes(key))
+  const founder = asker ? asker.name : 'the founder'
+  const blurb = asker ? sentence(asker.story, /./) ?? asker.profession : ''
+  const toMatch = (person: Person, viaWhy?: string): Match => {
+    const first = firstName(person.name)
+    const keen = sentence(person.story, /advise|mentor|help|looking|open to/)
+    return viaWhy
+      ? {
+          person,
+          why: viaWhy,
+          via: 'Can connect you',
+          say: `Ask who on their team or portfolio does ${key}.`,
+          action: { kind: 'message', label: `Ask ${first}`, to: person.name, draft: `Hi ${first}! I just met ${founder}, who’s looking for a ${role}. Anyone you’d recommend?` },
+        }
+      : {
+          person,
+          why: [person.profession, keen].filter(Boolean).join(' · '),
+          say: keen ? `They said they ${keen.replace(/^wants/i, 'want').toLowerCase()}.` : `Ask if they’d be open to a chat.`,
+          action: {
+            kind: 'intro',
+            label: 'Draft intro',
+            to: asker ? `${person.name} and ${asker.name}` : person.name,
+            draft: `Hi ${first}, meet ${founder}.${blurb ? ` ${blurb}.` : ''} They’re looking for a ${role}.${keen ? ` You mentioned you ${keen.replace(/^wants/i, 'want').toLowerCase()}, so I thought of you two.` : ''}`,
+            closes: asker && askerTodo ? { personId: asker.id, todoId: askerTodo.id } : undefined,
+          },
+        }
+  }
+  const groups = [
+    { label: 'You know directly', matches: direct.map((p) => toMatch(p)) },
+    { label: 'One step away', matches: connectors.map((p) => toMatch(p, sentence(p.story, new RegExp(key)) ?? p.profession)) },
+  ].filter((g) => g.matches.length)
+  const matches = groups.flatMap((g) => g.matches)
+  return { kind: 'people', title: matches.length ? `Who could help with a ${role}` : `No ${role} in your people yet`, matches, groups }
 }

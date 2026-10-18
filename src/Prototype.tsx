@@ -196,6 +196,7 @@ export function Prototype() {
                 onOpenProfile={openProfile}
                 onAdd={() => replaceTop({ kind: 'capture', talk: true })}
                 onLogMoment={(id) => replaceTop({ kind: 'capture', personId: id, talk: true })}
+                onToast={say}
                 onShow={(ids, label) => {
                   setLayers([])
                   setQuery('')
