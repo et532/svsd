@@ -21,7 +21,7 @@ export function BottomBar({ active, onChange, onAsk, layout = 'floating' }: Prop
       aria-current={active === id ? 'page' : undefined}
     >
       <Icon size={23} />
-      {layout === 'docked' && <span className="nav-label">{label}</span>}
+      <span className="nav-label">{label}</span>
     </button>
   )
 
@@ -30,7 +30,7 @@ export function BottomBar({ active, onChange, onAsk, layout = 'floating' }: Prop
       {tab('mindmap', 'Mindmap', MindmapIcon)}
       <button className="ask-button" onClick={onAsk} aria-label="Ask Peepl: search or add someone by voice">
         <span className="ask-button-orb" aria-hidden />
-        <MicIcon size={24} />
+        <MicIcon size={26} />
       </button>
       {tab('list', 'People', ListIcon)}
     </nav>
