@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { BottomBar, type Tab } from './components/BottomBar'
 import { BackIcon, CloseIcon } from './components/Icons'
 import { SearchBar } from './components/SearchBar'
+import { SearchFilter } from './components/SearchFilter'
+import { colorScale, type ColorBy } from './lib/mindmapColors'
 import { HomeIndicator, StatusBar } from './components/StatusBar'
 import { draftToMoment, draftToPerson, newTodo } from './lib/capture'
 import { auraDepth, closenessLabel, firstName, matchesQuery, momentsOf, todosOf } from './lib/people'
@@ -27,11 +29,13 @@ type Props = {
 }
 
 // The app's phone screen. Rendered once, or several times on the filter looks page.
-export function Prototype({ filterLayout, initialTab = 'list' }: Props) {
+export function Prototype({ filterLayout = 'a', initialTab = 'list' }: Props) {
   const allPeople = usePeople()
   const [tab, setTab] = useState<Tab>(initialTab)
   const [query, setQuery] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
+  // What the mindmap's dot colors mean, set from the filter in the search bar
+  const [colorBy, setColorBy] = useState<ColorBy>('relationship')
   const [layers, setLayers] = useState<Layer[]>([])
   // Set by "View connections" on a profile: who to focus, and a way back to them.
   const [navFocus, setNavFocus] = useState<string | null>(null)
@@ -126,7 +130,7 @@ export function Prototype({ filterLayout, initialTab = 'list' }: Props) {
       </div>
       <StatusBar />
       {tab === 'list' && <ListScreen people={people} query={query} onOpen={openProfile} />}
-      {tab === 'mindmap' && <MindmapScreen people={focusId ? allPeople : people} focusId={focusId} onView={openProfile} filterLayout={filterLayout} />}
+      {tab === 'mindmap' && <MindmapScreen people={focusId ? allPeople : people} focusId={focusId} onView={openProfile} colorBy={colorBy} />}
 
       {searchOpen && <div className="search-scrim" aria-hidden />}
 
@@ -136,6 +140,18 @@ export function Prototype({ filterLayout, initialTab = 'list' }: Props) {
           onChange={changeQuery}
           people={allPeople}
           onOpenChange={setSearchOpen}
+          // The color filter only means something on the mindmap
+          accessory={
+            tab === 'mindmap' && (
+              <SearchFilter
+                layout={filterLayout}
+                value={colorBy}
+                onChange={setColorBy}
+                entries={colorScale(focusId ? allPeople : people, colorBy).entries}
+              />
+            )
+          }
+          placeholder={tab === 'mindmap' ? 'Search people' : undefined}
         />
       </header>
 

@@ -8,6 +8,9 @@ type Props = {
   onChange: (value: string) => void
   people: Person[]
   onOpenChange?: (open: boolean) => void
+  // A control at the right end of the bar (the mindmap's filter button)
+  accessory?: React.ReactNode
+  placeholder?: string
 }
 
 const RECENTS_KEY = 'peepl-recent-searches'
@@ -27,7 +30,7 @@ type Option =
   | { kind: 'place'; label: string }
   | { kind: 'tag'; label: string }
 
-export function SearchBar({ value, onChange, people, onOpenChange }: Props) {
+export function SearchBar({ value, onChange, people, onOpenChange, accessory, placeholder = 'Search people, places, interests' }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
   const listId = useId()
   const [open, setOpenState] = useState(false)
@@ -155,7 +158,7 @@ export function SearchBar({ value, onChange, people, onOpenChange }: Props) {
           onFocus={() => setOpen(true)}
           onBlur={() => setOpen(false)}
           onKeyDown={onKeyDown}
-          placeholder="Search people, places, interests"
+          placeholder={placeholder}
           aria-label="Search people"
           role="combobox"
           aria-expanded={open}
@@ -178,6 +181,7 @@ export function SearchBar({ value, onChange, people, onOpenChange }: Props) {
             <CloseIcon size={17} />
           </button>
         )}
+        {accessory}
       </div>
 
       {open && (

@@ -1,10 +1,8 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import type { Context, Person } from '../data/people'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import type { Person } from '../data/people'
 import { createGraph, type Graph } from '../lib/forceGraph'
-import { contextColor, initials, linksOf, orbBackground, orbTextColor } from '../lib/people'
-import { ChevronDownIcon } from '../components/Icons'
-import { MindmapFilter, type KeyEntry } from '../components/MindmapFilter'
-import type { FilterLayout } from '../lib/filterLayouts'
+import { initials, linksOf, orbBackground, orbTextColor } from '../lib/people'
+import { colorKey, colorScale, type ColorBy } from '../lib/mindmapColors'
 
 
 // Grouping (territory clouds by city / met at / job). Its control on the right was removed for now at the
@@ -18,34 +16,6 @@ const groupValue: Record<GroupBy, (p: Person) => string> = {
   job: (p) => p.profession,
 }
 
-// What the bubble colors mean (the same colors as the avatars on the list).
-const legend: { id: Context; label: string }[] = [
-  { id: 'work', label: 'Work' },
-  { id: 'social', label: 'Social' },
-  { id: 'community', label: 'Community' },
-  { id: 'family', label: 'Family' },
-]
-
-// What the dot colors mean. 'relationship' uses the avatar colors; the others rank values by how many people share them.
-type ColorBy = 'relationship' | 'city' | 'job' | 'recent'
-const colorOptions: { id: ColorBy; label: string }[] = [
-  { id: 'relationship', label: 'Relationship' },
-  { id: 'city', label: 'City' },
-  { id: 'job', label: 'Job' },
-  { id: 'recent', label: 'Last seen' },
-]
-const colorKey: Record<ColorBy, (p: Person) => string> = {
-  relationship: (p) => p.context,
-  city: (p) => p.livesNow.city,
-  job: (p) => p.profession,
-  recent: (p) => {
-    const days = (Date.now() - new Date(p.lastContacted).getTime()) / 86_400_000
-    return days <= 30 ? 'This month' : days <= 120 ? 'Past 4 months' : 'Longer ago'
-  },
-}
-const palette = ['#2f4fd0', '#ec5a32', '#e8c22e', '#d6347f', '#2fa38a', '#8a5cd6']
-const otherColor = '#b9b2c2'
-
 // Territory clouds: one soft pastel per group.
 const territoryColors = ['#ffd6c2', '#d9f2e6', '#e3d9ff', '#ffd9ea', '#fbf0c4', '#d6e6ff']
 
@@ -58,24 +28,13 @@ type Props = {
   people: Person[]
   focusId?: string | null
   onView?: (id: string) => void
-  filterLayout?: FilterLayout
+  // What the dot colors mean, chosen with the filter in the search bar
+  colorBy?: ColorBy
 }
 
-export function MindmapScreen({ people, focusId = null, onView, filterLayout = 'a' }: Props) {
+export function MindmapScreen({ people, focusId = null, onView, colorBy = 'relationship' }: Props) {
   const groupBy: GroupBy = 'none'
-  const [colorBy, setColorBy] = useState<ColorBy>('relationship')
   const [selected, setSelected] = useState<string | null>(null)
-  const [menu, setMenu] = useState(false) // the key is always shown; tap or hold its pill to swap it for the list of things to color by
-  const [hover, setHover] = useState<ColorBy | null>(null)
-  const holdTimer = useRef(0)
-  const colorsRef = useRef<HTMLDivElement>(null)
-  const pillRef = useRef<HTMLButtonElement>(null)
-  const anchorRef = useRef<HTMLSpanElement>(null)
-  const blobRef = useRef<HTMLSpanElement>(null)
-  const blob = useRef({ pos: [0, 0, 0, 0], vel: [0, 0, 0, 0], goal: [0, 0, 0, 0], raf: 0, ready: false }) // top, bottom, left, right
-  const held = useRef(false)
-  // Whether the key (what each color means) is showing. The button layouts start folded up.
-  const [keyOpen, setKeyOpen] = useState(filterLayout === 'a' || filterLayout === 'c')
   const [focus, setFocus] = useState<string | null>(null) // a group isolated by tapping its name
 
   const rootRef = useRef<HTMLDivElement>(null)
@@ -135,18 +94,8 @@ export function MindmapScreen({ people, focusId = null, onView, filterLayout = '
     return { groupOf: of, groups: names }
   }, [people, groupBy])
 
-  // Color for each value, most common first; anything past the palette is grey "Other".
-  const colors = useMemo(() => {
-    const count = new Map<string, number>()
-    for (const p of people) count.set(colorKey[colorBy](p), (count.get(colorKey[colorBy](p)) ?? 0) + 1)
-    const ranked = [...count].sort((a, b) => b[1] - a[1]).map(([k]) => k)
-    const of = new Map(ranked.map((k, i) => [k, palette[i] ?? otherColor]))
-    const entries = ranked.slice(0, palette.length).map((k) => ({ label: k, color: of.get(k)! }))
-    if (ranked.length > palette.length) entries.push({ label: 'Other', color: otherColor })
-    return { of, entries }
-  }, [people, colorBy])
-  const keyEntries: KeyEntry[] =
-    colorBy === 'relationship' ? legend.map((l) => ({ label: l.label, color: contextColor(l.id) })) : colors.entries
+  // Color for each value (the key itself lives in the search bar's filter)
+  const colors = useMemo(() => colorScale(people, colorBy), [people, colorBy])
 
   selectedRef.current = selected
 
@@ -261,7 +210,6 @@ export function MindmapScreen({ people, focusId = null, onView, filterLayout = '
   const onPointerDown = (e: React.PointerEvent) => {
     ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
     cancelAnimationFrame(flight.current)
-    setMenu(false)
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
     const nodeEl = (e.target as HTMLElement).closest<HTMLElement>('[data-id]')
     const id = pointers.current.size === 1 ? (nodeEl?.dataset.id ?? null) : null
@@ -319,59 +267,6 @@ export function MindmapScreen({ people, focusId = null, onView, filterLayout = '
       d.pinch = 0
     }
   }
-
-  // A black blob rests on the pill. While you drag over the list it stretches out of the pill (a goo filter
-  // gives it a neck), slides to the option under your finger, then re-attaches there. Each edge is its own
-  // spring, the leading one stiffer, so it stretches before it catches up.
-  useLayoutEffect(() => {
-    const root = colorsRef.current
-    const pill = pillRef.current
-    const el = blobRef.current
-    const anchor = anchorRef.current
-    if (!root || !pill || !el || !anchor) return
-    const box = root.getBoundingClientRect()
-    // Screen measurements are scaled when the app is shown shrunk (the layout comparison page); styles are not.
-    const z = box.width / root.offsetWidth || 1
-    const rect = (t: Element) => {
-      const r = t.getBoundingClientRect()
-      return [(r.top - box.top) / z, (r.bottom - box.top) / z, (r.left - box.left) / z, (r.right - box.left) / z]
-    }
-    const [pt, pb, pl, pr] = rect(pill)
-    Object.assign(anchor.style, { top: `${pt}px`, height: `${pb - pt}px`, left: `${pl}px`, width: `${pr - pl}px` })
-    const option = hover && menu ? root.querySelector(`[data-color-option="${hover}"]`) : null
-    const b = blob.current
-    b.goal = option ? rect(option) : [pt, pb, pl, pr]
-    const paint = () => {
-      const [t, bt, l, r] = b.pos
-      Object.assign(el.style, { top: `${t}px`, height: `${Math.max(0, bt - t)}px`, left: `${l}px`, width: `${Math.max(0, r - l)}px` })
-    }
-    if (!b.ready || matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      b.ready = true
-      b.pos = [...b.goal]
-      b.vel = [0, 0, 0, 0]
-      paint()
-      return
-    }
-    cancelAnimationFrame(b.raf)
-    const down = b.goal[0] > b.pos[0]
-    const stiff = [down ? 0.11 : 0.24, down ? 0.24 : 0.11, 0.18, 0.18] // top, bottom, left, right
-    const tick = () => {
-      let busy = false
-      for (let i = 0; i < 4; i++) {
-        b.vel[i] = (b.vel[i] + (b.goal[i] - b.pos[i]) * stiff[i]) * 0.72
-        b.pos[i] += b.vel[i]
-        if (Math.abs(b.goal[i] - b.pos[i]) > 0.2 || Math.abs(b.vel[i]) > 0.05) busy = true
-      }
-      paint()
-      if (busy) b.raf = requestAnimationFrame(tick)
-      else {
-        b.pos = [...b.goal]
-        paint()
-      }
-    }
-    b.raf = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(b.raf)
-  }, [hover, menu, colorBy])
 
   // Zoom to a person and center them with their direct connections in view. The user can still pan afterwards.
   const flight = useRef(0)
@@ -547,138 +442,6 @@ export function MindmapScreen({ people, focusId = null, onView, filterLayout = '
         </div>
       )}
 
-      {filterLayout === 'b' || filterLayout === 'd' ? (
-        <MindmapFilter
-          layout={filterLayout}
-          options={colorOptions}
-          value={colorBy}
-          onChange={setColorBy}
-          entries={keyEntries}
-          open={keyOpen}
-          onOpenChange={setKeyOpen}
-        />
-      ) : (
-      <div
-        ref={colorsRef}
-        className={`mm-colors${keyOpen || menu ? '' : ' is-collapsed'}`}
-        onPointerDown={(e) => e.stopPropagation()}
-      >
-        <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden>
-          <filter id="mm-goo">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="b" />
-            <feColorMatrix in="b" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -8" />
-          </filter>
-        </svg>
-        <div className="mm-goo" aria-hidden>
-          <span ref={anchorRef} />
-          <span ref={blobRef} />
-        </div>
-        <div className="mm-pill-row">
-          <button
-            ref={pillRef}
-            type="button"
-            className="mm-color-pill"
-            aria-expanded={menu}
-            onPointerDown={(e) => {
-              e.currentTarget.setPointerCapture(e.pointerId)
-              held.current = false
-              window.clearTimeout(holdTimer.current)
-              holdTimer.current = window.setTimeout(() => {
-                held.current = true
-                setMenu(true)
-              }, 250)
-            }}
-            onPointerMove={(e) => {
-              if (!held.current) return
-              const id = document.elementFromPoint(e.clientX, e.clientY)?.closest<HTMLElement>('[data-color-option]')?.dataset.colorOption
-              setHover((id as ColorBy) ?? null)
-            }}
-            onPointerUp={() => {
-              window.clearTimeout(holdTimer.current)
-              if (held.current) {
-                // Released over an option: pick it. Released elsewhere: leave the list open to tap.
-                if (hover) {
-                  setColorBy(hover)
-                  setMenu(false)
-                }
-                setHover(null)
-              } else setMenu(!menu)
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault()
-                setMenu(!menu)
-              }
-            }}
-          >
-            {colorOptions.find((o) => o.id === colorBy)!.label}
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-              <path d="m6 9 6 6 6-6" />
-            </svg>
-          </button>
-          {filterLayout === 'a' && (
-            <button
-              type="button"
-              className={`mm-collapse${keyOpen ? ' is-up' : ''}`}
-              aria-label={keyOpen ? 'Hide key' : 'Show key'}
-              aria-expanded={keyOpen}
-              onClick={() => {
-                setKeyOpen(!keyOpen)
-                setMenu(false)
-              }}
-            >
-              <ChevronDownIcon size={14} />
-            </button>
-          )}
-          {filterLayout === 'c' && !keyOpen && !menu && (
-            <button type="button" className="mm-dots" aria-label="Show key" onClick={() => setKeyOpen(true)}>
-              {keyEntries.map((e) => (
-                <i key={e.label} style={{ background: e.color }} />
-              ))}
-            </button>
-          )}
-        </div>
-
-        {menu ? (
-          <div className="mm-list mm-menu" role="menu">
-            {colorOptions.filter((o) => o.id !== colorBy).map((o) => (
-              <button
-                key={o.id}
-                type="button"
-                role="menuitemradio"
-                aria-checked={colorBy === o.id}
-                data-color-option={o.id}
-                className={hover === o.id ? 'is-hover' : ''}
-                onPointerEnter={() => setHover(o.id)}
-                onPointerLeave={() => setHover(null)}
-                onClick={() => {
-                  setColorBy(o.id)
-                  setMenu(false)
-                }}
-              >
-                {o.label}
-              </button>
-            ))}
-          </div>
-        ) : (
-          keyOpen && (
-            <div className="mm-list">
-              {keyEntries.map((l) => (
-                <span key={l.label}>
-                  <i style={{ background: l.color }} />
-                  {l.label}
-                </span>
-              ))}
-              {filterLayout === 'c' && (
-                <button type="button" className="mm-hide" onClick={() => setKeyOpen(false)}>
-                  Hide
-                </button>
-              )}
-            </div>
-          )
-        )}
-      </div>
-      )}
     </div>
   )
 }

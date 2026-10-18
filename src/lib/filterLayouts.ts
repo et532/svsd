@@ -1,25 +1,48 @@
-// Layouts for the mindmap's color filter (top left), being compared at #/filter-looks.
+// Layouts for the mindmap's color filter, now a button in the search bar, being compared at #/filter-looks.
 // Open one full size with #/?filter=b.
 export type FilterLayout = 'a' | 'b' | 'c' | 'd'
-export const filterLayouts: { id: FilterLayout; name: string; description: string }[] = [
+
+export const filterLayouts: {
+  id: FilterLayout
+  name: string
+  description: string
+  // The button in the search bar: a filter icon, or a chip naming the current filter
+  trigger: 'icon' | 'chip'
+  // What it opens: a pop-up under the search bar, or a sheet that slides up from the bottom
+  panel: 'popover' | 'sheet'
+  // How the options are laid out (from the earlier B and D panels): rows with a check, or chips
+  options: 'rows' | 'chips'
+}[] = [
   {
     id: 'a',
-    name: 'Collapse arrow',
-    description: 'Today’s black pill, plus a small arrow beside it that hides or shows the key. Collapsed, only the pill naming the current filter is left.',
+    name: 'Icon + pop-up',
+    description: 'A filter icon at the end of the search bar opens a floating pop-up under it: options as rows with a check, and the key.',
+    trigger: 'icon',
+    panel: 'popover',
+    options: 'rows',
   },
   {
     id: 'b',
-    name: 'Filter button',
-    description: 'Collapsed to a “Filter” button with a row of the current colors. Tap to open a panel: what to color by, with a check on the current one, and the key below.',
+    name: 'Icon + slide-up',
+    description: 'The same filter icon opens a sheet that slides up from the bottom: options as rows with a check, and the key.',
+    trigger: 'icon',
+    panel: 'sheet',
+    options: 'rows',
   },
   {
     id: 'c',
-    name: 'Dots preview',
-    description: 'Today’s black pill. Collapsed, the key shrinks to a row of colored dots beside it; tap the dots to see the labels again, or “Hide” to fold them back.',
+    name: 'Current filter + pop-up',
+    description: 'The search bar ends in a chip naming the current filter (“Relationship”). It opens a floating pop-up with the options as chips, and the key.',
+    trigger: 'chip',
+    panel: 'popover',
+    options: 'chips',
   },
   {
     id: 'd',
-    name: 'Filter + current',
-    description: 'One button that reads “Filter | Relationship”, always showing the current filter. Tap to open the options as chips, with the key below.',
+    name: 'Current filter + slide-up',
+    description: 'The same chip naming the current filter opens a sheet from the bottom with the options as chips, and the key.',
+    trigger: 'chip',
+    panel: 'sheet',
+    options: 'chips',
   },
 ]
