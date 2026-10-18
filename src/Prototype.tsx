@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { BottomBar, type Tab } from './components/BottomBar'
-import { BackIcon } from './components/Icons'
+import { BackIcon, CloseIcon } from './components/Icons'
 import { SearchBar } from './components/SearchBar'
 import { HomeIndicator, StatusBar } from './components/StatusBar'
 import { draftToMoment, draftToPerson, newTodo } from './lib/capture'
@@ -12,20 +12,24 @@ import { MindmapScreen } from './screens/MindmapScreen'
 import { ProfileScreen } from './screens/ProfileScreen'
 import { SavedScreen } from './screens/SavedScreen'
 import type { FilterLayout } from './lib/filterLayouts'
+import type { NavLayout } from './lib/navLayouts'
+import { AskScreen } from './screens/AskScreen'
 
 // Full-screen layers above the tabs, newest last. Back / close pops the top one.
 type Layer =
   | { kind: 'capture'; personId?: string; talk?: boolean }
   | { kind: 'saved'; id: string }
   | { kind: 'profile'; id: string; fresh?: string | null }
+  | { kind: 'ask' }
 
 type Props = {
   filterLayout?: FilterLayout
+  navLayout?: NavLayout
   initialTab?: Tab
 }
 
 // The app's phone screen. Rendered once, or several times on the filter looks page.
-export function Prototype({ filterLayout, initialTab = 'list' }: Props) {
+export function Prototype({ filterLayout, navLayout, initialTab = 'list' }: Props) {
   const allPeople = usePeople()
   const [tab, setTab] = useState<Tab>(initialTab)
   const [query, setQuery] = useState('')
@@ -35,7 +39,12 @@ export function Prototype({ filterLayout, initialTab = 'list' }: Props) {
   const [navFocus, setNavFocus] = useState<string | null>(null)
   const [toast, setToast] = useState<{ text: string; key: number } | null>(null)
 
-  const people = useMemo(() => allPeople.filter((p) => matchesQuery(p, query)), [allPeople, query])
+  // People picked out by Ask ("Show all 3 in your list"), shown until cleared with the pill above the nav
+  const [askFilter, setAskFilter] = useState<{ ids: string[]; label: string } | null>(null)
+  const people = useMemo(
+    () => allPeople.filter((p) => matchesQuery(p, query) && (!askFilter || askFilter.ids.includes(p.id))),
+    [allPeople, query, askFilter],
+  )
   // One match on the mindmap: keep the whole graph and select that person instead of showing a lone dot.
   const searchFocus = query.trim() && people.length === 1 ? people[0].id : null
   const focusId = navFocus ?? searchFocus
@@ -145,15 +154,54 @@ export function Prototype({ filterLayout, initialTab = 'list' }: Props) {
         </button>
       )}
 
-      <BottomBar active={tab} onChange={changeTab} onAdd={() => {
+      {askFilter && layers.length === 0 && (
+        <div className="ask-filter" role="status">
+          <span className="ask-filter-dot" aria-hidden />
+          <span className="ask-filter-text">
+            {askFilter.label} · {people.length}
+          </span>
+          <button onClick={() => setAskFilter(null)} aria-label="Show everyone again">
+            <CloseIcon size={14} />
+          </button>
+        </div>
+      )}
+
+      <BottomBar
+        active={tab}
+        layout={navLayout}
+        onChange={changeTab}
+        onAdd={() => {
           setNavFocus(null)
           push({ kind: 'capture' })
-        }} />
+        }}
+        onAsk={() => {
+          setNavFocus(null)
+          push({ kind: 'ask' })
+        }}
+      />
 
       {layers.map((layer, i) => {
         const key = `${i}-${layer.kind}`
         // Only the top two layers render, so a profile stays under the moment being logged.
         if (i < layers.length - 2) return null
+        if (layer.kind === 'ask')
+          return (
+            <div key={key} className="layer is-fade">
+              <AskScreen
+                people={allPeople}
+                tab={tab}
+                onClose={pop}
+                onOpenProfile={openProfile}
+                onAdd={() => replaceTop({ kind: 'capture', talk: true })}
+                onLogMoment={(id) => replaceTop({ kind: 'capture', personId: id, talk: true })}
+                onShow={(ids, label) => {
+                  setLayers([])
+                  setQuery('')
+                  setAskFilter({ ids, label })
+                }}
+              />
+            </div>
+          )
         if (layer.kind === 'capture') {
           const person = layer.personId ? byId(layer.personId) : undefined
           return (

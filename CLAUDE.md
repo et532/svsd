@@ -15,7 +15,8 @@ A private, personal "people log": remember everyone you meet, where you met them
 - `src/Prototype.tsx` — the phone screen: search bar on top, current screen (Mindmap or People), bottom nav. Holds the tab, search query and layers.
 - `src/App.tsx` — wraps it in an iPhone 15 frame on desktop and scales the frame to fit the window. There is no side panel any more: the style playground was removed at the user's request, with its last settings (Frost glass, Cream background, Sphere avatars) baked into the defaults.
 - `src/screens/` — `ListScreen`, `MindmapScreen` (the people graph), plus the capture / saved / profile layers below. `FilterLooksPage` (route `#/filter-looks`) temporarily compares the mindmap filter layouts; `src/lib/filterLayouts.ts` lists them and `src/components/MindmapFilter.tsx` draws layouts B and D.
-- `src/components/` — `SearchBar` (with suggestions dropdown), `BottomBar`, `StatusBar`, `Icons`.
+- `src/components/` — `SearchBar` (with suggestions dropdown), `BottomBar` (tabs, Ask mic, +), `StatusBar`, `Icons`.
+- **Ask** (voice AI search): `src/screens/AskScreen.tsx` (the sheet), `src/lib/ask.ts` (`interpret()`: turns a request into an action, plus the demo requests). `src/lib/navLayouts.ts` lists the nav layouts; `NavLooksPage` (route `#/nav-looks`) compares them.
 - `src/lib/forceGraph.ts` — hand-rolled force simulation for the mindmap (no dependency). `src/data/mockPeople.ts` — seeded generator of fabricated people (mostly social, some work, few family; each knows 1-3 others, max 5, a few know nobody); open `/?mock=200` (up to 500) to stress-test the whole app with that many.
 - `src/data/people.ts` — 15 sample people (each has a `knows` list of ids; links are symmetric). `src/lib/people.ts` — search matching and helpers.
 - `src/lib/peopleStore.ts` — everyone in the app (sample people + people added with **+**, plus logged moments, to-dos and closeness), via `usePeople()`. Additions and changes are saved in `localStorage` (`peepl.people.v1`), never in mock mode. To reset to the sample people, clear the site's data in the browser (the reset button lived in the removed style panel; `resetPeople()` still exists).
@@ -38,7 +39,7 @@ A private, personal "people log": remember everyone you meet, where you met them
 - Motion uses `--ios-spring` (UIKit-like spring curve). Buttons shrink on press (`scale(.92)`), rows dim and shrink slightly. Screens fade in on tab change and the search dropdown scales in from the top. All off for reduced motion.
 
 **Overall**
-- Matches the user's wireframes: search bar at top; bottom-left floating pill nav with two icon-only tabs (Mindmap, People list); round **+** button bottom-right.
+- Matches the user's wireframes: search bar at top; bottom-left floating pill nav with two icon-only tabs (Mindmap, People list); round **+** button bottom-right; and the **Ask mic** in the bottom middle (see Ask below).
 - Sizes are about 5% smaller than the first version. The user found 15% smaller too small.
 - On desktop, the app sits in a light silver iPhone frame with a fake status bar (9:41, signal, Wi-Fi, battery), Dynamic Island, and home bar. On a real phone (under 600px wide) the frame and fake status bar are hidden. Use `var(--safe-top)` / `var(--safe-bottom)` for spacing, not `env()` directly.
 - The search input text stays 16px so iPhones don't zoom in on tap.
@@ -66,6 +67,14 @@ A private, personal "people log": remember everyone you meet, where you met them
 - Saving a person shows **Saved**: they land in the middle of their bit of the network (solid lines to people they know, dashed to suggestions: same "met at" or same city). Actions: **View profile** (primary), **Add another**, X to close.
 - Saving a moment returns to the profile with the new moment open, bumps closeness one step (Just met → Getting to know → Know well), and adds the follow-up to "Things to talk about".
 
+**Ask (voice AI search)** — the mic in the middle of the nav, on both Mindmap and People
+- Opens a glass sheet over the dimmed app: "Ask Peepl", a pastel AI orb (`--ai-orb`: the four relationship hues as soft pastels), a serif prompt, and example requests as chips.
+- **Voice is a scripted demo**, like capture (no real mic): **Tap to talk** "says" the next example request word by word with a live waveform; tap again to stop early. Tapping a chip plays that request. The **keyboard** button switches to typing any request.
+- `interpret()` in `src/lib/ask.ts` is a rule-based stand-in for a real model (works offline, no API key). It understands: **add someone** ("add someone new" → opens capture, already recording), **log a moment** ("log a moment with Maya" → capture for Maya), **open a profile** ("open Aisha's profile"), **catching up** ("who haven't I talked to in a while" → longest-ago first; "recently" → newest first), and **finding people** by any mix of interests / work (tags, job, story, with related words, e.g. sports → baseball, running, hiking), places ("in London", "from Lagos", "met at Climate Week"), and how you know them (family / work / friends / community). All conditions must hold.
+- Results: a title ("3 people · baseball"), up to 6 rows (avatar, name, why they matched) that open the profile on top of Ask (back returns to the results), and **Show all N in your list / on the mindmap**, which closes Ask and narrows that screen to them. A glass pill above the nav ("baseball · 3", ×) shows the narrowing until cleared.
+- To swap in real AI later: replace `interpret()` with a call to Claude (needs an Anthropic API key and a small local server so the key isn't in the browser); speech could use the browser's speech recognition.
+- **Nav layout is being chosen.** Four layouts are compared at `#/nav-looks` (one full size with `#/?nav=3`): **1 Three pieces** (black mic matching the +), **2 Gradient orb** (the default: the mic is the pastel AI orb), **3 One bar** (one glass bar holding tabs and +, with the orb raised out of the middle), **4 Ask pill** (a black "Ask" pill with a mic). Once the user picks, make it the only layout and delete the others and the page.
+
 **Person profile**
 - Opens from a list row, the mindmap's **View**, a mutual on another profile, or after saving.
 - Night hero tinted by how you know them (context core / deep), avatar, name, job · city, closeness and context chips. Then: field notes + tags, things to talk about (checkable), location trio (From / Met / Lives now), mutuals with **View connections**, and moments (collapsed by default; tap to expand; voice notes have a play button and transcript). Sticky bar: **Log a moment** + mic (starts recording right away).
@@ -77,7 +86,7 @@ A private, personal "people log": remember everyone you meet, where you met them
 
 ## Next steps / open items
 
-- **AI search (requested, not started):** the user wants an AI search that sits "before the list page". They describe it as a general free-text filter, e.g. "everyone interested in baseball", that returns matching people. Still to decide with the user: where it lives (a new nav tab before People, a screen that opens first, or an AI mode in the search bar) and whether it uses real Claude (needs an Anthropic API key and a small local server) or a simulated matcher. Sample people will need richer interests (e.g. baseball).
+- **Ask (voice AI search):** built (see above) with a scripted voice demo and a rule-based interpreter. Real speech and a real model are possible next steps.
 
 - **+ button:** built (capture flow above). Voice is scripted; real speech-to-text and AI field extraction are not planned yet.
 - **Person profile screen:** built (above). Stubs that only show a toast: + tag, + Add something to do, Link.

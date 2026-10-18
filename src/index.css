@@ -2461,3 +2461,442 @@ button {
   border-radius: 44px;
   box-shadow: var(--shadow);
 }
+
+/* ===== Ask: the voice AI search ===== */
+:root {
+  /* The AI orb: the four relationship hues as soft pastels, with a highlight */
+  --ai-orb:
+    radial-gradient(circle at 32% 28%, #ffffff 0, rgba(255, 255, 255, 0) 30%),
+    radial-gradient(circle at 74% 70%, #8da0ff 0, rgba(141, 160, 255, 0) 58%),
+    radial-gradient(circle at 26% 78%, #ffab8a 0, rgba(255, 171, 138, 0) 56%),
+    radial-gradient(circle at 76% 22%, #ff9cc8 0, rgba(255, 156, 200, 0) 52%),
+    radial-gradient(circle at 42% 62%, #ffe58f 0, rgba(255, 229, 143, 0) 50%),
+    #ece6ff;
+}
+
+/* The mic in the nav: centered between the tabs and the + */
+.ask-button {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 61px;
+  height: 61px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(160deg, #2c2c31, #0c0c0e);
+  color: #fff;
+  box-shadow:
+    0 10px 24px -8px rgba(17, 17, 19, 0.4),
+    0 2px 6px rgba(17, 17, 19, 0.15);
+  transition: scale 0.15s;
+}
+
+.ask-button:active {
+  scale: 0.94;
+}
+
+.ask-button svg,
+.ask-button span:not(.ask-button-orb) {
+  position: relative;
+}
+
+/* 2 and 3: a soft gradient orb */
+.ask-button.is-orb {
+  width: 64px;
+  height: 64px;
+  background: none;
+  color: var(--ink);
+  box-shadow:
+    0 12px 28px -10px rgba(141, 120, 255, 0.55),
+    0 4px 12px -4px rgba(255, 140, 170, 0.4);
+}
+
+.ask-button-orb {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--ai-orb);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  animation: ai-orb-drift 9s ease-in-out infinite;
+}
+
+@keyframes ai-orb-drift {
+  50% {
+    transform: rotate(160deg) scale(1.04);
+  }
+}
+
+/* 3: one glass bar holding everything, with the orb raised out of the middle */
+.nav-layout-3 {
+  padding: 6px;
+  background: var(--glass-strong);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-edge);
+  border-radius: 34px;
+  box-shadow: var(--shadow);
+}
+
+.nav-layout-3 .nav-pill {
+  padding: 0;
+  background: none;
+  border: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.nav-layout-3 .add-button {
+  width: 46px;
+  height: 46px;
+}
+
+.nav-layout-3 .ask-button {
+  width: 68px;
+  height: 68px;
+  transform: translate(-50%, -66%);
+}
+
+.nav-layout-3 .ask-button-orb {
+  border: 4px solid #fff;
+}
+
+/* 4: a black "Ask" pill */
+.nav-layout-4 .ask-button {
+  width: auto;
+  height: 52px;
+  padding: 0 18px 0 15px;
+  border-radius: 26px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ask-button-orb,
+  .ask-orb span {
+    animation: none;
+  }
+}
+
+/* "baseball · 3" above the nav after "Show all" in Ask; × shows everyone again */
+.ask-filter {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--safe-bottom) + 98px);
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100% - 2 * var(--gutter));
+  height: 38px;
+  padding: 0 5px 0 12px;
+  border-radius: var(--radius-pill);
+  transform: translateX(-50%);
+  background: var(--glass-strong);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-edge);
+  box-shadow: var(--shadow);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  animation: fade-in 0.3s ease;
+}
+
+.ask-filter-dot {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--ai-orb);
+}
+
+.ask-filter-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ask-filter button {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--hover);
+}
+
+/* The Ask sheet */
+.ask {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.ask-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(22, 18, 28, 0.26);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: fade-in 0.3s ease;
+}
+
+.ask-sheet {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: calc(100% - var(--safe-top) - 40px);
+  margin: 0 8px calc(var(--safe-bottom) + 8px);
+  padding: 14px 16px 16px;
+  border-radius: 34px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(30px) saturate(160%);
+  -webkit-backdrop-filter: blur(30px) saturate(160%);
+  border: 1px solid var(--glass-edge);
+  box-shadow: var(--shadow-float);
+  animation: layer-up 0.45s var(--ios-spring);
+}
+
+.ask-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-left: 6px;
+}
+
+.ask-orb {
+  align-self: center;
+  display: grid;
+  place-items: center;
+  width: 96px;
+  height: 96px;
+  flex: none;
+}
+
+.ask-orb span {
+  width: 74px;
+  height: 74px;
+  border-radius: 50%;
+  background: var(--ai-orb);
+  filter: blur(2.5px);
+  box-shadow:
+    0 0 40px 4px rgba(160, 140, 255, 0.35),
+    0 0 70px 14px rgba(255, 170, 200, 0.22);
+  animation: ai-orb-drift 9s ease-in-out infinite;
+}
+
+.ask-sheet.is-listening .ask-orb span {
+  animation: ask-listen 1.2s ease-in-out infinite;
+}
+
+.ask-sheet.is-thinking .ask-orb span {
+  animation: ask-think 1.4s linear infinite;
+}
+
+@keyframes ask-listen {
+  50% {
+    transform: scale(1.14) rotate(20deg);
+  }
+}
+
+@keyframes ask-think {
+  to {
+    transform: rotate(360deg) scale(0.94);
+  }
+}
+
+.ask-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  overflow-y: auto;
+  text-align: center;
+}
+
+.ask-title {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 32px;
+  font-weight: 400;
+  line-height: 1.05;
+  text-wrap: balance;
+}
+
+.ask-title.is-small {
+  font-size: 25px;
+}
+
+.ask-hint {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--ink-muted);
+  text-wrap: balance;
+}
+
+.ask-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.ask-chip {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: var(--radius-pill);
+  background: rgba(22, 18, 28, 0.05);
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.ask-chip:hover {
+  background: rgba(22, 18, 28, 0.09);
+}
+
+.ask-heard {
+  min-height: 64px;
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 28px;
+  line-height: 1.1;
+  text-wrap: balance;
+}
+
+.ask-you {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+.ask-results {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+}
+
+.ask-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 14px;
+  background: rgba(22, 18, 28, 0.035);
+  text-align: left;
+  color: var(--ink);
+}
+
+.ask-row:hover {
+  background: rgba(22, 18, 28, 0.07);
+}
+
+.ask-row svg {
+  flex: none;
+  color: var(--ink-faint);
+}
+
+.ask-row-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.ask-row-text b {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.ask-row-text span {
+  font-size: 12.5px;
+  color: var(--ink-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ask-show {
+  height: 44px;
+  margin-top: 2px;
+  border-radius: var(--radius-pill);
+  background: rgba(22, 18, 28, 0.06);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.ask-show:hover {
+  background: rgba(22, 18, 28, 0.1);
+}
+
+.ask-link {
+  align-self: center;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.ask-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ask-mic {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 52px;
+  border-radius: var(--radius-pill);
+  background: var(--ink);
+  color: var(--on-ink);
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.ask-wave {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 28px;
+}
+
+.ask-wave i {
+  width: 3px;
+  border-radius: 2px;
+  background: var(--live);
+  transition: height 0.11s ease;
+}
+
+.ask-input {
+  flex: 1;
+  min-width: 0;
+  height: 48px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: #fff;
+  font: inherit;
+  /* 16px stops iPhones from zooming in */
+  font-size: 16px;
+  color: var(--ink);
+  outline: none;
+}
+
+.ask-input:focus {
+  border-color: var(--ink);
+}

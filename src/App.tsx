@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { filterLayouts, type FilterLayout } from './lib/filterLayouts'
+import { navLayouts, type NavLayout } from './lib/navLayouts'
 import { Prototype } from './Prototype'
 import { FilterLooksPage } from './screens/FilterLooksPage'
+import { NavLooksPage } from './screens/NavLooksPage'
 
 // Full size of the device frame on a computer (see .device in index.css), plus some breathing room.
 const DEVICE_HEIGHT = 874 + 48
@@ -12,13 +14,17 @@ function deviceScale() {
   return Math.min(1, window.innerHeight / DEVICE_HEIGHT, window.innerWidth / DEVICE_WIDTH)
 }
 
-// Routes: #/filter-looks compares the mindmap filter layouts; #/?filter=b opens the app with that layout.
+// Routes: #/filter-looks and #/nav-looks compare layouts side by side; #/?filter=b or #/?nav=3 opens the app
+// with that layout.
 function readRoute() {
   const [path, search = ''] = window.location.hash.replace(/^#/, '').split('?')
-  const filter = new URLSearchParams(search).get('filter') as FilterLayout | null
+  const params = new URLSearchParams(search)
+  const filter = params.get('filter') as FilterLayout | null
+  const nav = params.get('nav') as NavLayout | null
   return {
-    page: path === '/filter-looks' ? 'filter-looks' : 'app',
+    page: path === '/filter-looks' ? 'filter-looks' : path === '/nav-looks' ? 'nav-looks' : 'app',
     filter: filterLayouts.some((l) => l.id === filter) ? filter! : undefined,
+    nav: navLayouts.some((l) => l.id === nav) ? nav! : undefined,
   }
 }
 
@@ -38,11 +44,17 @@ export default function App() {
   }, [])
 
   if (route.page === 'filter-looks') return <FilterLooksPage />
+  if (route.page === 'nav-looks') return <NavLooksPage />
 
   return (
     <div className="app">
       <div className="device" style={{ '--device-scale': scale } as React.CSSProperties}>
-        <Prototype key={route.filter} filterLayout={route.filter} initialTab={route.filter ? 'mindmap' : 'list'} />
+        <Prototype
+          key={`${route.filter}-${route.nav}`}
+          filterLayout={route.filter}
+          navLayout={route.nav}
+          initialTab={route.filter ? 'mindmap' : 'list'}
+        />
       </div>
     </div>
   )
