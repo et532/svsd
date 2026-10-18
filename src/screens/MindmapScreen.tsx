@@ -2,7 +2,6 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { Context, Person } from '../data/people'
 import { createGraph, type Graph } from '../lib/forceGraph'
 import { contextColor, initials, linksOf, orbBackground, orbTextColor } from '../lib/people'
-import { usePfpStyle } from '../lib/pfpStyle'
 
 type GroupBy = 'none' | 'city' | 'met' | 'job'
 
@@ -57,7 +56,6 @@ const GRAB_ZOOM = 0.6
 const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
 export function MindmapScreen({ people, focusId = null, onView }: { people: Person[]; focusId?: string | null; onView?: (id: string) => void }) {
-  const pfp = usePfpStyle()
   const [groupBy, setGroupBy] = useState<GroupBy>('none')
   const [colorBy, setColorBy] = useState<ColorBy>('relationship')
   const [selected, setSelected] = useState<string | null>(null)
@@ -515,7 +513,7 @@ export function MindmapScreen({ people, focusId = null, onView }: { people: Pers
               style={{ width: r * 2, height: r * 2, margin: -r, fontSize: r * 0.62, color: colorBy === 'relationship' ? orbTextColor(p.id) : '#fff',
                 ['--orb' as string]:
                   colorBy === 'relationship'
-                    ? orbBackground(p.id, pfp)
+                    ? orbBackground(p.id)
                     : `radial-gradient(circle at 32% 28%, #fff 0, ${colors.of.get(colorKey[colorBy](p))} 62%)`,
               }}
             >

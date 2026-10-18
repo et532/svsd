@@ -1,11 +1,10 @@
-import { GlobeIcon, ListIcon, MindmapIcon, PlusIcon } from './Icons'
+import { ListIcon, MindmapIcon, PlusIcon } from './Icons'
 
-export type Tab = 'mindmap' | 'list' | 'map'
+export type Tab = 'mindmap' | 'list'
 
 const tabs: { id: Tab; label: string; Icon: typeof ListIcon }[] = [
   { id: 'mindmap', label: 'Mindmap', Icon: MindmapIcon },
   { id: 'list', label: 'People', Icon: ListIcon },
-  { id: 'map', label: 'Map', Icon: GlobeIcon },
 ]
 
 type Props = {

@@ -1,7 +1,6 @@
 import { useId, useMemo, useRef, useState } from 'react'
 import type { Person } from '../data/people'
 import { initials, matchesQuery, matchRank, orbBackground, orbTextColor, timeSince, whyMatched } from '../lib/people'
-import { usePfpStyle } from '../lib/pfpStyle'
 import { CloseIcon, PinIcon, SearchIcon, TagIcon } from './Icons'
 
 type Props = {
@@ -9,9 +8,6 @@ type Props = {
   onChange: (value: string) => void
   people: Person[]
   onOpenChange?: (open: boolean) => void
-  // Extra control at the right end of the bar (the map filter button).
-  accessory?: React.ReactNode
-  placeholder?: string
 }
 
 const RECENTS_KEY = 'peepl-recent-searches'
@@ -31,7 +27,7 @@ type Option =
   | { kind: 'place'; label: string }
   | { kind: 'tag'; label: string }
 
-export function SearchBar({ value, onChange, people, onOpenChange, accessory, placeholder = 'Search people, places, interests' }: Props) {
+export function SearchBar({ value, onChange, people, onOpenChange }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
   const listId = useId()
   const [open, setOpenState] = useState(false)
@@ -159,7 +155,7 @@ export function SearchBar({ value, onChange, people, onOpenChange, accessory, pl
           onFocus={() => setOpen(true)}
           onBlur={() => setOpen(false)}
           onKeyDown={onKeyDown}
-          placeholder={placeholder}
+          placeholder="Search people, places, interests"
           aria-label="Search people"
           role="combobox"
           aria-expanded={open}
@@ -181,12 +177,6 @@ export function SearchBar({ value, onChange, people, onOpenChange, accessory, pl
           >
             <CloseIcon size={17} />
           </button>
-        )}
-        {accessory && (
-          <>
-            <span className="search-divider" aria-hidden />
-            {accessory}
-          </>
         )}
       </div>
 
@@ -236,12 +226,11 @@ export function SearchBar({ value, onChange, people, onOpenChange, accessory, pl
 }
 
 function OptionContent({ option, query }: { option: Option; query: string }) {
-  const pfp = usePfpStyle()
   if (option.kind === 'person') {
     const { person } = option
     return (
       <>
-        <span className="avatar avatar-sm" style={{ background: orbBackground(person.id, pfp), color: orbTextColor(person.id) }} aria-hidden>
+        <span className="avatar avatar-sm" style={{ background: orbBackground(person.id), color: orbTextColor(person.id) }} aria-hidden>
           {initials(person.name)}
         </span>
         <span className="option-text">

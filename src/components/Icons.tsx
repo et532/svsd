@@ -29,15 +29,6 @@ export function ListIcon({ size = 24 }: IconProps) {
   )
 }
 
-export function GlobeIcon({ size = 24 }: IconProps) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" {...base} aria-hidden>
-      <circle cx="12" cy="12" r="9" />
-      <path d="M3 12h18M12 3c2.6 2.6 3.8 5.6 3.8 9s-1.2 6.4-3.8 9c-2.6-2.6-3.8-5.6-3.8-9S9.4 5.6 12 3Z" />
-    </svg>
-  )
-}
-
 export function PlusIcon({ size = 24 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" {...base} strokeWidth={2.4} aria-hidden>
@@ -82,39 +73,6 @@ export function TagIcon({ size = 20 }: IconProps) {
   )
 }
 
-// Where they're from: roots
-export function SproutIcon({ size = 20 }: IconProps) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" {...base} aria-hidden>
-      <path d="M12 21v-9" />
-      <path d="M12 12c0-4 2.5-6.5 7-6.5 0 4.5-2.5 6.5-7 6.5Z" />
-      <path d="M12 14.5C12 11 10 9 5.5 9c0 3.8 2 5.5 6.5 5.5Z" />
-    </svg>
-  )
-}
-
-// Where you met
-export function MeetIcon({ size = 20 }: IconProps) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" {...base} aria-hidden>
-      <circle cx="8" cy="7.5" r="3" />
-      <circle cx="16.5" cy="8.5" r="2.5" />
-      <path d="M2.5 20c0-3.6 2.5-6 5.5-6s5.5 2.4 5.5 6" />
-      <path d="M14.5 14.3c.6-.2 1.3-.3 2-.3 2.6 0 5 2 5 5.5" />
-    </svg>
-  )
-}
-
-// Where they live now
-export function HomeIcon({ size = 20 }: IconProps) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" {...base} aria-hidden>
-      <path d="M4 10.5 12 4l8 6.5V20H4v-9.5Z" />
-      <path d="M10 20v-5h4v5" />
-    </svg>
-  )
-}
-
 export function ChevronRightIcon({ size = 20 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" {...base} aria-hidden>
@@ -122,7 +80,6 @@ export function ChevronRightIcon({ size = 20 }: IconProps) {
     </svg>
   )
 }
-
 
 export function MicIcon({ size = 20 }: IconProps) {
   return (

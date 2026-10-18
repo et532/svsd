@@ -3,7 +3,6 @@ import { BackIcon, CheckIcon, ChevronRightIcon, MicIcon, PlayIcon, PlusIcon } fr
 import type { Moment, Person } from '../data/people'
 import { formatTime } from '../lib/capture'
 import { updatePerson } from '../lib/peopleStore'
-import { usePfpStyle } from '../lib/pfpStyle'
 import { auraDepth, closenessLabel, contextLabel, firstName, initials, momentsOf, orbBackground, todosOf } from '../lib/people'
 
 type Props = {
@@ -14,7 +13,6 @@ type Props = {
   onBack: () => void
   onExpand?: (full: boolean) => void
   onOpen: (id: string) => void
-  onViewMap: () => void
   onViewConnections: () => void
   onLogMoment: (talk: boolean) => void
   onSoon: (what: string) => void
@@ -25,8 +23,7 @@ function dateLabel(iso: string) {
   return d.toDateString() === new Date().toDateString() ? 'Today' : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
-export function ProfileScreen({ person: p, people, freshMomentId = null, onBack, onExpand, onOpen, onViewMap, onViewConnections, onLogMoment, onSoon }: Props) {
-  const pfp = usePfpStyle()
+export function ProfileScreen({ person: p, people, freshMomentId = null, onBack, onExpand, onOpen, onViewConnections, onLogMoment, onSoon }: Props) {
   const [open, setOpen] = useState<Set<string>>(() => new Set(freshMomentId ? [freshMomentId] : []))
   // Opens as an 80% sheet; the first scroll grows it to full screen.
   const [full, setFull] = useState(false)
@@ -65,7 +62,7 @@ export function ProfileScreen({ person: p, people, freshMomentId = null, onBack,
             </button>
           </div>
           <div className="profile-who">
-            <span className="avatar avatar-xl" style={{ background: orbBackground(p.id, pfp) }}>
+            <span className="avatar avatar-xl" style={{ background: orbBackground(p.id) }}>
               {initials(p.name)}
             </span>
             <div>
@@ -118,9 +115,6 @@ export function ProfileScreen({ person: p, people, freshMomentId = null, onBack,
           <div className="profile-section">
             <div className="profile-row">
               <span className="label">Location</span>
-              <button className="text-link" onClick={onViewMap}>
-                View map
-              </button>
             </div>
             <div className="profile-places">
               {[
@@ -146,7 +140,7 @@ export function ProfileScreen({ person: p, people, freshMomentId = null, onBack,
             <div className="profile-mutuals">
               {mutuals.map((m) => (
                 <button key={m.id} className="profile-mutual" onClick={() => onOpen(m.id)}>
-                  <span className="avatar" style={{ background: orbBackground(m.id, pfp) }}>
+                  <span className="avatar" style={{ background: orbBackground(m.id) }}>
                     {initials(m.name)}
                   </span>
                   {firstName(m.name)}

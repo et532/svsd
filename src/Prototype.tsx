@@ -1,25 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { BottomBar, type Tab } from './components/BottomBar'
-import { FilterMenu } from './components/FilterMenu'
 import { BackIcon } from './components/Icons'
 import { SearchBar } from './components/SearchBar'
 import { HomeIndicator, StatusBar } from './components/StatusBar'
-import type { Mode } from './modes'
 import { draftToMoment, draftToPerson, newTodo } from './lib/capture'
 import { auraDepth, closenessLabel, firstName, matchesQuery, momentsOf, todosOf } from './lib/people'
 import { addPerson, updatePerson, usePeople } from './lib/peopleStore'
 import { CaptureScreen, type CaptureResult } from './screens/CaptureScreen'
 import { ListScreen } from './screens/ListScreen'
-import { MapScreen } from './screens/MapScreen'
 import { MindmapScreen } from './screens/MindmapScreen'
 import { ProfileScreen } from './screens/ProfileScreen'
 import { SavedScreen } from './screens/SavedScreen'
-import type { MapLook } from './screens/mapLooks'
-
-type Props = {
-  mapLook?: MapLook
-  initialTab?: Tab
-}
 
 // Full-screen layers above the tabs, newest last. Back / close pops the top one.
 type Layer =
@@ -27,15 +18,14 @@ type Layer =
   | { kind: 'saved'; id: string }
   | { kind: 'profile'; id: string; fresh?: string | null }
 
-// The app's phone screen. Rendered once, or several times on the map looks page.
-export function Prototype({ mapLook, initialTab = 'list' }: Props) {
+// The app's phone screen.
+export function Prototype() {
   const allPeople = usePeople()
-  const [tab, setTab] = useState<Tab>(initialTab)
+  const [tab, setTab] = useState<Tab>('list')
   const [query, setQuery] = useState('')
-  const [mode, setMode] = useState<Mode>('from')
   const [searchOpen, setSearchOpen] = useState(false)
   const [layers, setLayers] = useState<Layer[]>([])
-  // Set by "View map" / "View connections" on a profile: who to focus, and a way back to them.
+  // Set by "View connections" on a profile: who to focus, and a way back to them.
   const [navFocus, setNavFocus] = useState<string | null>(null)
   const [toast, setToast] = useState<{ text: string; key: number } | null>(null)
 
@@ -123,7 +113,6 @@ export function Prototype({ mapLook, initialTab = 'list' }: Props) {
       </div>
       <StatusBar />
       {tab === 'list' && <ListScreen people={people} query={query} onOpen={openProfile} />}
-      {tab === 'map' && <MapScreen people={people} mode={mode} look={mapLook} focusId={focusId} onView={openProfile} />}
       {tab === 'mindmap' && <MindmapScreen people={focusId ? allPeople : people} focusId={focusId} onView={openProfile} />}
 
       {searchOpen && <div className="search-scrim" aria-hidden />}
@@ -134,10 +123,6 @@ export function Prototype({ mapLook, initialTab = 'list' }: Props) {
           onChange={changeQuery}
           people={allPeople}
           onOpenChange={setSearchOpen}
-          // The from / met / lives now filter only changes the map, so it only shows there.
-          accessory={tab === 'map' && <FilterMenu mode={mode} onChange={setMode} />}
-          // Shorter text so it isn't cut off next to the filter chip
-          placeholder={tab === 'map' ? 'Search people & places' : undefined}
         />
       </header>
 
@@ -201,7 +186,6 @@ export function Prototype({ mapLook, initialTab = 'list' }: Props) {
               freshMomentId={layer.fresh}
               onBack={closeSheet}
               onOpen={openProfile}
-              onViewMap={() => goTo('map', person.id)}
               onViewConnections={() => goTo('mindmap', person.id)}
               onLogMoment={(talk) => push({ kind: 'capture', personId: person.id, talk })}
               onSoon={(what) => say(`${what} isn’t built yet`)}

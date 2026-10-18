@@ -1,7 +1,6 @@
 import type { Person } from '../data/people'
 import { ChevronRightIcon } from '../components/Icons'
 import { initials, orbBackground, orbTextColor } from '../lib/people'
-import { usePfpStyle } from '../lib/pfpStyle'
 
 type Props = {
   people: Person[]
@@ -10,7 +9,6 @@ type Props = {
 }
 
 export function ListScreen({ people, query, onOpen }: Props) {
-  const pfp = usePfpStyle()
   const sorted = [...people].sort((a, b) => a.name.localeCompare(b.name))
 
   if (sorted.length === 0) {
@@ -27,7 +25,7 @@ export function ListScreen({ people, query, onOpen }: Props) {
         {sorted.map((person) => (
           <li key={person.id}>
             <button className="person-row" onClick={() => onOpen(person.id)}>
-              <span className="avatar" style={{ background: orbBackground(person.id, pfp), color: orbTextColor(person.id) }} aria-hidden>
+              <span className="avatar" style={{ background: orbBackground(person.id), color: orbTextColor(person.id) }} aria-hidden>
                 {initials(person.name)}
               </span>
               <span className="person-name">{person.name}</span>

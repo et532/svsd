@@ -1,6 +1,5 @@
 import { CheckIcon, CloseIcon } from '../components/Icons'
 import type { Person } from '../data/people'
-import { usePfpStyle } from '../lib/pfpStyle'
 import { contextColor, contextLabel, firstName, initials, orbBackground } from '../lib/people'
 
 type Props = {
@@ -18,7 +17,6 @@ const R = 118
 // After saving: the new person lands in the middle of their part of the network.
 // Solid lines are people they know; dashed lines are suggestions (met at the same place, or same city).
 export function SavedScreen({ person, people, onClose, onAddAnother, onViewProfile }: Props) {
-  const pfp = usePfpStyle()
   const known = person.knows.map((id) => people.find((p) => p.id === id)).filter((p): p is Person => !!p)
   const suggested = people
     .filter((p) => p.id !== person.id && !person.knows.includes(p.id))
@@ -62,14 +60,14 @@ export function SavedScreen({ person, people, onClose, onAddAnother, onViewProfi
           </svg>
           {nodes.map(({ p, kind, x, y }) => (
             <div key={p.id} className={`saved-node${kind === 'sugg' ? ' is-sugg' : ''}`} style={{ left: `${(x / W) * 100}%`, top: `${(y / H) * 100}%` }}>
-              <span className="avatar" style={{ background: orbBackground(p.id, pfp) }}>
+              <span className="avatar" style={{ background: orbBackground(p.id) }}>
                 {initials(p.name)}
               </span>
               <span className="saved-tag">{firstName(p.name)}</span>
             </div>
           ))}
           <div className="saved-node is-new" style={{ left: '50%', top: '50%' }}>
-            <span className="avatar avatar-lg" style={{ background: orbBackground(person.id, pfp) }}>
+            <span className="avatar avatar-lg" style={{ background: orbBackground(person.id) }}>
               {initials(person.name)}
             </span>
             <span className="saved-tag">{first}</span>
