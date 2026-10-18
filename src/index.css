@@ -281,6 +281,12 @@ button {
   color: var(--muted);
 }
 
+/* The magnifying glass is black; the clear button and filter chip set their own colors */
+.search-bar > svg {
+  flex: none;
+  color: var(--ink);
+}
+
 .search-bar input {
   flex: 1;
   min-width: 0;

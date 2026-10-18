@@ -49,8 +49,9 @@ export function PlusIcon({ size = 24 }: IconProps) {
 export function SearchIcon({ size = 20 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" {...base} aria-hidden>
-      <circle cx="11" cy="11" r="7" />
-      <path d="m20 20-3.5-3.5" />
+      {/* Slightly smaller lens and longer handle, within the same 4–20 bounds as before */}
+      <circle cx="10.5" cy="10.5" r="6.5" />
+      <path d="M15 15l5 5" />
     </svg>
   )
 }
