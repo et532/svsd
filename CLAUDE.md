@@ -13,7 +13,7 @@ A private, personal "people log": remember everyone you meet, where you met them
 ## Layout
 
 - `src/Prototype.tsx` — the phone screen: search bar on top, current screen, bottom nav. Holds the tab, search query, and map mode state.
-- `src/App.tsx` — wraps it in an iPhone 15 frame on desktop and scales the frame to fit the window.
+- `src/App.tsx` — wraps it in an iPhone 15 frame on desktop and scales the frame to fit the window. On screens 1000px or wider it also shows the **font panel** (`src/components/FontPanel.tsx`), a design tool beside the phone, not part of the app.
 - `src/screens/` — `ListScreen`, `MapScreen`, `MindmapScreen` (placeholder). `mapLooks.ts` holds the base-map looks; `MapLooksPage` (route `#/map-looks`) compares them side by side.
 - `src/components/` — `SearchBar` (with suggestions dropdown), `FilterMenu` (map filter chip + bottom sheet), `BottomBar`, `StatusBar`, `Icons`.
 - `src/data/people.ts` — 15 sample people. `src/modes.ts` — the three map modes. `src/lib/people.ts` — search matching and helpers.
@@ -21,7 +21,8 @@ A private, personal "people log": remember everyone you meet, where you met them
 ## Design decisions (agreed with the user)
 
 **Visual style** (from the user's reference images: soft, clean, modern, light, pastel)
-- Base is black and white: white background, near-black text (`--ink: #111113`), grey secondary text. Font is Inter (Google Fonts), with light and semibold weights mixed for headlines (e.g. "Mindmap is **coming soon**").
+- Base is black and white: white background, near-black text (`--ink: #111113`), grey secondary text. Light and semibold weights are mixed for headlines (e.g. "Mindmap is **coming soon**").
+- **Fonts are being explored.** Inter is the default. All text uses `var(--font-body)`; headings (sheet title, dropdown section titles, mindmap title) use `var(--font-heading)`. The font panel switches both and remembers the choice in the browser. Options are loaded from Google Fonts in `index.html`: text = Inter, Geist, Manrope, DM Sans, Plus Jakarta Sans, Figtree, Outfit, Instrument Sans; headings = same as text, Instrument Serif, Newsreader, Fraunces, Outfit, Manrope. Once the user picks, set the defaults in `:root`, trim the Google Fonts link to just those fonts, and remove the panel. Any new heading should use `var(--font-heading)`.
 - Color comes only from soft pastel gradients. A drifting "aura" of blurred peach, pink, lavender, mint and butter orbs sits behind every screen (`.aura` in `Prototype.tsx`). Motion stops when the user prefers reduced motion.
 - Glassmorphism: the search bar, nav pill, list cards, search dropdown, map popups and the bottom sheet are frosted translucent white (`backdrop-filter` blur, white edge, soft lavender-tinted shadow). The sheet has a faint pastel wash in its top corners.
 - Avatars are gradient "orbs" with a soft highlight, like the reference spheres. Colors come from `orbBackground()` in `src/lib/people.ts`, stable per person. People have no color field.

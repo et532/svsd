@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { FontPanel } from './components/FontPanel'
 import { Prototype } from './Prototype'
 import { MapLooksPage } from './screens/MapLooksPage'
 import { mapLooks, type MapLook } from './screens/mapLooks'
@@ -41,6 +42,7 @@ export default function App() {
 
   return (
     <div className="app">
+      <FontPanel />
       <div className="device" style={{ '--device-scale': scale } as React.CSSProperties}>
         <Prototype key={route.look} mapLook={route.look} initialTab={route.look ? 'map' : 'list'} />
       </div>

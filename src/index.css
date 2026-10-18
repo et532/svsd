@@ -18,8 +18,10 @@
     0 0 0 1px rgba(17, 17, 19, 0.04);
   --gutter: 16px;
 
-  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  font-feature-settings: 'cv11', 'ss01';
+  /* Switchable from the font panel beside the phone (components/FontPanel.tsx) */
+  --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-heading: var(--font-body);
+  font-family: var(--font-body);
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
@@ -553,6 +555,12 @@ button {
   }
 }
 
+.placeholder-screen h2,
+.sheet-grab h3,
+.dropdown-title {
+  font-family: var(--font-heading);
+}
+
 .placeholder-screen h2 {
   margin: 0 0 10px;
   font-size: 25px;
@@ -902,4 +910,114 @@ button {
   height: 812px;
   border-radius: 44px;
   box-shadow: var(--shadow);
+}
+
+/* Font panel beside the phone (desktop only, not part of the app) */
+.font-panel {
+  display: none;
+}
+
+@media (min-width: 1000px) {
+  /* Keep the phone clear of the panel */
+  .app {
+    padding-left: 304px;
+  }
+
+  .font-panel {
+    position: fixed;
+    top: 24px;
+    left: 24px;
+    bottom: 24px;
+    display: block;
+    width: 280px;
+    overflow-y: auto;
+    padding: 18px 16px;
+    background: var(--glass-strong);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-edge);
+    border-radius: 24px;
+    box-shadow: var(--shadow);
+    /* The panel always uses Inter so it doesn't change while you compare */
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+.font-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.font-panel h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+}
+
+.font-reset {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.font-reset:hover {
+  color: var(--ink);
+}
+
+.font-group {
+  margin-top: 16px;
+}
+
+.font-group h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.font-hint {
+  margin: 2px 0 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.font-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  text-align: left;
+}
+
+.font-option:hover {
+  background: var(--hover);
+}
+
+.font-option.is-selected {
+  background: #fff;
+  border-color: var(--ink);
+}
+
+.font-sample {
+  font-size: 17px;
+  line-height: 1.25;
+}
+
+.font-note {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.font-panel-note {
+  margin: 16px 2px 0;
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--muted);
 }
