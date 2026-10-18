@@ -661,56 +661,6 @@ button {
   font-weight: 600;
 }
 
-/* Two rows under the search bar: group-by, then the color key */
-.mm-chips {
-  position: absolute;
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  cursor: default;
-  background: var(--glass-strong);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-edge);
-  border-radius: 999px;
-  box-shadow: var(--shadow);
-}
-
-.mm-chips {
-  top: calc(var(--safe-top) + 80px);
-  left: auto;
-  right: 10px;
-  flex-direction: column;
-  gap: 4px;
-  padding: 6px;
-  border-radius: 24px;
-  overflow: visible;
-}
-
-.mm-chips button {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  width: 50px;
-  height: 50px;
-  border-radius: 18px;
-  font-size: 10px;
-  font-weight: 500;
-  color: var(--muted);
-  transition: background 0.2s, color 0.2s;
-}
-
-.mm-chips button:hover {
-  color: var(--ink);
-}
-
-.mm-chips button.is-on {
-  background: var(--ink);
-  color: #fff;
-}
-
 /* Color key: always shown. Tap or hold its black pill to swap the list for the things you can color by */
 .mm-colors {
   position: absolute;
@@ -807,6 +757,198 @@ button {
 
 .mm-menu button.is-hover {
   color: #fff;
+}
+
+/* Collapsing the key (layouts A and C): the pill stays, the list folds away */
+.mm-colors.is-collapsed {
+  padding-bottom: 6px;
+}
+
+.mm-pill-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mm-collapse {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  color: var(--ink);
+  background: rgba(17, 17, 19, 0.05);
+  transition: background 0.2s;
+}
+
+.mm-collapse:hover {
+  background: rgba(17, 17, 19, 0.09);
+}
+
+.mm-collapse svg,
+.mm-filter-caret svg {
+  transition: transform 0.25s var(--ios-spring, ease);
+}
+
+.mm-collapse.is-up svg,
+.mm-filter-caret.is-up svg {
+  transform: rotate(180deg);
+}
+
+/* A row of the current key colors (layout C collapsed, layout B's button) */
+.mm-dots {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 8px 0 4px;
+  height: 30px;
+}
+
+.mm-dots i {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.mm-hide {
+  align-self: flex-start;
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.mm-hide:hover {
+  color: var(--ink);
+}
+
+/* Layouts B and D: a "Filter" button that opens a panel */
+.mm-filter {
+  position: absolute;
+  top: calc(var(--safe-top) + 80px);
+  left: var(--gutter);
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: max-content;
+  min-width: 0;
+  white-space: nowrap;
+  padding: 4px;
+  border-radius: 22px;
+  cursor: default;
+  background: var(--glass-strong);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-edge);
+  box-shadow: var(--shadow);
+}
+
+.mm-filter.is-open {
+  min-width: 210px;
+  padding-bottom: 14px;
+}
+
+.mm-filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 10px 0 12px;
+  border-radius: 17px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.mm-filter-btn b {
+  font-weight: 600;
+}
+
+.mm-filter-sep {
+  width: 1px;
+  height: 16px;
+  background: rgba(17, 17, 19, 0.14);
+}
+
+.mm-filter-btn .mm-dots {
+  height: auto;
+  padding: 0 0 0 2px;
+}
+
+.mm-filter-caret {
+  display: grid;
+  margin-left: auto;
+  color: var(--muted);
+}
+
+.mm-filter-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 2px 6px 0;
+}
+
+.mm-filter-label {
+  margin-top: 6px;
+  padding-left: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+}
+
+/* B: options as rows with a check */
+.mm-filter-options {
+  display: flex;
+  flex-direction: column;
+}
+
+.mm-filter-options button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 32px;
+  padding: 0 8px 0 4px;
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.mm-filter-options button:hover {
+  background: rgba(17, 17, 19, 0.05);
+}
+
+.mm-filter-options button.is-on {
+  font-weight: 600;
+}
+
+/* D: options as chips */
+.mm-filter-seg {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  max-width: 210px;
+}
+
+.mm-filter-seg button {
+  height: 28px;
+  padding: 0 11px;
+  border-radius: 14px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink);
+  background: rgba(17, 17, 19, 0.05);
+}
+
+.mm-filter-seg button.is-on {
+  background: var(--ink);
+  color: #fff;
+}
+
+.mm-filter .mm-list {
+  padding-left: 4px;
 }
 
 .dropdown-title {
@@ -1000,7 +1142,7 @@ button {
 }
 
 /* Press feedback: quick shrink on touch, springy release */
-:is(.nav-button, .add-button, .mm-view, .mm-chips button, .mm-color-pill, .mm-menu button, .search-clear, .dropdown-clear, .person-row, .dropdown-option) {
+:is(.nav-button, .add-button, .mm-view, .mm-color-pill, .mm-collapse, .mm-filter-btn, .mm-filter-seg button, .mm-menu button, .search-clear, .dropdown-clear, .person-row, .dropdown-option) {
   transition:
     transform 0.4s var(--ios-spring),
     opacity 0.2s var(--ios-press),
@@ -1008,7 +1150,7 @@ button {
     color 0.2s var(--ios-press);
 }
 
-:is(.nav-button, .add-button, .mm-view, .mm-chips button, .mm-color-pill, .search-clear):active {
+:is(.nav-button, .add-button, .mm-view, .mm-color-pill, .mm-collapse, .mm-filter-btn, .mm-filter-seg button, .search-clear):active {
   transform: scale(0.92);
   transition-duration: 0.1s;
 }
@@ -2239,4 +2381,83 @@ button {
   to {
     opacity: 0;
   }
+}
+
+/* Temporary comparison page for the mindmap filter layouts (#/filter-looks) */
+.looks-page {
+  height: 100%;
+  overflow-y: auto;
+  padding: 32px 24px 80px;
+}
+
+.looks-back,
+.looks-frame a {
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.looks-header h1 {
+  margin: 14px 0 6px;
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -0.6px;
+}
+
+.looks-header p {
+  max-width: 620px;
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.looks-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 32px;
+  margin-top: 28px;
+}
+
+.looks-frame {
+  width: 375px;
+  max-width: 100%;
+  margin: 0;
+}
+
+.looks-frame figcaption {
+  min-height: 112px;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.looks-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.looks-id {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: #fff;
+  font-size: 12px;
+}
+
+.looks-frame figcaption p {
+  margin: 6px 0 8px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.looks-frame .phone {
+  height: 812px;
+  border-radius: 44px;
+  box-shadow: var(--shadow);
 }

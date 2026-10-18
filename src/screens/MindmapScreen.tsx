@@ -2,15 +2,14 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { Context, Person } from '../data/people'
 import { createGraph, type Graph } from '../lib/forceGraph'
 import { contextColor, initials, linksOf, orbBackground, orbTextColor } from '../lib/people'
+import { ChevronDownIcon } from '../components/Icons'
+import { MindmapFilter, type KeyEntry } from '../components/MindmapFilter'
+import type { FilterLayout } from '../lib/filterLayouts'
 
+
+// Grouping (territory clouds by city / met at / job). Its control on the right was removed for now at the
+// user's request, so the graph is never grouped; the group logic stays for when it comes back.
 type GroupBy = 'none' | 'city' | 'met' | 'job'
-
-const groupOptions: { id: GroupBy; label: string; icon: string }[] = [
-  { id: 'none', label: 'None', icon: 'M6 7m-2 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0M17 6m-2 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0M12 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0' },
-  { id: 'city', label: 'City', icon: 'M4 21V9l7-4v16M11 21V12l9 3v6M3 21h18' },
-  { id: 'met', label: 'Met at', icon: 'M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11zM12 10m-2 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0' },
-  { id: 'job', label: 'Job', icon: 'M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M3 13h18' },
-]
 
 const groupValue: Record<GroupBy, (p: Person) => string> = {
   none: () => '',
@@ -55,8 +54,15 @@ const radius = (degree: number) => 11 + Math.min(degree, 5) * 1.2
 const GRAB_ZOOM = 0.6
 const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
-export function MindmapScreen({ people, focusId = null, onView }: { people: Person[]; focusId?: string | null; onView?: (id: string) => void }) {
-  const [groupBy, setGroupBy] = useState<GroupBy>('none')
+type Props = {
+  people: Person[]
+  focusId?: string | null
+  onView?: (id: string) => void
+  filterLayout?: FilterLayout
+}
+
+export function MindmapScreen({ people, focusId = null, onView, filterLayout = 'a' }: Props) {
+  const groupBy: GroupBy = 'none'
   const [colorBy, setColorBy] = useState<ColorBy>('relationship')
   const [selected, setSelected] = useState<string | null>(null)
   const [menu, setMenu] = useState(false) // the key is always shown; tap or hold its pill to swap it for the list of things to color by
@@ -68,6 +74,8 @@ export function MindmapScreen({ people, focusId = null, onView }: { people: Pers
   const blobRef = useRef<HTMLSpanElement>(null)
   const blob = useRef({ pos: [0, 0, 0, 0], vel: [0, 0, 0, 0], goal: [0, 0, 0, 0], raf: 0, ready: false }) // top, bottom, left, right
   const held = useRef(false)
+  // Whether the key (what each color means) is showing. The button layouts start folded up.
+  const [keyOpen, setKeyOpen] = useState(filterLayout === 'a' || filterLayout === 'c')
   const [focus, setFocus] = useState<string | null>(null) // a group isolated by tapping its name
 
   const rootRef = useRef<HTMLDivElement>(null)
@@ -137,6 +145,8 @@ export function MindmapScreen({ people, focusId = null, onView }: { people: Pers
     if (ranked.length > palette.length) entries.push({ label: 'Other', color: otherColor })
     return { of, entries }
   }, [people, colorBy])
+  const keyEntries: KeyEntry[] =
+    colorBy === 'relationship' ? legend.map((l) => ({ label: l.label, color: contextColor(l.id) })) : colors.entries
 
   selectedRef.current = selected
 
@@ -535,7 +545,22 @@ export function MindmapScreen({ people, focusId = null, onView }: { people: Pers
         </div>
       )}
 
-      <div ref={colorsRef} className="mm-colors" onPointerDown={(e) => e.stopPropagation()}>
+      {filterLayout === 'b' || filterLayout === 'd' ? (
+        <MindmapFilter
+          layout={filterLayout}
+          options={colorOptions}
+          value={colorBy}
+          onChange={setColorBy}
+          entries={keyEntries}
+          open={keyOpen}
+          onOpenChange={setKeyOpen}
+        />
+      ) : (
+      <div
+        ref={colorsRef}
+        className={`mm-colors${keyOpen || menu ? '' : ' is-collapsed'}`}
+        onPointerDown={(e) => e.stopPropagation()}
+      >
         <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden>
           <filter id="mm-goo">
             <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="b" />
@@ -546,48 +571,71 @@ export function MindmapScreen({ people, focusId = null, onView }: { people: Pers
           <span ref={anchorRef} />
           <span ref={blobRef} />
         </div>
-        <button
-          ref={pillRef}
-          type="button"
-          className="mm-color-pill"
-          aria-expanded={menu}
-          onPointerDown={(e) => {
-            e.currentTarget.setPointerCapture(e.pointerId)
-            held.current = false
-            window.clearTimeout(holdTimer.current)
-            holdTimer.current = window.setTimeout(() => {
-              held.current = true
-              setMenu(true)
-            }, 250)
-          }}
-          onPointerMove={(e) => {
-            if (!held.current) return
-            const id = document.elementFromPoint(e.clientX, e.clientY)?.closest<HTMLElement>('[data-color-option]')?.dataset.colorOption
-            setHover((id as ColorBy) ?? null)
-          }}
-          onPointerUp={() => {
-            window.clearTimeout(holdTimer.current)
-            if (held.current) {
-              // Released over an option: pick it. Released elsewhere: leave the list open to tap.
-              if (hover) {
-                setColorBy(hover)
-                setMenu(false)
+        <div className="mm-pill-row">
+          <button
+            ref={pillRef}
+            type="button"
+            className="mm-color-pill"
+            aria-expanded={menu}
+            onPointerDown={(e) => {
+              e.currentTarget.setPointerCapture(e.pointerId)
+              held.current = false
+              window.clearTimeout(holdTimer.current)
+              holdTimer.current = window.setTimeout(() => {
+                held.current = true
+                setMenu(true)
+              }, 250)
+            }}
+            onPointerMove={(e) => {
+              if (!held.current) return
+              const id = document.elementFromPoint(e.clientX, e.clientY)?.closest<HTMLElement>('[data-color-option]')?.dataset.colorOption
+              setHover((id as ColorBy) ?? null)
+            }}
+            onPointerUp={() => {
+              window.clearTimeout(holdTimer.current)
+              if (held.current) {
+                // Released over an option: pick it. Released elsewhere: leave the list open to tap.
+                if (hover) {
+                  setColorBy(hover)
+                  setMenu(false)
+                }
+                setHover(null)
+              } else setMenu(!menu)
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                setMenu(!menu)
               }
-              setHover(null)
-            } else setMenu(!menu)
-          }}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault()
-              setMenu(!menu)
-            }
-          }}
-        >
-          {colorOptions.find((o) => o.id === colorBy)!.label}
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-            <path d="m6 9 6 6 6-6" />
-          </svg>
-        </button>
+            }}
+          >
+            {colorOptions.find((o) => o.id === colorBy)!.label}
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
+          {filterLayout === 'a' && (
+            <button
+              type="button"
+              className={`mm-collapse${keyOpen ? ' is-up' : ''}`}
+              aria-label={keyOpen ? 'Hide key' : 'Show key'}
+              aria-expanded={keyOpen}
+              onClick={() => {
+                setKeyOpen(!keyOpen)
+                setMenu(false)
+              }}
+            >
+              <ChevronDownIcon size={14} />
+            </button>
+          )}
+          {filterLayout === 'c' && !keyOpen && !menu && (
+            <button type="button" className="mm-dots" aria-label="Show key" onClick={() => setKeyOpen(true)}>
+              {keyEntries.map((e) => (
+                <i key={e.label} style={{ background: e.color }} />
+              ))}
+            </button>
+          )}
+        </div>
 
         {menu ? (
           <div className="mm-list mm-menu" role="menu">
@@ -611,36 +659,24 @@ export function MindmapScreen({ people, focusId = null, onView }: { people: Pers
             ))}
           </div>
         ) : (
-          <div className="mm-list">
-            {(colorBy === 'relationship' ? legend.map((l) => ({ label: l.label, color: contextColor(l.id) })) : colors.entries).map((l) => (
-              <span key={l.label}>
-                <i style={{ background: l.color }} />
-                {l.label}
-              </span>
-            ))}
-          </div>
+          keyOpen && (
+            <div className="mm-list">
+              {keyEntries.map((l) => (
+                <span key={l.label}>
+                  <i style={{ background: l.color }} />
+                  {l.label}
+                </span>
+              ))}
+              {filterLayout === 'c' && (
+                <button type="button" className="mm-hide" onClick={() => setKeyOpen(false)}>
+                  Hide
+                </button>
+              )}
+            </div>
+          )
         )}
       </div>
-
-      <div className="mm-chips" onPointerDown={(e) => e.stopPropagation()}>
-        {groupOptions.map((o) => (
-          <button
-            key={o.id}
-            type="button"
-            aria-pressed={groupBy === o.id}
-            className={groupBy === o.id ? 'is-on' : ''}
-            onClick={() => {
-              setGroupBy(o.id)
-              setFocus(null)
-            }}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round">
-              <path d={o.icon} />
-            </svg>
-            {o.label}
-          </button>
-        ))}
-      </div>
+      )}
     </div>
   )
 }

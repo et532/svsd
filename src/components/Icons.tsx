@@ -130,3 +130,21 @@ export function BackIcon({ size = 20 }: IconProps) {
     </svg>
   )
 }
+
+export function FilterIcon({ size = 20 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...base} aria-hidden>
+      <path d="M4 7h10M18 7h2M4 17h4M12 17h8" />
+      <circle cx="16" cy="7" r="2" />
+      <circle cx="10" cy="17" r="2" />
+    </svg>
+  )
+}
+
+export function ChevronDownIcon({ size = 16 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...base} aria-hidden>
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  )
+}
