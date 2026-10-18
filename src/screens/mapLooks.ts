@@ -52,11 +52,11 @@ const pastelFeatureColors: Record<string, string> = {
   landcover_wood: '#dcf1e5',
   landuse_residential: '#f8f4f7',
   building: '#f0eaf8',
-  'aeroway-area': '#f7f5fa',
+  'aeroway-area': '#f1f5ff',
   waterway: '#d5dbf5',
-  highway_path: '#efebf7',
-  highway_minor: '#ebe5f6',
-  highway_major_casing: '#e4d9f5',
+  highway_path: '#ece8f8',
+  highway_minor: '#e6e0f7',
+  highway_major_casing: '#dcd0f5',
   highway_major_inner: '#ffffff',
   highway_major_subtle: '#e6ddf5',
   highway_motorway_casing: '#f5cfe0',
@@ -66,9 +66,11 @@ const pastelFeatureColors: Record<string, string> = {
   highway_motorway_bridge_inner: '#fff0f6',
   tunnel_motorway_casing: '#f7dde8',
   tunnel_motorway_inner: '#fff6fa',
-  railway: '#e3def0',
-  railway_transit: '#e3def0',
-  railway_service: '#e3def0',
+  railway: '#d9dff5',
+  railway_transit: '#d9dff5',
+  railway_service: '#d9dff5',
+  'aeroway-taxiway': '#d9e3fb',
+  'aeroway-runway-casing': '#d9e3fb',
   boundary_2: '#cbc1ec',
   boundary_3: '#d8d0f1',
   boundary_disputed: '#d8d0f1',
@@ -146,7 +148,8 @@ export function applyLook(map: maplibregl.Map, look: MapLook) {
     } else if (layer.type === 'symbol') {
       // Keep the globe clean: place names only once you zoom in
       map.setLayerZoomRange(layer.id, 3, 24)
-      map.setPaintProperty(layer.id, 'text-color', '#9a9aa4')
+      // Place names and other map text stay grey; road sign numbers a touch darker to read on the blue signs
+      map.setPaintProperty(layer.id, 'text-color', layer.id.includes('shield') ? '#7c7c88' : '#9a9aa4')
       map.setPaintProperty(layer.id, 'text-halo-color', 'rgba(255,255,255,0.85)')
     }
   }
@@ -156,4 +159,26 @@ export function applyLook(map: maplibregl.Map, look: MapLook) {
     'fog-color': '#ffffff',
     'atmosphere-blend': style.atmosphere ? ['interpolate', ['linear'], ['zoom'], 0, 1, 5, 1, 7, 0] : 0,
   })
+}
+
+// Pastel blue for the map's icons (road signs, airport, city dots), from darkest to lightest
+const ICON_DARK = [124, 148, 226]
+const ICON_LIGHT = [226, 234, 255]
+
+// Recolor the base map's icons pastel blue, keeping their shapes: dark pixels become the deeper blue,
+// light pixels the paler one. Call after the map has loaded, once its icon images are available.
+export function tintIcons(map: maplibregl.Map, look: MapLook) {
+  if (!looks[look].pastelFeatures) return
+  for (const id of map.listImages()) {
+    const image = map.getImage(id)
+    if (!image || image.sdf) continue
+    const { width, height, data } = image.data
+    const tinted = new Uint8Array(data.length)
+    for (let i = 0; i < data.length; i += 4) {
+      const lightness = (0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]) / 255
+      for (let c = 0; c < 3; c++) tinted[i + c] = ICON_DARK[c] + (ICON_LIGHT[c] - ICON_DARK[c]) * lightness
+      tinted[i + 3] = data[i + 3]
+    }
+    map.updateImage(id, { width, height, data: tinted })
+  }
 }

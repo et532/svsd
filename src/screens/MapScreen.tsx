@@ -4,7 +4,7 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 import type { Person } from '../data/people'
 import { personColor } from '../lib/people'
 import type { Mode } from '../modes'
-import { applyLook, lookHasGlow, type MapLook } from './mapLooks'
+import { applyLook, lookHasGlow, tintIcons, type MapLook } from './mapLooks'
 
 // Free vector tiles, no API key needed.
 const STYLE_URL = 'https://tiles.openfreemap.org/styles/positron'
@@ -42,6 +42,7 @@ export function MapScreen({ people, mode, look = 'a' }: Props) {
     })
 
     map.on('load', () => {
+      tintIcons(map, look)
       map.addSource('people', {
         type: 'geojson',
         data: { type: 'FeatureCollection', features: [] },
