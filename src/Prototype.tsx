@@ -21,6 +21,12 @@ export function Prototype() {
 
   return (
     <div className="phone">
+      <div className="aura" aria-hidden>
+        <span className="aura-orb" />
+        <span className="aura-orb" />
+        <span className="aura-orb" />
+        <span className="aura-orb" />
+      </div>
       <StatusBar />
       {tab === 'list' && <ListScreen people={people} query={query} />}
       {tab === 'map' && <MapScreen people={people} mode={mode} />}

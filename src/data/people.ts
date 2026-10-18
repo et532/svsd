@@ -14,7 +14,6 @@ export type Person = {
   met: Place & { context: string }
   livesNow: Place
   lastContacted: string // ISO date
-  color: string
 }
 
 // Sample people so the list and map have something to show.
@@ -29,7 +28,6 @@ export const samplePeople: Person[] = [
     met: { city: 'New York', lat: 40.741, lng: -73.99, context: 'Climate Week' },
     livesNow: { city: 'Brooklyn, NY', lat: 40.678, lng: -73.944 },
     lastContacted: '2026-10-02',
-    color: '#F2C6B4',
   },
   {
     id: 'daniel-okafor',
@@ -41,7 +39,6 @@ export const samplePeople: Person[] = [
     met: { city: 'San Francisco', lat: 37.776, lng: -122.417, context: 'Config' },
     livesNow: { city: 'San Francisco', lat: 37.761, lng: -122.435 },
     lastContacted: '2026-08-21',
-    color: '#C9DCC4',
   },
   {
     id: 'sofia-ramirez',
@@ -53,7 +50,6 @@ export const samplePeople: Person[] = [
     met: { city: 'Austin', lat: 30.267, lng: -97.743, context: 'SXSW' },
     livesNow: { city: 'Austin', lat: 30.285, lng: -97.733 },
     lastContacted: '2026-06-11',
-    color: '#F5DFA6',
   },
   {
     id: 'liam-oconnor',
@@ -65,7 +61,6 @@ export const samplePeople: Person[] = [
     met: { city: 'Dublin', lat: 53.343, lng: -6.254, context: 'College' },
     livesNow: { city: 'Berlin', lat: 52.52, lng: 13.405 },
     lastContacted: '2025-12-24',
-    color: '#BFD3E6',
   },
   {
     id: 'aisha-khan',
@@ -77,7 +72,6 @@ export const samplePeople: Person[] = [
     met: { city: 'New York', lat: 40.752, lng: -73.977, context: 'Demo Day' },
     livesNow: { city: 'Manhattan, NY', lat: 40.776, lng: -73.971 },
     lastContacted: '2026-10-12',
-    color: '#E3CBE8',
   },
   {
     id: 'kenji-watanabe',
@@ -89,7 +83,6 @@ export const samplePeople: Person[] = [
     met: { city: 'Tokyo', lat: 35.676, lng: 139.65, context: 'Friend’s dinner' },
     livesNow: { city: 'Tokyo', lat: 35.662, lng: 139.704 },
     lastContacted: '2026-03-05',
-    color: '#F2C6B4',
   },
   {
     id: 'priya-nair',
@@ -101,7 +94,6 @@ export const samplePeople: Person[] = [
     met: { city: 'San Francisco', lat: 37.789, lng: -122.401, context: 'Climate meetup' },
     livesNow: { city: 'Oakland, CA', lat: 37.804, lng: -122.271 },
     lastContacted: '2026-09-18',
-    color: '#C9DCC4',
   },
   {
     id: 'tom-becker',
@@ -113,7 +105,6 @@ export const samplePeople: Person[] = [
     met: { city: 'London', lat: 51.507, lng: -0.128, context: 'Conference' },
     livesNow: { city: 'London', lat: 51.52, lng: -0.09 },
     lastContacted: '2026-01-30',
-    color: '#F5DFA6',
   },
   {
     id: 'grace-kim',
@@ -125,7 +116,6 @@ export const samplePeople: Person[] = [
     met: { city: 'Boston', lat: 42.36, lng: -71.059, context: 'College' },
     livesNow: { city: 'Boston', lat: 42.336, lng: -71.104 },
     lastContacted: '2026-07-04',
-    color: '#BFD3E6',
   },
   {
     id: 'lucas-silva',
@@ -137,7 +127,6 @@ export const samplePeople: Person[] = [
     met: { city: 'Lisbon', lat: 38.722, lng: -9.139, context: 'Web Summit' },
     livesNow: { city: 'Lisbon', lat: 38.711, lng: -9.146 },
     lastContacted: '2026-05-16',
-    color: '#E3CBE8',
   },
   {
     id: 'hannah-cohen',
@@ -149,7 +138,6 @@ export const samplePeople: Person[] = [
     met: { city: 'New York', lat: 40.728, lng: -74.002, context: 'Founder dinner' },
     livesNow: { city: 'Manhattan, NY', lat: 40.735, lng: -74.003 },
     lastContacted: '2026-09-29',
-    color: '#F2C6B4',
   },
   {
     id: 'omar-haddad',
@@ -161,7 +149,6 @@ export const samplePeople: Person[] = [
     met: { city: 'Paris', lat: 48.857, lng: 2.352, context: 'Mutual friend' },
     livesNow: { city: 'Paris', lat: 48.865, lng: 2.38 },
     lastContacted: '2026-04-09',
-    color: '#C9DCC4',
   },
   {
     id: 'emma-wright',
@@ -173,7 +160,6 @@ export const samplePeople: Person[] = [
     met: { city: 'Sydney', lat: -33.88, lng: 151.2, context: 'Primary school' },
     livesNow: { city: 'Melbourne', lat: -37.814, lng: 144.963 },
     lastContacted: '2025-11-12',
-    color: '#F5DFA6',
   },
   {
     id: 'noah-patel',
@@ -185,7 +171,6 @@ export const samplePeople: Person[] = [
     met: { city: 'Toronto', lat: 43.645, lng: -79.39, context: 'Collision' },
     livesNow: { city: 'Toronto', lat: 43.665, lng: -79.4 },
     lastContacted: '2026-08-02',
-    color: '#BFD3E6',
   },
   {
     id: 'zara-ahmed',
@@ -197,6 +182,5 @@ export const samplePeople: Person[] = [
     met: { city: 'Brooklyn, NY', lat: 40.714, lng: -73.961, context: 'Gallery opening' },
     livesNow: { city: 'Brooklyn, NY', lat: 40.707, lng: -73.957 },
     lastContacted: '2026-10-15',
-    color: '#E3CBE8',
   },
 ]

@@ -33,6 +33,29 @@ function normalize(text: string): string {
     .replace(/[̀-ͯ]/g, '')
 }
 
+// Soft pastel palettes for the gradient orb avatars: [glow, accent, base].
+const orbPalettes = [
+  ['#ffb48f', '#ff9fc4', '#ffe6d9'],
+  ['#a8b6ff', '#d6b8ff', '#eef0ff'],
+  ['#8fe0c6', '#b6dcff', '#ecfbf5'],
+  ['#ffd27f', '#ffa3a3', '#fff3dc'],
+  ['#c4a8ff', '#92d4ff', '#f1ebff'],
+  ['#ff9fca', '#ffc7a6', '#fff0f6'],
+]
+
+// A sphere-like gradient with a soft highlight, stable for each person.
+export function orbBackground(id: string): string {
+  let hash = 0
+  for (const ch of id) hash = (hash * 31 + ch.charCodeAt(0)) | 0
+  const [glow, accent, base] = orbPalettes[(hash >>> 0) % orbPalettes.length]
+  return [
+    'radial-gradient(circle at 30% 26%, rgba(255,255,255,0.95) 0, rgba(255,255,255,0) 34%)',
+    `radial-gradient(circle at 76% 78%, ${accent} 0, transparent 62%)`,
+    `radial-gradient(circle at 22% 80%, ${glow} 0, transparent 58%)`,
+    base,
+  ].join(', ')
+}
+
 export function timeSince(isoDate: string, now = new Date()): string {
   const days = Math.floor((now.getTime() - new Date(isoDate).getTime()) / 86_400_000)
   if (days <= 0) return 'Today'

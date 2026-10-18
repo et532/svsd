@@ -20,10 +20,20 @@ A private, personal "people log": remember everyone you meet, where you met them
 
 ## Design decisions (agreed with the user)
 
+**Visual style** (from the user's reference images: soft, clean, modern, light, pastel)
+- Base is black and white: white background, near-black text (`--ink: #111113`), grey secondary text. Font is Inter (Google Fonts), with light and semibold weights mixed for headlines (e.g. "Mindmap is **coming soon**").
+- Color comes only from soft pastel gradients. A drifting "aura" of blurred peach, pink, lavender, mint and butter orbs sits behind every screen (`.aura` in `Prototype.tsx`). Motion stops when the user prefers reduced motion.
+- Glassmorphism: the search bar, nav pill, list cards, search dropdown, map popups and the bottom sheet are frosted translucent white (`backdrop-filter` blur, white edge, soft lavender-tinted shadow). The sheet has a faint pastel wash in its top corners.
+- Avatars are gradient "orbs" with a soft highlight, like the reference spheres. Colors come from `orbBackground()` in `src/lib/people.ts`, stable per person. People have no color field.
+- Black accents: the active nav tab, the **+** button and the Apply button are black, with a subtle gradient. The + button has a soft pastel glow underneath.
+- Map: the base map is lightened (pale land and water, faint relief and labels), with a soft lavender atmosphere around the globe. The map background is transparent so the aura glows around the globe. Pins have a blurred halo.
+- Desktop device frame is light silver, not black.
+- Glass surfaces create a containing block for `position: fixed`, so full-screen overlays (the bottom sheet) are portalled into `.phone`. Keep it that way for any new overlay opened from inside a glass element.
+
 **Overall**
 - Matches the user's wireframes: search bar at top; bottom-left floating pill nav with three icon-only tabs (Mindmap, People list, Map); round **+** button bottom-right.
 - Sizes are about 5% smaller than the first version. The user found 15% smaller too small.
-- On desktop, the app sits in an iPhone frame with a fake status bar (9:41, signal, Wi-Fi, battery), Dynamic Island, and home bar. On a real phone (under 600px wide) the frame and fake status bar are hidden. Use `var(--safe-top)` / `var(--safe-bottom)` for spacing, not `env()` directly.
+- On desktop, the app sits in a light silver iPhone frame with a fake status bar (9:41, signal, Wi-Fi, battery), Dynamic Island, and home bar. On a real phone (under 600px wide) the frame and fake status bar are hidden. Use `var(--safe-top)` / `var(--safe-bottom)` for spacing, not `env()` directly.
 - The search input text stays 16px so iPhones don't zoom in on tap.
 
 **People list**
@@ -40,8 +50,8 @@ A private, personal "people log": remember everyone you meet, where you met them
 **Map**
 - Opens as a 3D globe; zooming in turns it into a flat street map. Pins cluster; tap a cluster to zoom in, tap a pin for a name popup.
 - Three modes, **always in this order: Where they're from → Where you met → Where they live now.** Default is "Where they're from".
-- Pin color matches the mode: from = amber `#D9822B`, met = coral `#E4572E`, lives now = green `#2F8F6B`.
-- The filter is a **pill-shaped chip inside the right end of the search bar**, tinted in the mode color, showing an icon and a short word (From / Met / Now). It only appears on the map screen.
+- Pin color matches the mode, in soft pastel-leaning tones: from = peach `#F59A6E`, met = pink `#EC7DAE`, lives now = periwinkle `#8C94F4`.
+- The filter is a **pill-shaped chip inside the right end of the search bar**, with a soft gradient of the mode color behind a black icon and short word (From / Met / Now). It only appears on the map screen.
 - Tapping the chip opens a **bottom sheet** that slides up. It has a left-aligned "Show on map" title, **no X button**, three radio rows, and an **Apply** button. It closes on tapping the backdrop, swiping down, or pressing Esc.
 - The map's attribution / info icon was removed at the user's request.
 

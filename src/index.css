@@ -1,15 +1,25 @@
+/* Visual style: white base, black type, soft pastel gradients, frosted glass surfaces. */
 :root {
-  --bg: #f7f4ef;
-  --surface: #ffffff;
-  --ink: #1f1d1a;
-  --muted: #7a746b;
-  --line: #ebe5dc;
-  --accent: #e4572e;
-  --backdrop: #e9e3d9;
-  --shadow: 0 6px 20px rgba(31, 29, 26, 0.1), 0 1px 3px rgba(31, 29, 26, 0.08);
+  --bg: #ffffff;
+  --ink: #111113;
+  --muted: #8a8a93;
+  --line: rgba(17, 17, 19, 0.07);
+  --hover: rgba(17, 17, 19, 0.04);
+
+  /* Frosted glass */
+  --glass: rgba(255, 255, 255, 0.58);
+  --glass-strong: rgba(255, 255, 255, 0.82);
+  --glass-edge: rgba(255, 255, 255, 0.85);
+  --glass-blur: blur(22px) saturate(170%);
+
+  --shadow:
+    0 12px 32px -10px rgba(60, 50, 110, 0.16),
+    0 2px 6px rgba(60, 50, 110, 0.05),
+    0 0 0 1px rgba(17, 17, 19, 0.04);
   --gutter: 16px;
 
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-feature-settings: 'cv11', 'ss01';
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
@@ -27,7 +37,10 @@ body,
 }
 
 body {
-  background: var(--backdrop);
+  background:
+    radial-gradient(circle at 18% 22%, #fbe8f1 0, rgba(251, 232, 241, 0) 38%),
+    radial-gradient(circle at 82% 78%, #e8edff 0, rgba(232, 237, 255, 0) 40%),
+    #f5f5f7;
 }
 
 button {
@@ -37,6 +50,12 @@ button {
   background: none;
   padding: 0;
   cursor: pointer;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
 }
 
 /* App shell: full screen on a real phone; on a computer, an iPhone-sized device frame */
@@ -73,22 +92,25 @@ button {
 }
 
 @media (min-width: 600px) {
-  /* iPhone 15 screen (393 × 852) inside a black bezel, scaled down to fit short windows */
+  /* iPhone 15 screen (393 × 852) in a light silver frame, scaled down to fit short windows */
   .device {
     flex: none;
     width: 415px;
     height: 874px;
     padding: 11px;
     border-radius: 66px;
-    background: #121212;
+    background: linear-gradient(150deg, #fdfdfe 0%, #e4e4e9 45%, #f4f4f6 100%);
     box-shadow:
-      0 0 0 2px #3a3a3a,
-      0 30px 80px rgba(31, 29, 26, 0.25);
+      inset 0 0 0 1px rgba(255, 255, 255, 0.9),
+      0 0 0 1px rgba(17, 17, 19, 0.08),
+      0 50px 100px -24px rgba(60, 50, 110, 0.28),
+      0 20px 40px -20px rgba(17, 17, 19, 0.18);
     transform: scale(var(--device-scale, 1));
   }
 
   .phone {
     border-radius: 55px;
+    box-shadow: 0 0 0 1px rgba(17, 17, 19, 0.1);
     --safe-top: 54px;
     --safe-bottom: 20px;
   }
@@ -146,6 +168,80 @@ button {
   }
 }
 
+/* Soft pastel light drifting behind every screen */
+.aura {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.aura-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(48px);
+  opacity: 0.75;
+  animation: drift 20s ease-in-out infinite alternate;
+}
+
+.aura-orb:nth-child(1) {
+  top: -70px;
+  right: -90px;
+  width: 290px;
+  height: 290px;
+  background: radial-gradient(circle at 35% 35%, #ffc6a8, #ffb6d3 55%, rgba(255, 182, 211, 0) 72%);
+}
+
+.aura-orb:nth-child(2) {
+  top: 36%;
+  left: -150px;
+  width: 310px;
+  height: 310px;
+  background: radial-gradient(circle, #d2c6ff, #bcd5ff 55%, rgba(188, 213, 255, 0) 72%);
+  animation-duration: 24s;
+  animation-delay: -8s;
+}
+
+.aura-orb:nth-child(3) {
+  right: -70px;
+  bottom: -70px;
+  width: 260px;
+  height: 260px;
+  background: radial-gradient(circle, #c4f0de, #d6e6ff 55%, rgba(214, 230, 255, 0) 72%);
+  animation-duration: 28s;
+  animation-delay: -14s;
+}
+
+.aura-orb:nth-child(4) {
+  top: 16%;
+  left: 34%;
+  width: 170px;
+  height: 170px;
+  background: radial-gradient(circle, #ffeab8, rgba(255, 234, 184, 0) 70%);
+  opacity: 0.5;
+  animation-duration: 18s;
+  animation-delay: -4s;
+}
+
+@keyframes drift {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(22px, 30px) scale(1.08);
+  }
+  100% {
+    transform: translate(-16px, 12px) scale(0.95);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aura-orb,
+  .hero-orb {
+    animation: none;
+  }
+}
+
 .screen {
   position: absolute;
   inset: 0;
@@ -162,23 +258,22 @@ button {
   z-index: 4;
 }
 
-/* Fade rows out as they scroll under the search bar */
-.list-screen ~ .top-bar {
-  background: linear-gradient(var(--bg) 70%, rgba(247, 244, 239, 0));
-}
-
 .search {
   position: relative;
   pointer-events: auto;
 }
 
 .search-bar {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 9px;
   height: 50px;
   padding: 0 13px 0 17px;
-  background: var(--surface);
+  background: var(--glass-strong);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-edge);
   border-radius: 25px;
   box-shadow: var(--shadow);
   color: var(--muted);
@@ -193,6 +288,7 @@ button {
   font: inherit;
   /* 16px stops iPhones from zooming in when the search bar is tapped */
   font-size: 16px;
+  letter-spacing: -0.1px;
   color: var(--ink);
 }
 
@@ -214,7 +310,34 @@ button {
 }
 
 .search-clear:hover {
-  background: var(--bg);
+  background: var(--hover);
+}
+
+.search-divider {
+  width: 1px;
+  height: 23px;
+  margin: 0 2px;
+  background: var(--line);
+}
+
+/* Map filter chip: pill-shaped to match the search bar's rounded ends, tinted with the mode's gradient */
+.filter-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  width: 51px;
+  height: 38px;
+  margin-right: -6px;
+  border-radius: 19px;
+  color: var(--ink);
+}
+
+.filter-tiny {
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1;
 }
 
 /* Bottom bar */
@@ -233,7 +356,10 @@ button {
   display: flex;
   gap: 4px;
   padding: 6px;
-  background: var(--surface);
+  background: var(--glass-strong);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-edge);
   border-radius: 30px;
   box-shadow: var(--shadow);
 }
@@ -245,7 +371,7 @@ button {
   height: 46px;
   border-radius: 23px;
   color: var(--muted);
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.2s, color 0.2s;
 }
 
 .nav-button:hover {
@@ -264,9 +390,13 @@ button {
   width: 61px;
   height: 61px;
   border-radius: 50%;
-  background: var(--ink);
+  background: linear-gradient(160deg, #2c2c31, #0c0c0e);
   color: #fff;
-  box-shadow: var(--shadow);
+  /* Soft pastel glow underneath */
+  box-shadow:
+    0 12px 28px -8px rgba(150, 110, 255, 0.5),
+    0 6px 16px -6px rgba(255, 140, 180, 0.4),
+    0 2px 6px rgba(17, 17, 19, 0.2);
   transition: transform 0.15s;
 }
 
@@ -275,7 +405,7 @@ button {
 }
 
 :is(button, a, select, .dropdown-option):focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--ink);
   outline-offset: 2px;
 }
 
@@ -283,6 +413,17 @@ button {
 .list-screen {
   overflow-y: auto;
   padding: calc(var(--safe-top) + 80px) var(--gutter) calc(var(--safe-bottom) + 106px);
+  /* Fade rows out as they scroll under the search bar, letting the gradient show through */
+  mask-image: linear-gradient(
+    to bottom,
+    transparent calc(var(--safe-top) + 40px),
+    #000 calc(var(--safe-top) + 80px)
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent calc(var(--safe-top) + 40px),
+    #000 calc(var(--safe-top) + 80px)
+  );
 }
 
 .people-list {
@@ -299,11 +440,17 @@ button {
   align-items: center;
   gap: 13px;
   padding: 13px 15px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 17px;
+  background: var(--glass);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-edge);
+  border-radius: 20px;
+  box-shadow:
+    0 6px 20px -12px rgba(60, 50, 110, 0.18),
+    0 0 0 1px rgba(17, 17, 19, 0.03);
 }
 
+/* Gradient orb avatars (colors come from lib/people.ts) */
 .avatar {
   flex: none;
   display: grid;
@@ -311,16 +458,19 @@ button {
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  font-size: 14px;
-  font-weight: 650;
-  color: rgba(31, 29, 26, 0.8);
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  color: rgba(17, 17, 19, 0.75);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6);
 }
 
 .person-name {
   flex: 1;
   min-width: 0;
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 500;
+  letter-spacing: -0.15px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -329,7 +479,7 @@ button {
 .person-arrow {
   flex: none;
   display: grid;
-  color: var(--muted);
+  color: #b4b4bc;
 }
 
 .empty {
@@ -339,25 +489,35 @@ button {
 }
 
 /* Map screen */
-/* Extra specificity so maplibre's own `.maplibregl-map { position: relative }` doesn't win */
+/* Extra specificity so maplibre's own `.maplibregl-map { position: relative }` doesn't win.
+   Transparent so the aura glows around the globe. */
 .map-screen > .map-container {
   position: absolute;
   inset: 0;
-  background: var(--bg);
+  background: transparent;
 }
 
 .person-popup .maplibregl-popup-content {
   padding: 9px 13px;
-  border-radius: 11px;
+  background: var(--glass-strong);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-edge);
+  border-radius: 14px;
   box-shadow: var(--shadow);
   font-family: inherit;
   font-size: 12.5px;
   color: var(--muted);
 }
 
+.person-popup .maplibregl-popup-tip {
+  display: none;
+}
+
 .person-popup strong {
   display: block;
   font-size: 14px;
+  font-weight: 600;
   color: var(--ink);
 }
 
@@ -367,34 +527,51 @@ button {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 0 40px 40px;
+  padding: 0 40px 60px;
   text-align: center;
 }
 
-.placeholder-icon {
-  display: grid;
-  place-items: center;
-  width: 80px;
-  height: 80px;
-  margin-bottom: 19px;
+.hero-orb {
+  width: 150px;
+  height: 150px;
+  margin-bottom: 36px;
   border-radius: 50%;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  color: var(--muted);
+  background:
+    radial-gradient(circle at 34% 28%, #ffffff 0, rgba(255, 255, 255, 0) 30%),
+    radial-gradient(circle at 72% 72%, #b4a2ff 0, rgba(180, 162, 255, 0) 58%),
+    radial-gradient(circle at 24% 76%, #ffb497 0, rgba(255, 180, 151, 0) 56%),
+    radial-gradient(circle at 78% 24%, #ff9fc9 0, rgba(255, 159, 201, 0) 52%),
+    #ebe5ff;
+  filter: blur(1.5px);
+  box-shadow:
+    0 0 60px 6px rgba(190, 165, 255, 0.4),
+    0 0 120px 30px rgba(255, 190, 210, 0.25);
+  animation: breathe 7s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  50% {
+    transform: scale(1.05) rotate(8deg);
+  }
 }
 
 .placeholder-screen h2 {
-  margin: 0 0 8px;
-  font-size: 19px;
-  font-weight: 650;
+  margin: 0 0 10px;
+  font-size: 25px;
+  font-weight: 300;
+  letter-spacing: -0.6px;
+}
+
+.placeholder-screen h2 strong {
+  font-weight: 600;
 }
 
 .placeholder-screen p {
   margin: 0;
   max-width: 250px;
-  font-size: 15px;
+  font-size: 14.5px;
   color: var(--muted);
-  line-height: 1.45;
+  line-height: 1.5;
 }
 
 /* Search dropdown */
@@ -402,14 +579,10 @@ button {
   position: absolute;
   inset: 0;
   z-index: 3;
-  background: rgba(31, 29, 26, 0.18);
+  background: rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   animation: fade-in 0.15s ease-out;
-}
-
-@keyframes fade-in {
-  from {
-    opacity: 0;
-  }
 }
 
 .search-dropdown {
@@ -420,8 +593,11 @@ button {
   max-height: 420px;
   overflow-y: auto;
   padding: 6px 0;
-  background: var(--surface);
-  border-radius: 19px;
+  background: var(--glass-strong);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-edge);
+  border-radius: 22px;
   box-shadow: var(--shadow);
   animation: fade-in 0.12s ease-out;
 }
@@ -437,7 +613,8 @@ button {
 .dropdown-title {
   padding: 10px 15px 4px;
   font-size: 14px;
-  font-weight: 650;
+  font-weight: 600;
+  letter-spacing: -0.1px;
   color: var(--ink);
 }
 
@@ -445,18 +622,20 @@ button {
   display: flex;
   align-items: center;
   gap: 11px;
-  padding: 8px 15px;
+  margin: 0 6px;
+  padding: 7px 9px;
+  border-radius: 14px;
   cursor: pointer;
 }
 
 .dropdown-option.is-active {
-  background: var(--bg);
+  background: var(--hover);
 }
 
 .avatar.avatar-sm {
   width: 32px;
   height: 32px;
-  font-size: 11.5px;
+  font-size: 11px;
 }
 
 .option-icon {
@@ -466,7 +645,7 @@ button {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: var(--bg);
+  background: rgba(17, 17, 19, 0.04);
   color: var(--muted);
 }
 
@@ -484,44 +663,13 @@ button {
 .option-label mark {
   background: none;
   color: inherit;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .dropdown-empty {
   padding: 13px 15px;
   font-size: 15px;
   color: var(--muted);
-}
-
-/* Map filter chip (inside the search bar) */
-.search-bar {
-  position: relative;
-}
-
-.search-divider {
-  width: 1px;
-  height: 23px;
-  margin: 0 2px;
-  background: var(--line);
-}
-
-/* Pill-shaped so it matches the search bar's rounded ends */
-.filter-chip {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1px;
-  width: 51px;
-  height: 38px;
-  margin-right: -6px;
-  border-radius: 19px;
-}
-
-.filter-tiny {
-  font-size: 10.5px;
-  font-weight: 700;
-  line-height: 1;
 }
 
 /* Bottom sheet. .phone is the containing block for this fixed overlay, so it stays inside the phone frame. */
@@ -540,17 +688,40 @@ button {
 .overlay-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(31, 29, 26, 0.45);
+  background: rgba(30, 28, 50, 0.16);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
   animation: fade-in 0.2s ease-out;
 }
 
 .sheet {
   position: relative;
+  overflow: hidden;
   padding: 0 19px calc(var(--safe-bottom) + 19px);
-  background: var(--surface);
-  border-radius: 27px 27px 0 0;
+  background: var(--glass-strong);
+  backdrop-filter: blur(30px) saturate(170%);
+  -webkit-backdrop-filter: blur(30px) saturate(170%);
+  border: 1px solid var(--glass-edge);
+  border-bottom: 0;
+  border-radius: 30px 30px 0 0;
+  box-shadow: 0 -12px 40px -16px rgba(60, 50, 110, 0.25);
   user-select: none;
   animation: slide-up 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Faint pastel wash in the sheet's top corners */
+.sheet::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 196, 222, 0.45), rgba(255, 196, 222, 0) 45%),
+    radial-gradient(circle at 0% 0%, rgba(205, 200, 255, 0.4), rgba(205, 200, 255, 0) 40%);
+  pointer-events: none;
+}
+
+.sheet > * {
+  position: relative;
 }
 
 @keyframes slide-up {
@@ -569,13 +740,14 @@ button {
   height: 5px;
   margin: 0 auto 15px;
   border-radius: 3px;
-  background: var(--line);
+  background: rgba(17, 17, 19, 0.12);
 }
 
 .sheet-grab h3 {
   margin: 0 0 6px;
-  font-size: 19px;
-  font-weight: 650;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.4px;
   text-align: left;
 }
 
@@ -587,6 +759,7 @@ button {
   padding: 17px 0;
   border-bottom: 1px solid var(--line);
   font-size: 15.5px;
+  letter-spacing: -0.1px;
   text-align: left;
 }
 
@@ -598,8 +771,9 @@ button {
   flex: none;
   width: 19px;
   height: 19px;
-  border: 2px solid #cfc6b8;
+  border: 1.5px solid #d2d2d8;
   border-radius: 50%;
+  transition: border 0.15s;
 }
 
 .radio.is-on {
@@ -611,8 +785,10 @@ button {
   height: 51px;
   margin-top: 15px;
   border-radius: 26px;
-  background: var(--ink);
+  background: linear-gradient(160deg, #2c2c31, #0c0c0e);
   color: #fff;
   font-size: 15.5px;
-  font-weight: 650;
+  font-weight: 600;
+  letter-spacing: -0.1px;
+  box-shadow: 0 10px 24px -10px rgba(17, 17, 19, 0.45);
 }

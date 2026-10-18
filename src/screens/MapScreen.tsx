@@ -6,6 +6,10 @@ import { modeInfo, type Mode } from '../modes'
 
 // Free vector tiles, no API key needed.
 const STYLE_URL = 'https://tiles.openfreemap.org/styles/positron'
+
+// Layers recolored to the current mode
+const PIN_LAYERS = ['cluster-glow', 'clusters', 'person-glow', 'person']
+
 type Props = {
   people: Person[]
   mode: Mode
@@ -31,6 +35,7 @@ export function MapScreen({ people, mode }: Props) {
 
     map.on('style.load', () => {
       map.setProjection({ type: 'globe' })
+      softenBaseMap(map)
     })
 
     map.on('load', () => {
@@ -42,6 +47,31 @@ export function MapScreen({ people, mode }: Props) {
         clusterMaxZoom: 12,
       })
 
+      // Soft blurred halo under each pin and cluster
+      map.addLayer({
+        id: 'cluster-glow',
+        type: 'circle',
+        source: 'people',
+        filter: ['has', 'point_count'],
+        paint: {
+          'circle-color': modeInfo.from.color,
+          'circle-radius': ['step', ['get', 'point_count'], 26, 4, 32, 10, 38],
+          'circle-blur': 1,
+          'circle-opacity': 0.45,
+        },
+      })
+      map.addLayer({
+        id: 'person-glow',
+        type: 'circle',
+        source: 'people',
+        filter: ['!', ['has', 'point_count']],
+        paint: {
+          'circle-color': modeInfo.from.color,
+          'circle-radius': 18,
+          'circle-blur': 1,
+          'circle-opacity': 0.45,
+        },
+      })
       map.addLayer({
         id: 'clusters',
         type: 'circle',
@@ -86,18 +116,17 @@ export function MapScreen({ people, mode }: Props) {
         filter: ['!', ['has', 'point_count']],
         layout: {
           'text-field': ['get', 'name'],
-          'text-font': ['Noto Sans Bold'],
+          'text-font': ['Noto Sans Regular'],
           'text-size': 11.5,
           'text-offset': [0, 1.25],
           'text-anchor': 'top',
         },
         paint: {
-          'text-color': '#1F1D1A',
-          'text-halo-color': '#fff',
-          'text-halo-width': 1.6,
+          'text-color': '#111113',
+          'text-halo-color': 'rgba(255,255,255,0.9)',
+          'text-halo-width': 1.8,
         },
       })
-
 
       setReady(true)
     })
@@ -141,7 +170,7 @@ export function MapScreen({ people, mode }: Props) {
     ;(map.getSource('people') as GeoJSONSource).setData(data)
     popupRef.current?.remove()
     // Pins take the color of the current view so it's clear which places you're looking at.
-    for (const layer of ['clusters', 'person']) map.setPaintProperty(layer, 'circle-color', modeInfo[mode].color)
+    for (const layer of PIN_LAYERS) map.setPaintProperty(layer, 'circle-color', modeInfo[mode].color)
 
     // Keep the opening globe view; after that, move to whoever matches the search or mode.
     if (isFirstData.current) {
@@ -172,6 +201,29 @@ function toGeoJSON(people: Person[], mode: Mode): GeoJSON.FeatureCollection<GeoJ
       }
     }),
   }
+}
+
+// Lighten the base map so it reads as soft and airy: pale land and water, faint shaded relief and labels,
+// and a gentle lavender glow around the globe.
+function softenBaseMap(map: maplibregl.Map) {
+  for (const layer of map.getStyle().layers) {
+    if (layer.type === 'background') {
+      map.setPaintProperty(layer.id, 'background-color', '#fbfbfc')
+    } else if (layer.type === 'raster') {
+      map.setPaintProperty(layer.id, 'raster-opacity', 0.18)
+    } else if (layer.type === 'fill' && layer.id.includes('water')) {
+      map.setPaintProperty(layer.id, 'fill-color', '#e9edf6')
+    } else if (layer.type === 'symbol') {
+      map.setPaintProperty(layer.id, 'text-color', '#9a9aa4')
+      map.setPaintProperty(layer.id, 'text-halo-color', 'rgba(255,255,255,0.85)')
+    }
+  }
+  map.setSky({
+    'sky-color': '#ffffff',
+    'horizon-color': '#efe8ff',
+    'fog-color': '#ffffff',
+    'atmosphere-blend': ['interpolate', ['linear'], ['zoom'], 0, 1, 5, 1, 7, 0],
+  })
 }
 
 function fitToPeople(map: maplibregl.Map, data: GeoJSON.FeatureCollection<GeoJSON.Point>) {

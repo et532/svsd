@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { modeInfo, modeOrder, type Mode } from '../modes'
 import { HomeIcon, MeetIcon, SproutIcon } from './Icons'
 
@@ -16,14 +17,19 @@ type Props = {
 // Chip in the search bar showing which places the map shows, and the sheet it opens to change that.
 export function FilterMenu({ mode, onChange }: Props) {
   const [open, setOpen] = useState(false)
+  const chipRef = useRef<HTMLButtonElement>(null)
+  // The sheet renders into the phone screen itself: the search bar's frosted-glass blur would
+  // otherwise trap the full-screen overlay inside the bar.
+  const phone = open ? chipRef.current?.closest('.phone') : null
   const info = modeInfo[mode]
   const Icon = modeIcons[mode]
 
   return (
     <>
       <button
+        ref={chipRef}
         className="filter-chip"
-        style={{ background: `${info.color}1f`, color: info.color }}
+        style={{ background: `linear-gradient(135deg, ${info.color}55, ${info.color}1a)` }}
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
         aria-expanded={open}
@@ -33,16 +39,18 @@ export function FilterMenu({ mode, onChange }: Props) {
         <span className="filter-tiny">{info.tiny}</span>
       </button>
 
-      {open && (
-        <BottomSheet
-          mode={mode}
-          onApply={(next) => {
-            onChange(next)
-            setOpen(false)
-          }}
-          onClose={() => setOpen(false)}
-        />
-      )}
+      {phone &&
+        createPortal(
+          <BottomSheet
+            mode={mode}
+            onApply={(next) => {
+              onChange(next)
+              setOpen(false)
+            }}
+            onClose={() => setOpen(false)}
+          />,
+          phone,
+        )}
     </>
   )
 }

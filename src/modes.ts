@@ -18,20 +18,20 @@ export const modeInfo: Record<Mode, {
     short: 'From',
     tiny: 'From',
     description: 'Hometowns and where people grew up',
-    color: '#D9822B',
+    color: '#F59A6E',
   },
   met: {
     label: 'Where you met',
     short: 'Met',
     tiny: 'Met',
     description: 'The place you first crossed paths',
-    color: '#E4572E',
+    color: '#EC7DAE',
   },
   livesNow: {
     label: 'Where they live now',
     short: 'Lives now',
     tiny: 'Now',
     description: 'The city each person calls home today',
-    color: '#2F8F6B',
+    color: '#8C94F4',
   },
 }
