@@ -1,0 +1,618 @@
+:root {
+  --bg: #f7f4ef;
+  --surface: #ffffff;
+  --ink: #1f1d1a;
+  --muted: #7a746b;
+  --line: #ebe5dc;
+  --accent: #e4572e;
+  --backdrop: #e9e3d9;
+  --shadow: 0 6px 20px rgba(31, 29, 26, 0.1), 0 1px 3px rgba(31, 29, 26, 0.08);
+  --gutter: 16px;
+
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--backdrop);
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  border: 0;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+/* App shell: full screen on a real phone; on a computer, an iPhone-sized device frame */
+.app {
+  height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.device {
+  width: 100%;
+  height: 100%;
+}
+
+.phone {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  /* Makes the phone the containing block for position: fixed overlays (sheets, pop-ups) */
+  transform: translateZ(0);
+  /* Space the system uses at the top and bottom of the screen */
+  --safe-top: env(safe-area-inset-top);
+  --safe-bottom: env(safe-area-inset-bottom);
+}
+
+/* The fake status bar and home indicator only show inside the device frame */
+.status-bar,
+.home-indicator {
+  display: none;
+}
+
+@media (min-width: 600px) {
+  /* iPhone 15 screen (393 × 852) inside a black bezel, scaled down to fit short windows */
+  .device {
+    flex: none;
+    width: 415px;
+    height: 874px;
+    padding: 11px;
+    border-radius: 66px;
+    background: #121212;
+    box-shadow:
+      0 0 0 2px #3a3a3a,
+      0 30px 80px rgba(31, 29, 26, 0.25);
+    transform: scale(var(--device-scale, 1));
+  }
+
+  .phone {
+    border-radius: 55px;
+    --safe-top: 54px;
+    --safe-bottom: 20px;
+  }
+
+  .status-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 54px;
+    padding: 4px 34px 0 50px;
+    color: #000;
+    pointer-events: none;
+  }
+
+  .status-time {
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.2px;
+  }
+
+  .status-icons {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .dynamic-island {
+    position: absolute;
+    top: 11px;
+    left: 50%;
+    width: 124px;
+    height: 36px;
+    margin-left: -62px;
+    border-radius: 18px;
+    background: #000;
+  }
+
+  .home-indicator {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    z-index: 20;
+    display: block;
+    width: 138px;
+    height: 5px;
+    margin-left: -69px;
+    border-radius: 3px;
+    background: #000;
+    pointer-events: none;
+  }
+}
+
+.screen {
+  position: absolute;
+  inset: 0;
+}
+
+/* Search bar */
+.top-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: calc(var(--safe-top) + 15px) var(--gutter) 11px;
+  pointer-events: none;
+  z-index: 4;
+}
+
+/* Fade rows out as they scroll under the search bar */
+.list-screen ~ .top-bar {
+  background: linear-gradient(var(--bg) 70%, rgba(247, 244, 239, 0));
+}
+
+.search {
+  position: relative;
+  pointer-events: auto;
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 50px;
+  padding: 0 13px 0 17px;
+  background: var(--surface);
+  border-radius: 25px;
+  box-shadow: var(--shadow);
+  color: var(--muted);
+}
+
+.search-bar input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: none;
+  font: inherit;
+  /* 16px stops iPhones from zooming in when the search bar is tapped */
+  font-size: 16px;
+  color: var(--ink);
+}
+
+.search-bar input::placeholder {
+  color: var(--muted);
+}
+
+.search-bar input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.search-clear {
+  display: grid;
+  place-items: center;
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  color: var(--muted);
+}
+
+.search-clear:hover {
+  background: var(--bg);
+}
+
+/* Bottom bar */
+.bottom-bar {
+  position: absolute;
+  left: var(--gutter);
+  right: var(--gutter);
+  bottom: calc(var(--safe-bottom) + 19px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 2;
+}
+
+.nav-pill {
+  display: flex;
+  gap: 4px;
+  padding: 6px;
+  background: var(--surface);
+  border-radius: 30px;
+  box-shadow: var(--shadow);
+}
+
+.nav-button {
+  display: grid;
+  place-items: center;
+  width: 49px;
+  height: 46px;
+  border-radius: 23px;
+  color: var(--muted);
+  transition: background 0.15s, color 0.15s;
+}
+
+.nav-button:hover {
+  color: var(--ink);
+}
+
+.nav-button.is-active {
+  background: var(--ink);
+  color: #fff;
+}
+
+.add-button {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 61px;
+  height: 61px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: #fff;
+  box-shadow: var(--shadow);
+  transition: transform 0.15s;
+}
+
+.add-button:active {
+  transform: scale(0.94);
+}
+
+:is(button, a, select, .dropdown-option):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* List screen */
+.list-screen {
+  overflow-y: auto;
+  padding: calc(var(--safe-top) + 80px) var(--gutter) calc(var(--safe-bottom) + 106px);
+}
+
+.people-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.person-row {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 13px 15px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 17px;
+}
+
+.avatar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  font-size: 14px;
+  font-weight: 650;
+  color: rgba(31, 29, 26, 0.8);
+}
+
+.person-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.person-arrow {
+  flex: none;
+  display: grid;
+  color: var(--muted);
+}
+
+.empty {
+  margin-top: 40px;
+  text-align: center;
+  color: var(--muted);
+}
+
+/* Map screen */
+/* Extra specificity so maplibre's own `.maplibregl-map { position: relative }` doesn't win */
+.map-screen > .map-container {
+  position: absolute;
+  inset: 0;
+  background: var(--bg);
+}
+
+.person-popup .maplibregl-popup-content {
+  padding: 9px 13px;
+  border-radius: 11px;
+  box-shadow: var(--shadow);
+  font-family: inherit;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.person-popup strong {
+  display: block;
+  font-size: 14px;
+  color: var(--ink);
+}
+
+/* Mindmap placeholder */
+.placeholder-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 40px 40px;
+  text-align: center;
+}
+
+.placeholder-icon {
+  display: grid;
+  place-items: center;
+  width: 80px;
+  height: 80px;
+  margin-bottom: 19px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+
+.placeholder-screen h2 {
+  margin: 0 0 8px;
+  font-size: 19px;
+  font-weight: 650;
+}
+
+.placeholder-screen p {
+  margin: 0;
+  max-width: 250px;
+  font-size: 15px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+/* Search dropdown */
+.search-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  background: rgba(31, 29, 26, 0.18);
+  animation: fade-in 0.15s ease-out;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.search-dropdown {
+  position: absolute;
+  top: 57px;
+  left: 0;
+  right: 0;
+  max-height: 420px;
+  overflow-y: auto;
+  padding: 6px 0;
+  background: var(--surface);
+  border-radius: 19px;
+  box-shadow: var(--shadow);
+  animation: fade-in 0.12s ease-out;
+}
+
+.dropdown-section {
+  padding: 4px 0;
+}
+
+.dropdown-section + .dropdown-section {
+  border-top: 1px solid var(--line);
+}
+
+.dropdown-title {
+  padding: 10px 15px 4px;
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--ink);
+}
+
+.dropdown-option {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 8px 15px;
+  cursor: pointer;
+}
+
+.dropdown-option.is-active {
+  background: var(--bg);
+}
+
+.avatar.avatar-sm {
+  width: 32px;
+  height: 32px;
+  font-size: 11.5px;
+}
+
+.option-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--bg);
+  color: var(--muted);
+}
+
+.option-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.option-label {
+  font-size: 14.5px;
+  color: var(--ink);
+}
+
+.option-label mark {
+  background: none;
+  color: inherit;
+  font-weight: 700;
+}
+
+.dropdown-empty {
+  padding: 13px 15px;
+  font-size: 15px;
+  color: var(--muted);
+}
+
+/* Map filter chip (inside the search bar) */
+.search-bar {
+  position: relative;
+}
+
+.search-divider {
+  width: 1px;
+  height: 23px;
+  margin: 0 2px;
+  background: var(--line);
+}
+
+/* Pill-shaped so it matches the search bar's rounded ends */
+.filter-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  width: 51px;
+  height: 38px;
+  margin-right: -6px;
+  border-radius: 19px;
+}
+
+.filter-tiny {
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* Bottom sheet. .phone is the containing block for this fixed overlay, so it stays inside the phone frame. */
+.filter-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  pointer-events: auto;
+  /* Don't inherit the search bar's muted text color */
+  color: var(--ink);
+}
+
+.overlay-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(31, 29, 26, 0.45);
+  animation: fade-in 0.2s ease-out;
+}
+
+.sheet {
+  position: relative;
+  padding: 0 19px calc(var(--safe-bottom) + 19px);
+  background: var(--surface);
+  border-radius: 27px 27px 0 0;
+  user-select: none;
+  animation: slide-up 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+.sheet-grab {
+  padding-top: 9px;
+  touch-action: none;
+}
+
+.sheet-handle {
+  width: 38px;
+  height: 5px;
+  margin: 0 auto 15px;
+  border-radius: 3px;
+  background: var(--line);
+}
+
+.sheet-grab h3 {
+  margin: 0 0 6px;
+  font-size: 19px;
+  font-weight: 650;
+  text-align: left;
+}
+
+.sheet-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 17px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 15.5px;
+  text-align: left;
+}
+
+.sheet-row:last-child {
+  border-bottom: 0;
+}
+
+.radio {
+  flex: none;
+  width: 19px;
+  height: 19px;
+  border: 2px solid #cfc6b8;
+  border-radius: 50%;
+}
+
+.radio.is-on {
+  border: 5.5px solid var(--ink);
+}
+
+.primary-button {
+  width: 100%;
+  height: 51px;
+  margin-top: 15px;
+  border-radius: 26px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 15.5px;
+  font-weight: 650;
+}
