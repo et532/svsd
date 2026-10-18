@@ -967,6 +967,43 @@ button {
   color: var(--ink);
 }
 
+.option-sub {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.dropdown-title {
+  display: flex;
+  justify-content: space-between;
+}
+
+.dropdown-clear {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+@keyframes option-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+.dropdown-option {
+  animation: option-in 160ms ease-out backwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dropdown-option {
+    animation: none;
+  }
+}
+
 .option-label mark {
   background: none;
   color: inherit;

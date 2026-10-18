@@ -16,9 +16,10 @@ type Props = {
   people: Person[]
   mode: Mode
   look?: MapLook
+  focusId?: string | null
 }
 
-export function MapScreen({ people, mode, look = 'a' }: Props) {
+export function MapScreen({ people, mode, look = 'a', focusId = null }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
   const popupRef = useRef<maplibregl.Popup | null>(null)
@@ -191,11 +192,21 @@ export function MapScreen({ people, mode, look = 'a' }: Props) {
     // Keep the opening globe view; after that, move to whoever matches the search or mode.
     if (isFirstData.current) {
       isFirstData.current = false
-      return
+      if (!focusId) return
     }
-    const timer = setTimeout(() => fitToPeople(map, data), 350)
+    const timer = setTimeout(() => {
+      // One person searched for: fly in close and show their popup, as if they were tapped.
+      const f = focusId && data.features.find((x) => x.properties?.id === focusId)
+      if (!f) return fitToPeople(map, data)
+      const at = f.geometry.coordinates as [number, number]
+      map.flyTo({ center: at, zoom: 10, duration: 1400, padding: { top: 0, bottom: 60, left: 0, right: 0 } })
+      popupRef.current = new maplibregl.Popup({ offset: 13, closeButton: false, className: 'person-popup' })
+        .setLngLat(at)
+        .setDOMContent(popupContent(f.properties?.name, f.properties?.caption))
+        .addTo(map)
+    }, 350)
     return () => clearTimeout(timer)
-  }, [people, mode, ready])
+  }, [people, mode, ready, focusId])
 
   return (
     <div className="screen map-screen">

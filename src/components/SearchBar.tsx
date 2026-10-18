@@ -1,6 +1,6 @@
 import { useId, useMemo, useRef, useState } from 'react'
 import type { Person } from '../data/people'
-import { initials, matchesQuery, orbBackground, orbTextColor } from '../lib/people'
+import { initials, matchesQuery, matchRank, orbBackground, orbTextColor, timeSince, whyMatched } from '../lib/people'
 import { usePfpStyle } from '../lib/pfpStyle'
 import { CloseIcon, PinIcon, SearchIcon, TagIcon } from './Icons'
 
@@ -14,8 +14,20 @@ type Props = {
   placeholder?: string
 }
 
+const RECENTS_KEY = 'peepl-recent-searches'
+
+function loadRecents(): string[] {
+  try {
+    const saved = JSON.parse(localStorage.getItem(RECENTS_KEY) ?? '[]')
+    return Array.isArray(saved) ? saved.filter((s) => typeof s === 'string').slice(0, 3) : []
+  } catch {
+    return []
+  }
+}
+
 type Option =
-  | { kind: 'person'; person: Person }
+  | { kind: 'person'; person: Person; sub?: string }
+  | { kind: 'recent'; label: string }
   | { kind: 'place'; label: string }
   | { kind: 'tag'; label: string }
 
@@ -24,6 +36,7 @@ export function SearchBar({ value, onChange, people, onOpenChange, accessory, pl
   const listId = useId()
   const [open, setOpenState] = useState(false)
   const [active, setActive] = useState(-1)
+  const [recents, setRecents] = useState<string[]>(loadRecents)
 
   const setOpen = (next: boolean) => {
     setOpenState(next)
@@ -36,27 +49,32 @@ export function SearchBar({ value, onChange, people, onOpenChange, accessory, pl
   const sections = useMemo(() => {
     // Before typing: suggest the people you talked to most recently and your most common places.
     if (!query) {
+      const byRecent = [...people].sort((a, b) => b.lastContacted.localeCompare(a.lastContacted))
       return [
+        { title: 'Recent searches', options: recents.map((label): Option => ({ kind: 'recent', label })) },
         {
           title: 'People',
-          options: [...people]
-            .sort((a, b) => b.lastContacted.localeCompare(a.lastContacted))
-            .slice(0, 4)
-            .map((person): Option => ({ kind: 'person', person })),
+          options: byRecent.slice(0, 3).map((person): Option => ({ kind: 'person', person })),
+        },
+        {
+          // The people you've lost touch with longest.
+          title: 'Catch up',
+          options: byRecent.slice(-2).reverse().map((person): Option => ({ kind: 'person', person, sub: `Last talked ${timeSince(person.lastContacted)}` })),
         },
         {
           title: 'Places',
           options: places.slice(0, 3).map((label): Option => ({ kind: 'place', label })),
         },
-      ]
+      ].filter((s) => s.options.length > 0)
     }
     return [
       {
         title: 'People',
         options: people
           .filter((p) => matchesQuery(p, value))
+          .sort((a, b) => matchRank(a, value) - matchRank(b, value))
           .slice(0, 4)
-          .map((person): Option => ({ kind: 'person', person })),
+          .map((person): Option => ({ kind: 'person', person, sub: whyMatched(person, value) ?? undefined })),
       },
       {
         title: 'Places',
@@ -73,11 +91,20 @@ export function SearchBar({ value, onChange, people, onOpenChange, accessory, pl
           .map((label): Option => ({ kind: 'tag', label })),
       },
     ].filter((s) => s.options.length > 0)
-  }, [query, value, people, places, tags])
+  }, [query, value, people, places, tags, recents])
 
   const flat = sections.flatMap((s) => s.options)
 
   const choose = (text: string) => {
+    if (text.trim()) {
+      const next = [text, ...recents.filter((r) => r !== text)].slice(0, 3)
+      setRecents(next)
+      try {
+        localStorage.setItem(RECENTS_KEY, JSON.stringify(next))
+      } catch {
+        /* private mode: recents just won't persist */
+      }
+    }
     onChange(text)
     setOpen(false)
     inputRef.current?.blur()
@@ -85,6 +112,15 @@ export function SearchBar({ value, onChange, people, onOpenChange, accessory, pl
 
   const chooseOption = (option: Option) =>
     choose(option.kind === 'person' ? option.person.name : option.label)
+
+  const clearRecents = () => {
+    setRecents([])
+    try {
+      localStorage.removeItem(RECENTS_KEY)
+    } catch {
+      /* ignore */
+    }
+  }
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
@@ -157,17 +193,29 @@ export function SearchBar({ value, onChange, people, onOpenChange, accessory, pl
       {open && (
         // preventDefault keeps the input focused while tapping inside the dropdown.
         <div className="search-dropdown" id={listId} role="listbox" onMouseDown={(e) => e.preventDefault()}>
-          {query && flat.length === 0 && <div className="dropdown-empty">No matches for “{value.trim()}”</div>}
+          {query && flat.length === 0 && (
+            <div className="dropdown-empty">
+              No one matches “{value.trim()}”. Try a name, a place or an interest.
+            </div>
+          )}
 
           {sections.map((section) => (
             <div key={section.title} className="dropdown-section">
-              <div className="dropdown-title">{section.title}</div>
+              <div className="dropdown-title">
+                {section.title}
+                {section.title === 'Recent searches' && (
+                  <button className="dropdown-clear" onClick={clearRecents}>
+                    Clear
+                  </button>
+                )}
+              </div>
               {section.options.map((option) => {
                 index += 1
                 const i = index
                 return (
                   <div
                     key={option.kind === 'person' ? option.person.id : `${option.kind}-${option.label}`}
+                    style={{ animationDelay: `${i * 25}ms` }}
                     id={`${listId}-${i}`}
                     role="option"
                     aria-selected={i === active}
@@ -200,6 +248,7 @@ function OptionContent({ option, query }: { option: Option; query: string }) {
           <span className="option-label">
             <Highlight text={person.name} query={query} />
           </span>
+          {option.sub && <span className="option-sub">{option.sub}</span>}
         </span>
       </>
     )
@@ -207,7 +256,7 @@ function OptionContent({ option, query }: { option: Option; query: string }) {
   return (
     <>
       <span className="option-icon" aria-hidden>
-        {option.kind === 'place' ? <PinIcon size={15} /> : <TagIcon size={15} />}
+        {option.kind === 'place' ? <PinIcon size={15} /> : option.kind === 'recent' ? <SearchIcon size={15} /> : <TagIcon size={15} />}
       </span>
       <span className="option-text">
         <span className="option-label">

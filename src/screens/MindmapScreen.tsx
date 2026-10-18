@@ -56,7 +56,7 @@ const radius = (degree: number) => 11 + Math.min(degree, 5) * 1.2
 const GRAB_ZOOM = 0.6
 const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
-export function MindmapScreen({ people }: { people: Person[] }) {
+export function MindmapScreen({ people, focusId = null }: { people: Person[]; focusId?: string | null }) {
   const pfp = usePfpStyle()
   const [groupBy, setGroupBy] = useState<GroupBy>('none')
   const [colorBy, setColorBy] = useState<ColorBy>('relationship')
@@ -331,6 +331,14 @@ export function MindmapScreen({ people }: { people: Person[] }) {
     }
     step()
   }
+
+  // Searching down to one person selects them like a tap. Wait a beat so the rebuilt graph has spread out first.
+  useEffect(() => {
+    setSelected(focusId)
+    if (!focusId) return
+    const t = setTimeout(() => flyTo(focusId), reduceMotion() ? 0 : 500)
+    return () => clearTimeout(t)
+  }, [focusId, people])
 
   const zoomAt = (cx: number, cy: number, factor: number) => {
     const root = rootRef.current!.getBoundingClientRect()

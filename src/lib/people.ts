@@ -20,10 +20,46 @@ export function matchesQuery(person: Person, query: string): boolean {
     person.met.city,
     person.met.context,
     person.livesNow.city,
+    person.context,
   ]
     .map(normalize)
     .join(' ')
-  return q.split(/\s+/).every((word) => haystack.includes(word))
+  const nameWords = normalize(person.name).split(/\s+/)
+  // A word matches as a substring, or (for longer words) as a name with one typo.
+  return q.split(/\s+/).every((word) => haystack.includes(word) || (word.length >= 3 && nameWords.some((n) => withinOneEdit(n.slice(0, word.length), word) || withinOneEdit(n, word))))
+}
+
+// True when a and b differ by at most one inserted, deleted or changed letter.
+function withinOneEdit(a: string, b: string): boolean {
+  if (Math.abs(a.length - b.length) > 1) return false
+  let i = 0
+  while (i < a.length && i < b.length && a[i] === b[i]) i++
+  if (a.length === b.length) return a.slice(i + 1) === b.slice(i + 1)
+  return a.length > b.length ? a.slice(i + 1) === b.slice(i) : a.slice(i) === b.slice(i + 1)
+}
+
+// Lower is better: name starts with it, then a name word starts with it, then name contains it, then the rest.
+export function matchRank(person: Person, query: string): number {
+  const q = normalize(query.trim())
+  const name = normalize(person.name)
+  if (name.startsWith(q)) return 0
+  if (name.split(/\s+/).some((w) => w.startsWith(q))) return 1
+  return name.includes(q) ? 2 : 3
+}
+
+// One short line saying why someone matched when it wasn't their name (e.g. "Likes baseball").
+export function whyMatched(person: Person, query: string): string | null {
+  const q = normalize(query.trim())
+  if (!q || normalize(person.name).includes(q)) return null
+  const has = (t: string) => normalize(t).includes(q)
+  const tag = person.tags.find(has)
+  if (tag) return `Interested in ${tag}`
+  if (has(person.profession)) return person.profession
+  if (has(person.met.city) || has(person.met.context)) return `Met at ${person.met.context} · ${person.met.city}`
+  if (has(person.from.city)) return `From ${person.from.city}`
+  if (has(person.livesNow.city)) return `Lives in ${person.livesNow.city}`
+  if (has(person.context)) return person.context[0].toUpperCase() + person.context.slice(1)
+  return null
 }
 
 function normalize(text: string): string {

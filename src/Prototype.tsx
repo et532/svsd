@@ -24,6 +24,8 @@ export function Prototype({ mapLook, initialTab = 'list' }: Props) {
   const [searchOpen, setSearchOpen] = useState(false)
 
   const people = useMemo(() => samplePeople.filter((p) => matchesQuery(p, query)), [query])
+  // One match on the mindmap: keep the whole graph and select that person instead of showing a lone dot.
+  const focusId = query.trim() && people.length === 1 ? people[0].id : null
 
   return (
     <div className="phone">
@@ -35,8 +37,8 @@ export function Prototype({ mapLook, initialTab = 'list' }: Props) {
       </div>
       <StatusBar />
       {tab === 'list' && <ListScreen people={people} query={query} />}
-      {tab === 'map' && <MapScreen people={people} mode={mode} look={mapLook} />}
-      {tab === 'mindmap' && <MindmapScreen people={people} />}
+      {tab === 'map' && <MapScreen people={people} mode={mode} look={mapLook} focusId={focusId} />}
+      {tab === 'mindmap' && <MindmapScreen people={focusId ? samplePeople : people} focusId={focusId} />}
 
       {searchOpen && <div className="search-scrim" aria-hidden />}
 
