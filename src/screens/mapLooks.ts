@@ -41,6 +41,37 @@ type LookStyle = {
   atmosphere: boolean
   // Show the pastel glow behind the globe (a CSS layer, see .globe-glow)
   glow: boolean
+  // Tint roads, parks, buildings and borders in soft pastels (otherwise the map's own greys)
+  pastelFeatures: boolean
+}
+
+// Soft pastel colors for map features, keyed by the base style's layer ids.
+// Pink for motorways, lilac for other roads and buildings, mint for green space, lavender for borders and rivers.
+const pastelFeatureColors: Record<string, string> = {
+  park: '#e2f5eb',
+  landcover_wood: '#dcf1e5',
+  landuse_residential: '#f8f4f7',
+  building: '#f0eaf8',
+  'aeroway-area': '#f7f5fa',
+  waterway: '#d5dbf5',
+  highway_path: '#efebf7',
+  highway_minor: '#ebe5f6',
+  highway_major_casing: '#e4d9f5',
+  highway_major_inner: '#ffffff',
+  highway_major_subtle: '#e6ddf5',
+  highway_motorway_casing: '#f5cfe0',
+  highway_motorway_inner: '#fff0f6',
+  highway_motorway_subtle: '#f3d3e2',
+  highway_motorway_bridge_casing: '#f5cfe0',
+  highway_motorway_bridge_inner: '#fff0f6',
+  tunnel_motorway_casing: '#f7dde8',
+  tunnel_motorway_inner: '#fff6fa',
+  railway: '#e3def0',
+  railway_transit: '#e3def0',
+  railway_service: '#e3def0',
+  boundary_2: '#cbc1ec',
+  boundary_3: '#d8d0f1',
+  boundary_disputed: '#d8d0f1',
 }
 
 const looks: Record<MapLook, LookStyle> = {
@@ -49,30 +80,33 @@ const looks: Record<MapLook, LookStyle> = {
     landOpacity: 1,
     water: '#ebeaf8',
     waterOpacity: 1,
-    fillOpacity: 0.5,
+    fillOpacity: 0.9,
     horizon: '#ece4ff',
     atmosphere: true,
     glow: false,
+    pastelFeatures: true,
   },
   b: {
     land: '#ffffff',
     landOpacity: 1,
     water: '#eadffc',
     waterOpacity: 1,
-    fillOpacity: 0.5,
+    fillOpacity: 0.9,
     horizon: '#ffe0ee',
     atmosphere: true,
     glow: true,
+    pastelFeatures: true,
   },
   c: {
     land: '#ffffff',
     landOpacity: 0.62,
     water: '#f4f0ff',
     waterOpacity: 0.2,
-    fillOpacity: 0.25,
+    fillOpacity: 0.5,
     horizon: '#efe6ff',
     atmosphere: true,
     glow: true,
+    pastelFeatures: true,
   },
   d: {
     land: '#f3f3f5',
@@ -83,6 +117,7 @@ const looks: Record<MapLook, LookStyle> = {
     horizon: '#ffffff',
     atmosphere: false,
     glow: false,
+    pastelFeatures: false,
   },
 }
 
@@ -92,6 +127,11 @@ export const lookHasGlow = (look: MapLook) => looks[look].glow
 export function applyLook(map: maplibregl.Map, look: MapLook) {
   const style = looks[look]
   for (const layer of map.getStyle().layers) {
+    const pastel = style.pastelFeatures ? pastelFeatureColors[layer.id] : undefined
+    if (pastel && (layer.type === 'line' || layer.type === 'fill')) {
+      map.setPaintProperty(layer.id, layer.type === 'line' ? 'line-color' : 'fill-color', pastel)
+    }
+
     if (layer.type === 'background') {
       map.setPaintProperty(layer.id, 'background-color', style.land)
       map.setPaintProperty(layer.id, 'background-opacity', style.landOpacity)
