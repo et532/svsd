@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { ChevronRightIcon, CloseIcon, MicIcon } from '../components/Icons'
+import { BackIcon, ChevronRightIcon, CloseIcon, MicIcon } from '../components/Icons'
 import type { Person } from '../data/people'
 import { interpret, storyRequest, type Action, type AskResult, type Match } from '../lib/ask'
 import { updatePerson } from '../lib/peopleStore'
@@ -112,13 +112,11 @@ export function AskScreen({ people, tab, onClose, onOpenProfile, onAdd, onLogMom
       <div className="ask-scrim" onClick={onClose} aria-hidden />
       <div className={`ask-sheet is-${phase}`} role="dialog" aria-modal="true" aria-label="Ask Peepl">
         <div className="ask-head">
-          <button className="round-button glass-button is-sm" onClick={onClose} aria-label="Close">
-            <CloseIcon size={16} />
+          <button className="ask-back" onClick={onClose} aria-label="Back">
+            <BackIcon size={16} />
+            {tab === 'mindmap' ? 'Mindmap' : 'People'}
           </button>
-        </div>
-
-        <div className="ask-orb" aria-hidden>
-          <span />
+          <h1 className="ask-h1">Ask</h1>
         </div>
 
         <div className="ask-body" aria-live="polite">
@@ -131,7 +129,7 @@ export function AskScreen({ people, tab, onClose, onOpenProfile, onAdd, onLogMom
 
           {phase === 'answer' && result && (
             <>
-              <p className="ask-you">“{heard}”</p>
+              <p className="ask-you">{heard}</p>
               <Answer
                 result={result}
                 tab={tab}
@@ -224,7 +222,9 @@ function Answer({ result, tab, onOpenProfile, onShow, onAgain, onAction }: Answe
   const { matches, title } = result
   return (
     <>
-      <h2 className="ask-title is-small">{title}</h2>
+      <p className="ask-count">
+        {matches.length} {matches.length === 1 ? 'person' : 'people'} · from your notes
+      </p>
       {matches.length > 0 && (
         <>
           {(result.groups ?? [{ label: '', matches }]).map((g) => (
