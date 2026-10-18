@@ -13,7 +13,6 @@ import { ListScreen } from './screens/ListScreen'
 import { MindmapScreen } from './screens/MindmapScreen'
 import { ProfileScreen } from './screens/ProfileScreen'
 import { SavedScreen } from './screens/SavedScreen'
-import type { FilterLayout } from './lib/filterLayouts'
 import { AskScreen } from './screens/AskScreen'
 
 // Full-screen layers above the tabs, newest last. Back / close pops the top one.
@@ -23,15 +22,10 @@ type Layer =
   | { kind: 'profile'; id: string; fresh?: string | null }
   | { kind: 'ask' }
 
-type Props = {
-  filterLayout?: FilterLayout
-  initialTab?: Tab
-}
-
-// The app's phone screen. Rendered once, or several times on the filter looks page.
-export function Prototype({ filterLayout = 'a', initialTab = 'list' }: Props) {
+// The app's phone screen.
+export function Prototype() {
   const allPeople = usePeople()
-  const [tab, setTab] = useState<Tab>(initialTab)
+  const [tab, setTab] = useState<Tab>('list')
   const [query, setQuery] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
   // What the mindmap's dot colors mean, set from the filter in the search bar
@@ -144,7 +138,6 @@ export function Prototype({ filterLayout = 'a', initialTab = 'list' }: Props) {
           accessory={
             tab === 'mindmap' && (
               <SearchFilter
-                layout={filterLayout}
                 value={colorBy}
                 onChange={setColorBy}
                 entries={colorScale(focusId ? allPeople : people, colorBy).entries}
