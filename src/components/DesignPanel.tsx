@@ -59,7 +59,7 @@ const chipOptions: ChipOption[] = [
   {
     name: 'Side by side',
     note: 'Icon next to the word, medium weight',
-    vars: { w: 'auto', h: '32px', pad: '12px', dir: 'row', gap: '5px', icon: '13px', stroke: '1.8', text: '12px', weight: '500' },
+    vars: { w: 'auto', h: '34px', pad: '12px', dir: 'row', gap: '5px', icon: '13px', stroke: '1.8', text: '12px', weight: '500' },
   },
   {
     name: 'Side by side, light',
