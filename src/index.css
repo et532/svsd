@@ -2305,25 +2305,35 @@ button {
   text-wrap: balance;
 }
 
-.ask-suggestions {
+.ask-actions {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 6px;
-  margin-top: 4px;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
 }
 
-.ask-chip {
-  height: 32px;
-  padding: 0 12px;
-  border-radius: var(--radius-pill);
-  background: rgba(22, 18, 28, 0.05);
-  font-size: 13px;
+.ask-actions li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 11px 14px;
+  border-radius: 16px;
+  background: rgba(22, 18, 28, 0.04);
+}
+
+.ask-actions b {
+  font-size: 14.5px;
+  font-weight: 600;
   color: var(--ink);
 }
 
-.ask-chip:hover {
-  background: rgba(22, 18, 28, 0.09);
+.ask-actions span {
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--ink-muted);
 }
 
 .ask-heard {

@@ -133,15 +133,30 @@ export function AskScreen({ people, tab, onClose, onOpenProfile, onAdd, onLogMom
         <div className="ask-body" aria-live="polite">
           {phase === 'idle' && (
             <>
-              <h2 className="ask-title">Who are you looking for?</h2>
-              <p className="ask-hint">Ask about interests, work, places or how long it’s been, or say “add someone new”.</p>
-              <div className="ask-suggestions">
-                {demoRequests.slice(0, 5).map((s) => (
-                  <button key={s} className="ask-chip" onClick={() => say(s)}>
-                    {s}
-                  </button>
-                ))}
-              </div>
+              <h2 className="ask-title">What can I help with?</h2>
+              <p className="ask-hint">Speak or type a request — here’s what you can do.</p>
+              <ul className="ask-actions">
+                <li>
+                  <b>Find people</b>
+                  <span>By interests, work, places, or how long it’s been.</span>
+                </li>
+                <li>
+                  <b>Add someone new</b>
+                  <span>Say “add someone new” to start a new person.</span>
+                </li>
+                <li>
+                  <b>Log a moment</b>
+                  <span>“Log a moment with Maya” to note what happened.</span>
+                </li>
+                <li>
+                  <b>Open a profile</b>
+                  <span>“Open Aisha’s profile” to jump straight there.</span>
+                </li>
+                <li>
+                  <b>Catch up</b>
+                  <span>“Who haven’t I talked to in a while?”</span>
+                </li>
+              </ul>
             </>
           )}
 
