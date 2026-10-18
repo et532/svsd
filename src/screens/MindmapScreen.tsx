@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { Context, Person } from '../data/people'
 import { createGraph, type Graph } from '../lib/forceGraph'
 import { contextColor, initials, linksOf, orbBackground, orbTextColor } from '../lib/people'
@@ -64,6 +64,11 @@ export function MindmapScreen({ people, focusId = null, onView }: { people: Pers
   const [menu, setMenu] = useState(false) // the key is always shown; tap or hold its pill to swap it for the list of things to color by
   const [hover, setHover] = useState<ColorBy | null>(null)
   const holdTimer = useRef(0)
+  const colorsRef = useRef<HTMLDivElement>(null)
+  const pillRef = useRef<HTMLButtonElement>(null)
+  const anchorRef = useRef<HTMLSpanElement>(null)
+  const blobRef = useRef<HTMLSpanElement>(null)
+  const blob = useRef({ pos: [0, 0, 0, 0], vel: [0, 0, 0, 0], goal: [0, 0, 0, 0], raf: 0, ready: false }) // top, bottom, left, right
   const held = useRef(false)
   const [focus, setFocus] = useState<string | null>(null) // a group isolated by tapping its name
 
@@ -290,7 +295,8 @@ export function MindmapScreen({ people, focusId = null, onView }: { people: Pers
   }
 
   const onPointerUp = (e: React.PointerEvent) => {
-    pointers.current.delete(e.pointerId)
+    // A press that started on an overlay (name pill, legend) never reached us, so it isn't a tap on the graph.
+    if (!pointers.current.delete(e.pointerId)) return
     const d = drag.current
     const node = graphRef.current?.nodes.find((n) => n.id === d.grab)
     if (node) node.pinned = false
@@ -305,6 +311,57 @@ export function MindmapScreen({ people, focusId = null, onView }: { people: Pers
       d.pinch = 0
     }
   }
+
+  // A black blob rests on the pill. While you drag over the list it stretches out of the pill (a goo filter
+  // gives it a neck), slides to the option under your finger, then re-attaches there. Each edge is its own
+  // spring, the leading one stiffer, so it stretches before it catches up.
+  useLayoutEffect(() => {
+    const root = colorsRef.current
+    const pill = pillRef.current
+    const el = blobRef.current
+    const anchor = anchorRef.current
+    if (!root || !pill || !el || !anchor) return
+    const box = root.getBoundingClientRect()
+    const rect = (t: Element) => {
+      const r = t.getBoundingClientRect()
+      return [r.top - box.top, r.bottom - box.top, r.left - box.left, r.right - box.left]
+    }
+    const [pt, pb, pl, pr] = rect(pill)
+    Object.assign(anchor.style, { top: `${pt}px`, height: `${pb - pt}px`, left: `${pl}px`, width: `${pr - pl}px` })
+    const option = hover && menu ? root.querySelector(`[data-color-option="${hover}"]`) : null
+    const b = blob.current
+    b.goal = option ? rect(option) : [pt, pb, pl, pr]
+    const paint = () => {
+      const [t, bt, l, r] = b.pos
+      Object.assign(el.style, { top: `${t}px`, height: `${Math.max(0, bt - t)}px`, left: `${l}px`, width: `${Math.max(0, r - l)}px` })
+    }
+    if (!b.ready || matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      b.ready = true
+      b.pos = [...b.goal]
+      b.vel = [0, 0, 0, 0]
+      paint()
+      return
+    }
+    cancelAnimationFrame(b.raf)
+    const down = b.goal[0] > b.pos[0]
+    const stiff = [down ? 0.11 : 0.24, down ? 0.24 : 0.11, 0.18, 0.18] // top, bottom, left, right
+    const tick = () => {
+      let busy = false
+      for (let i = 0; i < 4; i++) {
+        b.vel[i] = (b.vel[i] + (b.goal[i] - b.pos[i]) * stiff[i]) * 0.72
+        b.pos[i] += b.vel[i]
+        if (Math.abs(b.goal[i] - b.pos[i]) > 0.2 || Math.abs(b.vel[i]) > 0.05) busy = true
+      }
+      paint()
+      if (busy) b.raf = requestAnimationFrame(tick)
+      else {
+        b.pos = [...b.goal]
+        paint()
+      }
+    }
+    b.raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(b.raf)
+  }, [hover, menu, colorBy])
 
   // Zoom to a person and center them with their direct connections in view. The user can still pan afterwards.
   const flight = useRef(0)
@@ -480,8 +537,19 @@ export function MindmapScreen({ people, focusId = null, onView }: { people: Pers
         </div>
       )}
 
-      <div className="mm-colors" onPointerDown={(e) => e.stopPropagation()}>
+      <div ref={colorsRef} className="mm-colors" onPointerDown={(e) => e.stopPropagation()}>
+        <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden>
+          <filter id="mm-goo">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="b" />
+            <feColorMatrix in="b" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -8" />
+          </filter>
+        </svg>
+        <div className="mm-goo" aria-hidden>
+          <span ref={anchorRef} />
+          <span ref={blobRef} />
+        </div>
         <button
+          ref={pillRef}
           type="button"
           className="mm-color-pill"
           aria-expanded={menu}
@@ -525,14 +593,16 @@ export function MindmapScreen({ people, focusId = null, onView }: { people: Pers
 
         {menu ? (
           <div className="mm-list mm-menu" role="menu">
-            {colorOptions.map((o) => (
+            {colorOptions.filter((o) => o.id !== colorBy).map((o) => (
               <button
                 key={o.id}
                 type="button"
                 role="menuitemradio"
                 aria-checked={colorBy === o.id}
                 data-color-option={o.id}
-                className={`${colorBy === o.id ? 'is-on' : ''}${hover === o.id ? ' is-hover' : ''}`}
+                className={hover === o.id ? 'is-hover' : ''}
+                onPointerEnter={() => setHover(o.id)}
+                onPointerLeave={() => setHover(null)}
                 onClick={() => {
                   setColorBy(o.id)
                   setMenu(false)

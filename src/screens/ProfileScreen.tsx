@@ -12,6 +12,7 @@ type Props = {
   // A moment that was just logged opens expanded and glows once.
   freshMomentId?: string | null
   onBack: () => void
+  onExpand?: (full: boolean) => void
   onOpen: (id: string) => void
   onViewMap: () => void
   onViewConnections: () => void
@@ -24,9 +25,15 @@ function dateLabel(iso: string) {
   return d.toDateString() === new Date().toDateString() ? 'Today' : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
-export function ProfileScreen({ person: p, people, freshMomentId = null, onBack, onOpen, onViewMap, onViewConnections, onLogMoment, onSoon }: Props) {
+export function ProfileScreen({ person: p, people, freshMomentId = null, onBack, onExpand, onOpen, onViewMap, onViewConnections, onLogMoment, onSoon }: Props) {
   const pfp = usePfpStyle()
   const [open, setOpen] = useState<Set<string>>(() => new Set(freshMomentId ? [freshMomentId] : []))
+  // Opens as an 80% sheet; the first scroll grows it to full screen.
+  const [full, setFull] = useState(false)
+  const grow = () => {
+    setFull(true)
+    onExpand?.(true)
+  }
   const moments = momentsOf(p)
   const todos = todosOf(p)
   const mutuals = p.knows.map((id) => people.find((x) => x.id === id)).filter((x): x is Person => !!x)
@@ -46,8 +53,8 @@ export function ProfileScreen({ person: p, people, freshMomentId = null, onBack,
     })
 
   return (
-    <section className="profile" aria-label={p.name}>
-      <div className="profile-scroll">
+    <section className={`profile${full ? ' is-full' : ''}`} aria-label={p.name}>
+      <div className="profile-scroll" onScroll={(e) => !full && e.currentTarget.scrollTop > 4 && grow()} onWheel={(e) => e.deltaY > 0 && !full && grow()}>
         <div className="profile-hero">
           <span className="profile-blob" style={{ width: 300, height: 260, right: -80, top: -90, background: `var(--${p.context}-core)` }} />
           <span className="profile-blob" style={{ width: 240, height: 200, right: -20, bottom: -110, background: `var(--${other}-core)`, opacity: 0.85 }} />

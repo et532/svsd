@@ -53,6 +53,20 @@ export function Prototype({ mapLook, initialTab = 'list' }: Props) {
     return () => clearTimeout(t)
   }, [toast])
 
+  const [profileFull, setProfileFull] = useState(false)
+  useEffect(() => setProfileFull(false), [top])
+
+  const [closing, setClosing] = useState(false)
+  // Slide the sheet down first, then drop the layer.
+  const closeSheet = () => {
+    if (closing) return
+    setClosing(true)
+    setTimeout(() => {
+      pop()
+      setClosing(false)
+    }, 320)
+  }
+
   const push = (layer: Layer) => setLayers((l) => [...l, layer])
   const pop = () => setLayers((l) => l.slice(0, -1))
   const replaceTop = (layer: Layer) => setLayers((l) => [...l.slice(0, -1), layer])
@@ -100,7 +114,7 @@ export function Prototype({ mapLook, initialTab = 'list' }: Props) {
   const backTo = navFocus && layers.length === 0 ? byId(navFocus) : undefined
 
   return (
-    <div className={`phone${top?.kind === 'profile' ? ' is-dark-top' : ''}`}>
+    <div className={`phone${top?.kind === 'profile' && profileFull ? ' is-dark-top' : ''}`}>
       <div className="aura" aria-hidden>
         <span className="aura-orb" />
         <span className="aura-orb" />
@@ -178,12 +192,14 @@ export function Prototype({ mapLook, initialTab = 'list' }: Props) {
             </div>
           )
         return (
-          <div key={key + layer.id} className="layer is-right">
+          <div key={key + layer.id} className={`layer is-sheet${closing && i === layers.length - 1 ? ' is-closing' : ''}`}>
+            <div className="sheet-scrim" onClick={closeSheet} aria-hidden />
             <ProfileScreen
+              onExpand={setProfileFull}
               person={person}
               people={allPeople}
               freshMomentId={layer.fresh}
-              onBack={pop}
+              onBack={closeSheet}
               onOpen={openProfile}
               onViewMap={() => goTo('map', person.id)}
               onViewConnections={() => goTo('mindmap', person.id)}

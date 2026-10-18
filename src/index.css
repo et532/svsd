@@ -818,11 +818,26 @@ button {
   height: 34px;
   padding: 0 14px;
   border-radius: 17px;
-  background: var(--ink);
+  position: relative;
+  z-index: 1;
   color: #fff;
   font-size: 13px;
   font-weight: 500;
   touch-action: none;
+}
+
+/* The black shapes sit behind the text in a goo-filtered layer so the blob necks out of the pill */
+.mm-goo {
+  position: absolute;
+  inset: 0;
+  filter: url(#mm-goo);
+  pointer-events: none;
+}
+
+.mm-goo span {
+  position: absolute;
+  border-radius: 17px;
+  background: var(--ink);
 }
 
 .mm-list {
@@ -853,6 +868,8 @@ button {
 }
 
 .mm-menu button {
+  position: relative;
+  z-index: 1;
   height: 34px;
   padding: 0 14px;
   border-radius: 17px;
@@ -862,19 +879,12 @@ button {
   color: var(--ink);
 }
 
-.mm-menu button.is-on {
-  font-weight: 700;
-}
-
 .mm-menu button {
-  transition: background 0.12s, color 0.12s, transform 0.12s;
+  transition: color 0.2s;
 }
 
-.mm-menu button:hover,
 .mm-menu button.is-hover {
-  background: var(--ink);
   color: #fff;
-  transform: translateX(3px);
 }
 
 .sheet-grab h3,
@@ -2925,5 +2935,66 @@ button {
   .saved-sugg {
     animation: none;
     opacity: 0.8;
+  }
+}
+
+/* Profile opens as an 80% bottom sheet; scrolling grows it to full screen */
+.layer.is-sheet .sheet-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(17, 17, 19, 0.28);
+  animation: fade-in 0.3s ease;
+}
+
+.layer.is-sheet .profile {
+  inset: auto 0 0 0;
+  height: 80%;
+  overflow: hidden;
+  border-radius: 28px 28px 0 0;
+  box-shadow: 0 -10px 40px rgba(60, 40, 110, 0.22);
+  animation: sheet-up 0.5s var(--ios-spring);
+  transition: height 0.45s var(--ios-spring), border-radius 0.45s var(--ios-spring);
+}
+
+.layer.is-sheet .profile.is-full {
+  height: 100%;
+  border-radius: 0;
+}
+
+.layer.is-sheet .profile:not(.is-full) .profile-hero {
+  padding-top: 14px;
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .layer.is-sheet .profile,
+  .layer.is-sheet .sheet-scrim {
+    animation: none;
+    transition: none;
+  }
+}
+
+.layer.is-sheet.is-closing .profile {
+  animation: sheet-down 0.32s var(--ios-spring) forwards;
+}
+
+.layer.is-sheet.is-closing .sheet-scrim {
+  animation: fade-out 0.32s ease forwards;
+}
+
+@keyframes sheet-down {
+  to {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes fade-out {
+  to {
+    opacity: 0;
   }
 }
