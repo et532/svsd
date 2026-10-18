@@ -20,34 +20,60 @@ const glassPresets: { name: string; note: string; glass: Glass }[] = [
 type Gradient = { name: string; css: string }
 
 // Each option sets the phone's --bg (the screen behind the app's content). White is the
-// default; the rest are soft pastel gradients to compare against, plus a few bolder ones.
+// default; the rest vary both color AND orientation — the mesh points and linear/conic
+// angles differ from one to the next, so the options don't all flow the same direction.
 const gradients: Gradient[] = [
   { name: 'White', css: '#ffffff' },
   {
+    // diagonal mesh, top-left → bottom-right
     name: 'Pastel dawn',
-    css: 'radial-gradient(circle at 18% 22%, #fbe8f1 0, rgba(251,232,241,0) 38%), radial-gradient(circle at 82% 78%, #e8edff 0, rgba(232,237,255,0) 40%), #f5f5f7',
+    css: 'radial-gradient(circle at 15% 15%, #fbe8f1 0, rgba(251,232,241,0) 45%), radial-gradient(circle at 85% 85%, #e8edff 0, rgba(232,237,255,0) 48%), #f7f6fb',
   },
   {
+    // horizontal, left → right
     name: 'Peach blush',
-    css: 'radial-gradient(circle at 20% 20%, #ffe0cf 0, rgba(255,224,207,0) 45%), radial-gradient(circle at 80% 75%, #ffd6e6 0, rgba(255,214,230,0) 45%), #fdf6f3',
+    css: 'linear-gradient(90deg, #ffe0cf 0%, #ffe8ea 50%, #ffd6e6 100%)',
   },
   {
+    // vertical, bottom → top
     name: 'Mint sky',
-    css: 'radial-gradient(circle at 22% 25%, #d6f3e4 0, rgba(214,243,228,0) 45%), radial-gradient(circle at 78% 78%, #d8e9ff 0, rgba(216,233,255,0) 45%), #f3f8f6',
+    css: 'linear-gradient(to top, #d6f3e4 0%, #e3eef3 55%, #d8e9ff 100%)',
   },
   {
+    // mesh angled the other way, top-right → bottom-left
     name: 'Lavender haze',
-    css: 'radial-gradient(circle at 25% 20%, #e7ddff 0, rgba(231,221,255,0) 45%), radial-gradient(circle at 80% 80%, #ffd9f0 0, rgba(255,217,240,0) 45%), #f6f3fb',
+    css: 'radial-gradient(circle at 72% 18%, #e7ddff 0, rgba(231,221,255,0) 52%), radial-gradient(circle at 20% 78%, #ffd9f0 0, rgba(255,217,240,0) 54%), #f6f3fb',
   },
-  { name: 'Sunset', css: 'linear-gradient(160deg, #ffe7cf 0%, #ffd3e2 45%, #e2d6ff 100%)' },
-  { name: 'Ocean', css: 'linear-gradient(160deg, #d4f0ff 0%, #cfe6ff 40%, #d8f3ec 100%)' },
-  { name: 'Cotton candy', css: 'linear-gradient(135deg, #ffd9ec 0%, #e3e0ff 55%, #d6f0ff 100%)' },
-  { name: 'Golden hour', css: 'linear-gradient(160deg, #fff2cf 0%, #ffe0cf 45%, #ffd6e2 100%)' },
   {
-    name: 'Aurora',
-    css: 'radial-gradient(circle at 15% 30%, #c9f5e5 0, rgba(201,245,229,0) 40%), radial-gradient(circle at 55% 15%, #d7dcff 0, rgba(215,220,255,0) 42%), radial-gradient(circle at 85% 70%, #ffd6ef 0, rgba(255,214,239,0) 45%), #f4f5fb',
+    // steep diagonal, ↗ 45°
+    name: 'Sunset',
+    css: 'linear-gradient(45deg, #ffe7cf 0%, #ffd3e2 50%, #e2d6ff 100%)',
   },
-  { name: 'Neutral', css: 'linear-gradient(180deg, #fafafc 0%, #f1f1f4 100%)' },
+  {
+    // reverse diagonal, ↖ 300°
+    name: 'Ocean',
+    css: 'linear-gradient(300deg, #d4f0ff 0%, #cfe6ff 45%, #d8f3ec 100%)',
+  },
+  {
+    // rotational, conic sweep off-center
+    name: 'Cotton candy',
+    css: 'conic-gradient(from 120deg at 62% 38%, #ffd9ec, #e3e0ff, #d6f0ff, #ffe4f1, #ffd9ec)',
+  },
+  {
+    // shallow diagonal, 110°
+    name: 'Golden hour',
+    css: 'linear-gradient(110deg, #fff2cf 0%, #ffe0cf 50%, #ffd6e2 100%)',
+  },
+  {
+    // three-point mesh, scattered corners
+    name: 'Aurora',
+    css: 'radial-gradient(circle at 8% 22%, #c9f5e5 0, rgba(201,245,229,0) 42%), radial-gradient(circle at 58% 8%, #d7dcff 0, rgba(215,220,255,0) 44%), radial-gradient(circle at 90% 74%, #ffd6ef 0, rgba(255,214,239,0) 46%), #f4f5fb',
+  },
+  {
+    // flat vertical, top → bottom
+    name: 'Neutral',
+    css: 'linear-gradient(180deg, #fafafc 0%, #f1f1f4 100%)',
+  },
 ]
 
 const STORAGE_KEY = 'peepl-style'
@@ -126,7 +152,7 @@ export function StylePanel() {
 
       <section className="style-group">
         <h3>Glass style</h3>
-        <p className="style-hint">Frosted surfaces: search bar, cards, nav, popups, sheet</p>
+        <p className="style-hint">The search bar and nav pill (cards, dropdown, popups and sheet use a fixed vivid look)</p>
         <div role="radiogroup" aria-label="Glass preset" className="glass-presets">
           {glassPresets.map((p) => (
             <button
