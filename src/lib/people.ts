@@ -1,4 +1,5 @@
-import { samplePeople, type Context, type Person } from '../data/people'
+import type { Context, Moment, Person, Todo } from '../data/people'
+import { getPeople } from './peopleStore'
 
 export function initials(name: string): string {
   const parts = name.trim().split(/\s+/)
@@ -82,7 +83,7 @@ const contextHues: Record<Context, [string, string, string]> = {
 export const contextColor = (c: Context) => contextHues[c][0]
 
 function personById(id: string): Person | undefined {
-  return samplePeople.find((p) => p.id === id)
+  return getPeople().find((p) => p.id === id)
 }
 
 function hues(id: string) {
@@ -92,7 +93,9 @@ function hues(id: string) {
 // Aura depth 1-3 = how close you are. There is no closeness field yet, so it follows how recently
 // you were in touch: this month = 3, last four months = 2, longer = 1.
 export function auraDepth(id: string, now = new Date()): 1 | 2 | 3 {
-  const last = personById(id)?.lastContacted
+  const person = personById(id)
+  if (person?.closeness) return person.closeness
+  const last = person?.lastContacted
   if (!last) return 1
   const days = (now.getTime() - new Date(last).getTime()) / 86_400_000
   return days <= 30 ? 3 : days <= 120 ? 2 : 1
@@ -125,26 +128,11 @@ export const pfpStyles: { id: PfpStyle; name: string }[] = [
 
 // A gradient for a person's avatar, stable for each person, in the chosen style.
 export function orbBackground(id: string, style: PfpStyle = 'sphere'): string {
-  const [glow, deep, base] = hues(id)
+  const [glow, , base] = hues(id)
   const accent = glow
   switch (style) {
-    case 'aura': {
-      // Foundation aura: depth 1 flat core to wash, 2 two-tone, 3 deep heart with a highlight.
-      const d = auraDepth(id)
-      if (d === 1) return `radial-gradient(circle at 50% 50%, ${glow} 0%, ${base} 74%)`
-      if (d === 2)
-        return [
-          `radial-gradient(circle at 40% 38%, ${glow} 0%, transparent 58%)`,
-          `radial-gradient(circle at 66% 68%, ${glow} 0%, transparent 62%)`,
-          base,
-        ].join(', ')
-      return [
-        `radial-gradient(circle at 46% 48%, ${deep} 0%, transparent 34%)`,
-        `radial-gradient(circle at 32% 30%, ${glow} 0%, transparent 58%)`,
-        'radial-gradient(circle at 74% 26%, #fff 0%, transparent 18%)',
-        base,
-      ].join(', ')
-    }
+    case 'aura':
+      return auraGradient(personById(id)?.context ?? 'unsorted', auraDepth(id))
     case 'soft':
       return [
         'radial-gradient(circle at 32% 28%, rgba(255,255,255,0.9) 0, rgba(255,255,255,0) 46%)',
@@ -209,3 +197,47 @@ export function linksOf(people: Person[]): [string, string][] {
     }
   return links
 }
+
+// Words for aura depth, shown on the profile.
+export const closenessLabel = { 1: 'Just met', 2: 'Getting to know', 3: 'Know well' } as const
+
+export const contextLabel: Record<Context, string> = {
+  work: 'Work',
+  social: 'Social',
+  community: 'Community',
+  family: 'Family & home',
+  unsorted: 'Unsorted',
+}
+
+export function firstName(name: string): string {
+  return name.trim().split(/\s+/)[0] ?? name
+}
+
+// Foundation aura for a kind of relationship at a depth: 1 flat core to wash, 2 two-tone,
+// 3 deep heart with a highlight. Also used before a person exists (the capture orb).
+export function auraGradient(context: Context, depth: 1 | 2 | 3): string {
+  const [glow, deep, base] = contextHues[context]
+  if (depth === 1) return `radial-gradient(circle at 50% 50%, ${glow} 0%, ${base} 74%)`
+  if (depth === 2)
+    return [
+      `radial-gradient(circle at 40% 38%, ${glow} 0%, transparent 58%)`,
+      `radial-gradient(circle at 66% 68%, ${glow} 0%, transparent 62%)`,
+      base,
+    ].join(', ')
+  return [
+    `radial-gradient(circle at 46% 48%, ${deep} 0%, transparent 34%)`,
+    `radial-gradient(circle at 32% 30%, ${glow} 0%, transparent 58%)`,
+    'radial-gradient(circle at 74% 26%, #fff 0%, transparent 18%)',
+    base,
+  ].join(', ')
+}
+
+// Sample people have no logged moments or todos yet: show their story as the first meeting.
+export function momentsOf(p: Person): Moment[] {
+  return p.moments ?? [{ id: `${p.id}-first`, date: p.lastContacted, firstMeeting: true, title: p.story, text: p.story }]
+}
+
+export function todosOf(p: Person): Todo[] {
+  return p.todos ?? (p.tags[0] ? [{ id: `${p.id}-ask`, text: `Ask about ${p.tags[0]}`, done: false }] : [])
+}
+

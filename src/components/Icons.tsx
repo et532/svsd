@@ -123,3 +123,53 @@ export function ChevronRightIcon({ size = 20 }: IconProps) {
   )
 }
 
+
+export function MicIcon({ size = 20 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...base} aria-hidden>
+      <rect x="9" y="3" width="6" height="12" rx="3" />
+      <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
+    </svg>
+  )
+}
+
+export function KeyboardIcon({ size = 20 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...base} aria-hidden>
+      <rect x="3" y="6" width="18" height="12" rx="2" />
+      <path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10" />
+    </svg>
+  )
+}
+
+export function CheckIcon({ size = 18 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...base} strokeWidth={2.4} aria-hidden>
+      <path d="M5 12l5 5 9-10" />
+    </svg>
+  )
+}
+
+export function PauseIcon({ size = 18 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...base} strokeWidth={2.4} aria-hidden>
+      <path d="M9 6v12M15 6v12" />
+    </svg>
+  )
+}
+
+export function PlayIcon({ size = 12 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden>
+      <path d="M7 4l13 8-13 8z" fill="currentColor" />
+    </svg>
+  )
+}
+
+export function BackIcon({ size = 20 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...base} aria-hidden>
+      <path d="M15 5l-7 7 7 7" />
+    </svg>
+  )
+}

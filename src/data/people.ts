@@ -22,6 +22,27 @@ export type Person = {
   lastContacted: string // ISO date
   // Ids of people this person knows (mutuals mentioned when adding them). Links are symmetric.
   knows: string[]
+  // Set by capture: how well you know them (aura depth 1-3). Falls back to recency when missing.
+  closeness?: 1 | 2 | 3
+  // Things to talk about next time (from capture's "follow up" and "remember" answers).
+  todos?: Todo[]
+  // Logged moments, newest first. Sample people without any show their story as the first meeting.
+  moments?: Moment[]
+}
+
+export type Todo = { id: string; text: string; done: boolean }
+
+export type Moment = {
+  id: string
+  date: string // ISO date
+  // Short line shown when the moment is collapsed.
+  title: string
+  // Longer text shown when it's expanded.
+  text?: string
+  // Voice notes keep their transcript and length; typed notes have neither.
+  transcript?: string
+  seconds?: number
+  firstMeeting?: boolean
 }
 
 // Sample people so the list and map have something to show.

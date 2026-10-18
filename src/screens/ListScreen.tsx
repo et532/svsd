@@ -6,9 +6,10 @@ import { usePfpStyle } from '../lib/pfpStyle'
 type Props = {
   people: Person[]
   query: string
+  onOpen: (id: string) => void
 }
 
-export function ListScreen({ people, query }: Props) {
+export function ListScreen({ people, query, onOpen }: Props) {
   const pfp = usePfpStyle()
   const sorted = [...people].sort((a, b) => a.name.localeCompare(b.name))
 
@@ -24,14 +25,16 @@ export function ListScreen({ people, query }: Props) {
     <div className="screen list-screen">
       <ul className="people-list">
         {sorted.map((person) => (
-          <li key={person.id} className="person-row">
-            <div className="avatar" style={{ background: orbBackground(person.id, pfp), color: orbTextColor(person.id) }} aria-hidden>
-              {initials(person.name)}
-            </div>
-            <div className="person-name">{person.name}</div>
-            <span className="person-arrow" aria-hidden>
-              <ChevronRightIcon size={19} />
-            </span>
+          <li key={person.id}>
+            <button className="person-row" onClick={() => onOpen(person.id)}>
+              <span className="avatar" style={{ background: orbBackground(person.id, pfp), color: orbTextColor(person.id) }} aria-hidden>
+                {initials(person.name)}
+              </span>
+              <span className="person-name">{person.name}</span>
+              <span className="person-arrow" aria-hidden>
+                <ChevronRightIcon size={19} />
+              </span>
+            </button>
           </li>
         ))}
       </ul>
