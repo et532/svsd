@@ -330,9 +330,11 @@ export function MindmapScreen({ people, focusId = null, onView, filterLayout = '
     const anchor = anchorRef.current
     if (!root || !pill || !el || !anchor) return
     const box = root.getBoundingClientRect()
+    // Screen measurements are scaled when the app is shown shrunk (the layout comparison page); styles are not.
+    const z = box.width / root.offsetWidth || 1
     const rect = (t: Element) => {
       const r = t.getBoundingClientRect()
-      return [r.top - box.top, r.bottom - box.top, r.left - box.left, r.right - box.left]
+      return [(r.top - box.top) / z, (r.bottom - box.top) / z, (r.left - box.left) / z, (r.right - box.left) / z]
     }
     const [pt, pb, pl, pr] = rect(pill)
     Object.assign(anchor.style, { top: `${pt}px`, height: `${pb - pt}px`, left: `${pl}px`, width: `${pr - pl}px` })
