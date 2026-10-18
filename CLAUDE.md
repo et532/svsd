@@ -84,6 +84,12 @@ A private, personal "people log": remember everyone you meet, where you met them
 
 **Removed at the user's request (don't bring back unless asked):** the map screen (globe, map looks, glowing pins, From / Met / Now filter chip and its bottom sheet) and the side panels (style playground, fonts, chip layouts). **Rejected nav options:** labeled, expanding, or docked nav bars.
 
+## Earlier versions kept as branches
+
+To go back to an earlier iteration, switch to (or copy code from) these branches:
+- `archive/original-filters-and-plus-button` (commit `c5c1d60`): the **+** button at the bottom right, and the mindmap's original filters, i.e. the always-open color key panel at the top left (tap / hold-and-drag the black pill to change what colors mean) and the **group-by** stack on the right (None / City / Met at / Job). This is from before Ask.
+- `archive/plus-button-and-collapsible-filters` (commit `245cb5d`): the **+** button next to the Ask mic (four nav layouts), and the four **collapsible top-left filter** layouts (A Collapse arrow, B Filter button, C Dots preview, D Filter + current) at `#/filter-looks`.
+
 ## Next steps / open items
 
 - **Ask (voice AI search):** built (see above) with a scripted voice demo and a rule-based interpreter. Real speech and a real model are possible next steps.
