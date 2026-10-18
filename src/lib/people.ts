@@ -43,11 +43,20 @@ const orbPalettes = [
   ['#ff9fca', '#ffc7a6', '#fff0f6'],
 ]
 
-// A sphere-like gradient with a soft highlight, stable for each person.
-export function orbBackground(id: string): string {
+function orbPalette(id: string) {
   let hash = 0
   for (const ch of id) hash = (hash * 31 + ch.charCodeAt(0)) | 0
-  const [glow, accent, base] = orbPalettes[(hash >>> 0) % orbPalettes.length]
+  return orbPalettes[(hash >>> 0) % orbPalettes.length]
+}
+
+// A person's main pastel color, used for their glowing dot on the map (matches their avatar).
+export function personColor(id: string): string {
+  return orbPalette(id)[0]
+}
+
+// A sphere-like gradient with a soft highlight, stable for each person.
+export function orbBackground(id: string): string {
+  const [glow, accent, base] = orbPalette(id)
   return [
     'radial-gradient(circle at 30% 26%, rgba(255,255,255,0.95) 0, rgba(255,255,255,0) 34%)',
     `radial-gradient(circle at 76% 78%, ${accent} 0, transparent 62%)`,

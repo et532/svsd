@@ -9,10 +9,16 @@ import { matchesQuery } from './lib/people'
 import { ListScreen } from './screens/ListScreen'
 import { MapScreen } from './screens/MapScreen'
 import { MindmapScreen } from './screens/MindmapScreen'
+import type { MapLook } from './screens/mapLooks'
 
-// The app's single phone screen.
-export function Prototype() {
-  const [tab, setTab] = useState<Tab>('list')
+type Props = {
+  mapLook?: MapLook
+  initialTab?: Tab
+}
+
+// The app's phone screen. Rendered once, or several times on the map looks page.
+export function Prototype({ mapLook, initialTab = 'list' }: Props) {
+  const [tab, setTab] = useState<Tab>(initialTab)
   const [query, setQuery] = useState('')
   const [mode, setMode] = useState<Mode>('from')
   const [searchOpen, setSearchOpen] = useState(false)
@@ -29,7 +35,7 @@ export function Prototype() {
       </div>
       <StatusBar />
       {tab === 'list' && <ListScreen people={people} query={query} />}
-      {tab === 'map' && <MapScreen people={people} mode={mode} />}
+      {tab === 'map' && <MapScreen people={people} mode={mode} look={mapLook} />}
       {tab === 'mindmap' && <MindmapScreen />}
 
       {searchOpen && <div className="search-scrim" aria-hidden />}

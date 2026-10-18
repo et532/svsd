@@ -2,20 +2,23 @@ import { useEffect, useRef, useState } from 'react'
 import maplibregl, { type GeoJSONSource, type MapGeoJSONFeature } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import type { Person } from '../data/people'
-import { modeInfo, type Mode } from '../modes'
+import { personColor } from '../lib/people'
+import type { Mode } from '../modes'
+import { applyLook, lookHasGlow, type MapLook } from './mapLooks'
 
 // Free vector tiles, no API key needed.
 const STYLE_URL = 'https://tiles.openfreemap.org/styles/positron'
 
-// Layers recolored to the current mode
-const PIN_LAYERS = ['cluster-glow', 'clusters', 'person-glow', 'person']
+// Lavender halo behind groups of people
+const CLUSTER_GLOW = '#c9b8ff'
 
 type Props = {
   people: Person[]
   mode: Mode
+  look?: MapLook
 }
 
-export function MapScreen({ people, mode }: Props) {
+export function MapScreen({ people, mode, look = 'a' }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
   const popupRef = useRef<maplibregl.Popup | null>(null)
@@ -35,7 +38,7 @@ export function MapScreen({ people, mode }: Props) {
 
     map.on('style.load', () => {
       map.setProjection({ type: 'globe' })
-      softenBaseMap(map)
+      applyLook(map, look)
     })
 
     map.on('load', () => {
@@ -47,29 +50,17 @@ export function MapScreen({ people, mode }: Props) {
         clusterMaxZoom: 12,
       })
 
-      // Soft blurred halo under each pin and cluster
+      // Groups: a frosted white circle with a lavender halo
       map.addLayer({
         id: 'cluster-glow',
         type: 'circle',
         source: 'people',
         filter: ['has', 'point_count'],
         paint: {
-          'circle-color': modeInfo.from.color,
-          'circle-radius': ['step', ['get', 'point_count'], 26, 4, 32, 10, 38],
+          'circle-color': CLUSTER_GLOW,
+          'circle-radius': ['step', ['get', 'point_count'], 28, 4, 34, 10, 40],
           'circle-blur': 1,
-          'circle-opacity': 0.45,
-        },
-      })
-      map.addLayer({
-        id: 'person-glow',
-        type: 'circle',
-        source: 'people',
-        filter: ['!', ['has', 'point_count']],
-        paint: {
-          'circle-color': modeInfo.from.color,
-          'circle-radius': 18,
-          'circle-blur': 1,
-          'circle-opacity': 0.45,
+          'circle-opacity': 0.7,
         },
       })
       map.addLayer({
@@ -78,10 +69,10 @@ export function MapScreen({ people, mode }: Props) {
         source: 'people',
         filter: ['has', 'point_count'],
         paint: {
-          'circle-color': modeInfo.from.color, // recolored to the current mode once data loads
-          'circle-radius': ['step', ['get', 'point_count'], 14, 4, 18, 10, 22],
-          'circle-stroke-width': 2.8,
-          'circle-stroke-color': '#fff',
+          'circle-color': 'rgba(255,255,255,0.92)',
+          'circle-radius': ['step', ['get', 'point_count'], 14, 4, 17, 10, 20],
+          'circle-stroke-width': 1,
+          'circle-stroke-color': 'rgba(17,17,19,0.06)',
         },
       })
       map.addLayer({
@@ -95,7 +86,33 @@ export function MapScreen({ people, mode }: Props) {
           'text-size': 12,
           'text-allow-overlap': true,
         },
-        paint: { 'text-color': '#fff' },
+        paint: { 'text-color': '#111113' },
+      })
+
+      // People: a glowing dot in their own pastel color (the same as their avatar)
+      map.addLayer({
+        id: 'person-halo',
+        type: 'circle',
+        source: 'people',
+        filter: ['!', ['has', 'point_count']],
+        paint: {
+          'circle-color': ['get', 'color'],
+          'circle-radius': 28,
+          'circle-blur': 1,
+          'circle-opacity': 0.75,
+        },
+      })
+      map.addLayer({
+        id: 'person-glow',
+        type: 'circle',
+        source: 'people',
+        filter: ['!', ['has', 'point_count']],
+        paint: {
+          'circle-color': ['get', 'color'],
+          'circle-radius': 13,
+          'circle-blur': 0.7,
+          'circle-opacity': 1,
+        },
       })
       map.addLayer({
         id: 'person',
@@ -103,10 +120,10 @@ export function MapScreen({ people, mode }: Props) {
         source: 'people',
         filter: ['!', ['has', 'point_count']],
         paint: {
-          'circle-color': modeInfo.from.color, // recolored to the current mode once data loads
-          'circle-radius': 7.5,
-          'circle-stroke-width': 2.8,
-          'circle-stroke-color': '#fff',
+          'circle-color': ['get', 'color'],
+          'circle-radius': 5.5,
+          'circle-stroke-width': 2,
+          'circle-stroke-color': 'rgba(255,255,255,0.95)',
         },
       })
       map.addLayer({
@@ -141,8 +158,8 @@ export function MapScreen({ people, mode }: Props) {
       map.easeTo({ center: pointCoords(feature), zoom: Math.max(zoom, map.getZoom() + 2) })
     })
 
-    // Tap a person to see who it is.
-    map.on('click', 'person', (e) => {
+    // Tap a person to see who it is. The glow is the tap target, so the small dot is easy to hit.
+    map.on('click', 'person-glow', (e) => {
       const feature = e.features?.[0]
       if (!feature) return
       popupRef.current?.remove()
@@ -152,7 +169,7 @@ export function MapScreen({ people, mode }: Props) {
         .addTo(map)
     })
 
-    for (const layer of ['clusters', 'person']) {
+    for (const layer of ['clusters', 'person-glow']) {
       map.on('mouseenter', layer, () => (map.getCanvas().style.cursor = 'pointer'))
       map.on('mouseleave', layer, () => (map.getCanvas().style.cursor = ''))
     }
@@ -161,7 +178,7 @@ export function MapScreen({ people, mode }: Props) {
       map.remove()
       mapRef.current = null
     }
-  }, [])
+  }, [look])
 
   useEffect(() => {
     const map = mapRef.current
@@ -169,8 +186,6 @@ export function MapScreen({ people, mode }: Props) {
     const data = toGeoJSON(people, mode)
     ;(map.getSource('people') as GeoJSONSource).setData(data)
     popupRef.current?.remove()
-    // Pins take the color of the current view so it's clear which places you're looking at.
-    for (const layer of PIN_LAYERS) map.setPaintProperty(layer, 'circle-color', modeInfo[mode].color)
 
     // Keep the opening globe view; after that, move to whoever matches the search or mode.
     if (isFirstData.current) {
@@ -183,6 +198,7 @@ export function MapScreen({ people, mode }: Props) {
 
   return (
     <div className="screen map-screen">
+      {lookHasGlow(look) && <div className={`globe-glow globe-glow-${look}`} aria-hidden />}
       <div ref={containerRef} className="map-container" />
     </div>
   )
@@ -197,33 +213,10 @@ function toGeoJSON(people: Person[], mode: Mode): GeoJSON.FeatureCollection<GeoJ
       return {
         type: 'Feature',
         geometry: { type: 'Point', coordinates: [place.lng + dx, place.lat + dy] },
-        properties: { id: person.id, name: person.name, caption: caption(person, mode) },
+        properties: { id: person.id, name: person.name, caption: caption(person, mode), color: personColor(person.id) },
       }
     }),
   }
-}
-
-// Lighten the base map so it reads as soft and airy: pale land and water, faint shaded relief and labels,
-// and a gentle lavender glow around the globe.
-function softenBaseMap(map: maplibregl.Map) {
-  for (const layer of map.getStyle().layers) {
-    if (layer.type === 'background') {
-      map.setPaintProperty(layer.id, 'background-color', '#fbfbfc')
-    } else if (layer.type === 'raster') {
-      map.setPaintProperty(layer.id, 'raster-opacity', 0.18)
-    } else if (layer.type === 'fill' && layer.id.includes('water')) {
-      map.setPaintProperty(layer.id, 'fill-color', '#e9edf6')
-    } else if (layer.type === 'symbol') {
-      map.setPaintProperty(layer.id, 'text-color', '#9a9aa4')
-      map.setPaintProperty(layer.id, 'text-halo-color', 'rgba(255,255,255,0.85)')
-    }
-  }
-  map.setSky({
-    'sky-color': '#ffffff',
-    'horizon-color': '#efe8ff',
-    'fog-color': '#ffffff',
-    'atmosphere-blend': ['interpolate', ['linear'], ['zoom'], 0, 1, 5, 1, 7, 0],
-  })
 }
 
 function fitToPeople(map: maplibregl.Map, data: GeoJSON.FeatureCollection<GeoJSON.Point>) {
