@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { ChevronRightIcon, CloseIcon, KeyboardIcon, MicIcon } from '../components/Icons'
+import { ChevronRightIcon, CloseIcon, MicIcon } from '../components/Icons'
 import type { Person } from '../data/people'
 import { interpret, storyRequest, type Action, type AskResult, type Match } from '../lib/ask'
 import { updatePerson } from '../lib/peopleStore'
@@ -27,7 +27,6 @@ const BARS = 26
 export function AskScreen({ people, tab, onClose, onOpenProfile, onAdd, onLogMoment, onShow, onToast }: Props) {
   const [phase, setPhase] = useState<Phase>('idle')
   const [heard, setHeard] = useState('')
-  const [typing, setTyping] = useState(false)
   const [draft, setDraft] = useState('')
   const [result, setResult] = useState<AskResult | null>(null)
   const [bars, setBars] = useState<number[]>(() => Array(BARS).fill(4))
@@ -76,7 +75,6 @@ export function AskScreen({ people, tab, onClose, onOpenProfile, onAdd, onLogMom
   // "Speak" a request word by word, then answer it
   function say(text: string) {
     clearTimers()
-    setTyping(false)
     setResult(null)
     setHeard('')
     setPhase('listening')
@@ -92,17 +90,9 @@ export function AskScreen({ people, tab, onClose, onOpenProfile, onAdd, onLogMom
     say(storyRequest(people))
   }
 
-  function startTyping() {
-    clearTimers()
-    setPhase(result ? 'answer' : 'idle')
-    setTyping(true)
-    setTimeout(() => inputRef.current?.focus(), 50)
-  }
-
   function submitTyped(e: React.FormEvent) {
     e.preventDefault()
     if (!draft.trim()) return
-    setTyping(false)
     answer(draft.trim())
     setDraft('')
   }
@@ -113,6 +103,9 @@ export function AskScreen({ people, tab, onClose, onOpenProfile, onAdd, onLogMom
     setHeard('')
     setPhase('idle')
   }
+
+  // While recording, the spoken words stream into the text bar (not a separate heading)
+  const recording = phase === 'listening' || phase === 'thinking'
 
   return (
     <div className="ask">
@@ -135,8 +128,6 @@ export function AskScreen({ people, tab, onClose, onOpenProfile, onAdd, onLogMom
               <p className="ask-hint">Add a new person, or ask me to find specific people by their interests, work, or how you know them.</p>
             </>
           )}
-
-          {(phase === 'listening' || phase === 'thinking') && <p className="ask-heard">{heard || '…'}</p>}
 
           {phase === 'answer' && result && (
             <>
@@ -174,45 +165,33 @@ export function AskScreen({ people, tab, onClose, onOpenProfile, onAdd, onLogMom
           />
         )}
 
-        {typing ? (
-          <form className="ask-bar is-typing" onSubmit={submitTyped}>
-            <input
-              ref={inputRef}
-              className="ask-input"
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              placeholder="e.g. who’s into baseball?"
-              aria-label="Type a request"
-            />
-            <button type="button" className="round-button soft" onClick={() => setTyping(false)} aria-label="Speak instead">
+        <form className="ask-bar" onSubmit={submitTyped}>
+          <input
+            ref={inputRef}
+            className="ask-input"
+            value={recording ? heard : draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder="Ask about your people…"
+            aria-label="Ask about your people"
+            readOnly={recording}
+          />
+          <button
+            type="button"
+            className={`ask-mic-btn${phase === 'listening' ? ' is-live' : ''}`}
+            onClick={tapMic}
+            aria-label={phase === 'listening' ? 'Stop listening' : 'Tap to talk'}
+          >
+            {phase === 'listening' ? (
+              <span className="ask-wave" aria-hidden>
+                {bars.slice(0, 5).map((h, i) => (
+                  <i key={i} style={{ height: Math.max(4, h * 0.6) }} />
+                ))}
+              </span>
+            ) : (
               <MicIcon size={18} />
-            </button>
-          </form>
-        ) : (
-          <div className="ask-bar">
-            <button
-              className={`ask-mic${phase === 'listening' ? ' is-live' : ''}`}
-              onClick={tapMic}
-              aria-label={phase === 'listening' ? 'Stop listening' : 'Tap to talk'}
-            >
-              {phase === 'listening' ? (
-                <span className="ask-wave" aria-hidden>
-                  {bars.map((h, i) => (
-                    <i key={i} style={{ height: h }} />
-                  ))}
-                </span>
-              ) : (
-                <>
-                  <MicIcon size={20} />
-                  {phase === 'answer' ? 'Ask again' : 'Tap to talk'}
-                </>
-              )}
-            </button>
-            <button className="round-button soft" onClick={startTyping} aria-label="Type instead">
-              <KeyboardIcon size={18} />
-            </button>
-          </div>
-        )}
+            )}
+          </button>
+        </form>
       </div>
     </div>
   )

@@ -2305,15 +2305,6 @@ button {
   text-wrap: balance;
 }
 
-.ask-heard {
-  min-height: 64px;
-  margin: 0;
-  font-family: var(--font-heading);
-  font-size: 28px;
-  line-height: 1.1;
-  text-wrap: balance;
-}
-
 .ask-you {
   margin: 0;
   font-size: 13px;
@@ -2395,25 +2386,32 @@ button {
   gap: 10px;
 }
 
-.ask-mic {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  height: 52px;
-  border-radius: var(--radius-pill);
+.ask-mic-btn {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
   background: var(--ink);
   color: var(--on-ink);
-  font-size: 15px;
-  font-weight: 500;
+}
+
+.ask-mic-btn.is-live {
+  animation: ask-mic-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes ask-mic-pulse {
+  50% {
+    box-shadow: 0 0 0 6px rgba(22, 18, 28, 0.12);
+  }
 }
 
 .ask-wave {
   display: flex;
   align-items: center;
-  gap: 3px;
-  height: 28px;
+  gap: 2px;
+  height: 22px;
 }
 
 .ask-wave i {
