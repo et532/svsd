@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { modeInfo, modeOrder, type Mode } from '../modes'
 import { HomeIcon, MeetIcon, SproutIcon } from './Icons'
@@ -64,29 +64,64 @@ type SheetProps = {
 // Slides up from the bottom. Pick one, then Apply. Tap outside, swipe down, or press Escape to close.
 function BottomSheet({ mode, onApply, onClose }: SheetProps) {
   const [pending, setPending] = useState(mode)
+  const [closing, setClosing] = useState(false)
+  const [dragging, setDragging] = useState(false)
   const dragStartY = useRef<number | null>(null)
+  const sheetRef = useRef<HTMLDivElement>(null)
+
+  // Slide the sheet down first, then tell the parent to unmount it
+  const dismiss = useCallback(
+    (after: () => void) => {
+      if (closing) return
+      setClosing(true)
+      sheetRef.current?.style.removeProperty('transform')
+      setTimeout(after, 280)
+    },
+    [closing],
+  )
+  const close = useCallback(() => dismiss(onClose), [dismiss, onClose])
 
   useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
+    const onKeyDown = (e: KeyboardEvent) => e.key === 'Escape' && close()
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
-  }, [onClose])
+  }, [close])
 
   return (
-    <div className="filter-overlay">
-      <div className="overlay-backdrop" onClick={onClose} />
-      <div className="sheet" role="dialog" aria-modal="true" aria-labelledby="filter-sheet-title">
-        {/* Swipe down on the top of the sheet to close it */}
+    <div className={`filter-overlay${closing ? ' is-closing' : ''}`}>
+      <div className="overlay-backdrop" onClick={close} />
+      <div
+        ref={sheetRef}
+        className={`sheet${dragging ? ' is-dragging' : ''}`}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="filter-sheet-title"
+      >
+        {/* Swipe down on the top of the sheet to close it; the sheet follows the finger */}
         <div
           className="sheet-grab"
           onPointerDown={(e) => {
             dragStartY.current = e.clientY
+            setDragging(true)
             // Keep receiving the pointer even after it moves off this strip
             e.currentTarget.setPointerCapture(e.pointerId)
           }}
+          onPointerMove={(e) => {
+            if (dragStartY.current === null) return
+            const dy = Math.max(0, e.clientY - dragStartY.current)
+            sheetRef.current!.style.transform = `translateY(${dy}px)`
+          }}
           onPointerUp={(e) => {
-            if (dragStartY.current !== null && e.clientY - dragStartY.current > 50) onClose()
+            const dy = dragStartY.current === null ? 0 : e.clientY - dragStartY.current
             dragStartY.current = null
+            setDragging(false)
+            if (dy > 50) close()
+            else sheetRef.current?.style.removeProperty('transform')
+          }}
+          onPointerCancel={() => {
+            dragStartY.current = null
+            setDragging(false)
+            sheetRef.current?.style.removeProperty('transform')
           }}
         >
           <div className="sheet-handle" aria-hidden />
@@ -106,7 +141,7 @@ function BottomSheet({ mode, onApply, onClose }: SheetProps) {
             </button>
           ))}
         </div>
-        <button className="primary-button" onClick={() => onApply(pending)}>
+        <button className="primary-button" onClick={() => dismiss(() => onApply(pending))}>
           Apply
         </button>
       </div>

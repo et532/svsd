@@ -79,6 +79,8 @@ export function MindmapScreen({ people, focusId = null }: { people: Person[]; fo
   const selectedRef = useRef<string | null>(null)
   const wake = useRef<() => void>(() => {})
   const drawRef = useRef<() => void>(() => {})
+  const fitRef = useRef<() => { x: number; y: number; k: number }>(() => ({ x: 0, y: 0, k: 1 }))
+  const settleTimer = useRef(0)
 
   const links = useMemo(() => linksOf(people), [people])
   const degree = useMemo(() => {
@@ -205,6 +207,7 @@ export function MindmapScreen({ people, focusId = null }: { people: Person[]; fo
       }
     }
     drawRef.current = draw
+    fitRef.current = fit
 
     let raf = 0
     const tick = () => {
@@ -291,6 +294,7 @@ export function MindmapScreen({ people, focusId = null }: { people: Person[]; fo
     const d = drag.current
     const node = graphRef.current?.nodes.find((n) => n.id === d.grab)
     if (node) node.pinned = false
+    if (pointers.current.size < 2) settle() // let go of a pinch: spring back if it went too far
     if (pointers.current.size === 0) {
       if (!d.moved) {
         setSelected(d.id) // tap a node to select it, tap empty space to clear
@@ -317,19 +321,33 @@ export function MindmapScreen({ people, focusId = null }: { people: Person[]; fo
     const [x0, x1] = [Math.min(...ns.map((n) => n.x)), Math.max(...ns.map((n) => n.x))]
     const [y0, y1] = [Math.min(...ns.map((n) => n.y)), Math.max(...ns.map((n) => n.y))]
     const k = Math.min(1.4, Math.max(0.35, Math.min((root.clientWidth - 110) / (x1 - x0 + 90), (root.clientHeight - 360) / (y1 - y0 + 90))))
-    const target = { x: (-(x0 + x1) / 2) * k, y: (-(y0 + y1) / 2) * k + 20, k } // +20: leave room for the name pill below
+    animateTo({ x: (-(x0 + x1) / 2) * k, y: (-(y0 + y1) / 2) * k + 20, k }) // +20: leave room for the name pill below
+  }
+
+  // Glide the view to a target. Each frame closes a fraction of the gap, so it eases out like an iOS spring.
+  const animateTo = (target: { x: number; y: number; k: number }, rate = 0.16) => {
     touched.current = true
     cancelAnimationFrame(flight.current)
     const v = view.current
     const step = () => {
-      const fast = reduceMotion() ? 1 : 0.16
+      const fast = reduceMotion() ? 1 : rate
       v.x += (target.x - v.x) * fast
       v.y += (target.y - v.y) * fast
       v.k += (target.k - v.k) * fast
       drawRef.current()
-      if (Math.abs(target.k - v.k) > 0.002 || Math.abs(target.x - v.x) > 0.5) flight.current = requestAnimationFrame(step)
+      if (Math.abs(target.k - v.k) > 0.002 || Math.abs(target.x - v.x) > 0.5 || Math.abs(target.y - v.y) > 0.5) flight.current = requestAnimationFrame(step)
     }
     step()
+  }
+
+  // Zoom limits: a bit past "everyone in frame" going out, and 3x going in. Pushing past them stretches
+  // with resistance (zoomAt); letting go springs the view back, like an iOS scroll view's rubber band.
+  const MAX_K = 3
+  const minK = () => fitRef.current().k * 0.85
+  const settle = () => {
+    const v = view.current
+    if (v.k < minK()) animateTo(fitRef.current(), 0.12)
+    else if (v.k > MAX_K) animateTo({ x: (v.x * MAX_K) / v.k, y: (v.y * MAX_K) / v.k, k: MAX_K }, 0.12)
   }
 
   // Searching down to one person selects them like a tap. Wait a beat so the rebuilt graph has spread out first.
@@ -343,7 +361,10 @@ export function MindmapScreen({ people, focusId = null }: { people: Person[]; fo
   const zoomAt = (cx: number, cy: number, factor: number) => {
     const root = rootRef.current!.getBoundingClientRect()
     const v = view.current
-    const k = Math.min(3, Math.max(0.08, v.k * factor))
+    // Past a limit, only a third of the gesture counts, and the stretch is capped
+    const lo = minK()
+    if ((v.k <= lo && factor < 1) || (v.k >= MAX_K && factor > 1)) factor = Math.pow(factor, 0.3)
+    const k = Math.min(MAX_K * 1.25, Math.max(lo * 0.7, v.k * factor))
     const px = cx - root.left - root.width / 2
     const py = cy - root.top - root.height / 2
     v.x = px - ((px - v.x) / v.k) * k
@@ -358,7 +379,11 @@ export function MindmapScreen({ people, focusId = null }: { people: Person[]; fo
     const el = rootRef.current!
     const onWheel = (e: WheelEvent) => {
       e.preventDefault()
+      cancelAnimationFrame(flight.current)
       zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * 0.002))
+      // The wheel has no "let go", so spring back once it pauses
+      clearTimeout(settleTimer.current)
+      settleTimer.current = window.setTimeout(settle, 140)
     }
     el.addEventListener('wheel', onWheel, { passive: false })
     return () => el.removeEventListener('wheel', onWheel)

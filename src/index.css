@@ -799,8 +799,9 @@ button {
   flex-direction: column;
   align-items: flex-start;
   gap: 8px;
-  min-width: 170px;
-  padding: 6px 16px 14px 6px;
+  width: max-content;
+  white-space: nowrap;
+  padding: 6px 6px 14px;
   border-radius: 24px;
   cursor: default;
   background: var(--glass-strong);
@@ -1674,4 +1675,105 @@ button {
 .gradient-swatch.is-selected .gradient-name {
   color: var(--ink);
   font-weight: 500;
+}
+
+/* ---- iOS feel: no scrollbars, spring motion, press feedback ---- */
+:root {
+  /* Close to UIKit's default spring / ease-out curves */
+  --ios-spring: cubic-bezier(0.32, 0.72, 0, 1);
+  --ios-press: cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+* {
+  scrollbar-width: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+}
+
+.screen {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.search-dropdown {
+  overscroll-behavior: contain;
+  transform-origin: 50% 0;
+  animation: dropdown-in 0.32s var(--ios-spring);
+}
+
+@keyframes dropdown-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+}
+
+/* Tab changes: the new screen fades in */
+.screen {
+  animation: screen-in 0.35s var(--ios-spring);
+}
+
+@keyframes screen-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Press feedback: quick shrink on touch, springy release */
+:is(.nav-button, .add-button, .filter-chip, .sheet-row, .primary-button, .mm-view, .mm-chips button, .mm-color-pill, .mm-menu button, .search-clear, .dropdown-clear, .person-row, .dropdown-option) {
+  transition:
+    transform 0.4s var(--ios-spring),
+    opacity 0.2s var(--ios-press),
+    background 0.2s var(--ios-press),
+    color 0.2s var(--ios-press);
+}
+
+:is(.nav-button, .add-button, .filter-chip, .primary-button, .mm-view, .mm-chips button, .mm-color-pill, .search-clear):active {
+  transform: scale(0.92);
+  transition-duration: 0.1s;
+}
+
+:is(.person-row, .dropdown-option, .sheet-row, .mm-menu button):active {
+  transform: scale(0.98);
+  opacity: 0.7;
+  transition-duration: 0.1s;
+}
+
+/* Bottom sheet: spring up, and slide back down on dismiss (or follow the finger while dragging) */
+.sheet {
+  animation: slide-up 0.5s var(--ios-spring);
+  transition: transform 0.4s var(--ios-spring);
+}
+
+.sheet.is-dragging {
+  transition: none;
+}
+
+.filter-overlay.is-closing .sheet {
+  transform: translateY(100%);
+  animation: none;
+}
+
+.filter-overlay.is-closing .overlay-backdrop {
+  opacity: 0;
+  animation: none;
+}
+
+.overlay-backdrop {
+  transition: opacity 0.35s var(--ios-spring);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen,
+  .search-dropdown,
+  .sheet {
+    animation: none;
+  }
+
+  :is(.nav-button, .add-button, .filter-chip, .person-row, .dropdown-option, .sheet-row):active {
+    transform: none;
+  }
 }
