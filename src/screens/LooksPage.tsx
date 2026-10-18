@@ -47,11 +47,11 @@ export function LooksPage({ title, intro, options, param, render }: Props) {
         <p>{intro}</p>
       </header>
       <div className="looks-grid">
-        {options.map((option) => (
+        {options.map((option, i) => (
           <figure key={option.id} className="looks-frame">
             <figcaption>
               <div className="looks-name">
-                <span className="looks-id">{option.id.toUpperCase()}</span>
+                <span className="looks-id">{option.id.length === 1 ? option.id.toUpperCase() : i + 1}</span>
                 {option.name}
               </div>
               <p>{option.description}</p>

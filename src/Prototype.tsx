@@ -170,10 +170,6 @@ export function Prototype({ filterLayout, navLayout, initialTab = 'list' }: Prop
         active={tab}
         layout={navLayout}
         onChange={changeTab}
-        onAdd={() => {
-          setNavFocus(null)
-          push({ kind: 'capture' })
-        }}
         onAsk={() => {
           setNavFocus(null)
           push({ kind: 'ask' })
