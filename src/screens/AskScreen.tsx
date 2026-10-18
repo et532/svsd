@@ -192,9 +192,6 @@ export function AskScreen({ people, tab, onClose, onOpenProfile, onAdd, onLogMom
           </form>
         ) : (
           <div className="ask-bar">
-            <button className="round-button soft" onClick={startTyping} aria-label="Type instead">
-              <KeyboardIcon size={18} />
-            </button>
             <button
               className={`ask-mic${phase === 'listening' ? ' is-live' : ''}`}
               onClick={tapMic}
@@ -213,7 +210,9 @@ export function AskScreen({ people, tab, onClose, onOpenProfile, onAdd, onLogMom
                 </>
               )}
             </button>
-            <span className="round-button" aria-hidden />
+            <button className="round-button soft" onClick={startTyping} aria-label="Type instead">
+              <KeyboardIcon size={18} />
+            </button>
           </div>
         )}
       </div>
