@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { orbBackground, pfpStyles, type PfpStyle } from '../lib/people'
 import { setPfpStyle } from '../lib/pfpStyle'
+import { resetPeople, usePeople } from '../lib/peopleStore'
+import { samplePeople } from '../data/people'
 
 // Desktop-only panel beside the phone for exploring the glassmorphism look, the phone's
 // background, and the avatar gradient style. Not part of the app itself.
@@ -248,6 +250,8 @@ export function StylePanel() {
           ))}
         </div>
       </section>
+
+      <PeopleData />
     </aside>
   )
 }
@@ -280,5 +284,23 @@ function Slider({ label, value, min, max, step, display, onChange }: SliderProps
         onChange={(e) => onChange(Number(e.target.value))}
       />
     </label>
+  )
+}
+
+// People added with + and logged moments are kept in this browser; this puts the sample data back.
+function PeopleData() {
+  const people = usePeople()
+  const added = people.length - samplePeople.length
+  return (
+    <section className="style-group">
+      <h3>Prototype data</h3>
+      <p className="style-hint">
+        {added > 0 ? `${added} added ${added === 1 ? 'person' : 'people'} saved in this browser.` : 'Only the sample people.'} Moments and
+        to-dos are saved too.
+      </p>
+      <button className="style-reset" onClick={resetPeople}>
+        Reset to sample people
+      </button>
+    </section>
   )
 }

@@ -18,6 +18,8 @@ A private, personal "people log": remember everyone you meet, where you met them
 - `src/components/` — `SearchBar` (with suggestions dropdown), `FilterMenu` (map filter chip + bottom sheet), `BottomBar`, `StatusBar`, `Icons`.
 - `src/lib/forceGraph.ts` — hand-rolled force simulation for the mindmap (no dependency). `src/data/mockPeople.ts` — seeded generator of fabricated people (mostly social, some work, few family; each knows 1-3 others, max 5, a few know nobody); open `/?mock=200` (up to 500) to stress-test the whole app with that many.
 - `src/data/people.ts` — 15 sample people (each has a `knows` list of ids; links are symmetric). `src/modes.ts` — the three map modes. `src/lib/people.ts` — search matching and helpers.
+- `src/lib/peopleStore.ts` — everyone in the app (sample people + people added with **+**, plus logged moments, to-dos and closeness), via `usePeople()`. Additions and changes are saved in `localStorage` (`peepl.people.v1`), never in mock mode. The style panel's **Prototype data** section resets to the sample people.
+- Capture / profile (Scarlett's part): `src/screens/CaptureScreen.tsx` (add a person or log a moment), `SavedScreen.tsx` (new person joins the network), `ProfileScreen.tsx`. `src/lib/capture.ts` holds the voice scripts, prompts, typed-note parsing and how a capture becomes a `Person` or `Moment`. They open as full-screen **layers** above the tabs (`layers` in `Prototype.tsx`; back / close pops the top one).
 
 ## Design decisions (agreed with the user)
 
@@ -44,7 +46,7 @@ A private, personal "people log": remember everyone you meet, where you met them
 
 **People list**
 - Each card shows only the initials avatar, the name, and a right arrow. No subtitles or dates. The user asked for names only.
-- Sorted A–Z. The arrow doesn't open anything yet (there's no profile screen).
+- Sorted A–Z. Tapping a row opens the profile.
 
 **Search**
 - Searches name, job, story, tags, all three cities, and where you met (ignores accents).
@@ -55,7 +57,7 @@ A private, personal "people log": remember everyone you meet, where you met them
 - On the map, the search moves the map to fit whoever matches.
 
 **Map**
-- Opens as a 3D globe; zooming in turns it into a flat street map. Pins cluster; tap a cluster to zoom in, tap a pin for a name popup.
+- Opens as a 3D globe; zooming in turns it into a flat street map. Pins cluster; tap a cluster to zoom in, tap a pin for a name popup with a **View** button that opens their profile.
 - Three modes, **always in this order: Where they're from → Where you met → Where they live now.** Default is "Where they're from".
 - **Pins are glowing dots, one pastel color per person** (two blurred halos plus a small core with a white edge). The color matches the person's avatar (`personColor()` in `src/lib/people.ts`). Pins are no longer colored by mode. Clusters are frosted white circles with black numbers and a lavender halo. The glow is the tap target.
 - **Map look is being chosen.** Four options live in `mapLooks.ts`: A Soft frosted (the default), B Pastel ocean, C Glass globe, D Minimal mono. They're compared at `#/map-looks`, and one opens full size with `#/?look=b`. Looks A–C tint map features in soft pastels (`pastelFeatureColors` in `mapLooks.ts`): pink motorways, lilac roads and buildings, mint parks, lavender borders and rivers, blue railways and airports. Map icons (road signs, airport, city dots) are recolored pastel blue by `tintIcons()`, which keeps their shapes. **Only text stays grey:** place names, road names and sign numbers. D stays grey on purpose. Once the user picks, make it the only look and delete the others, the `#/map-looks` page and its `.designs-*` CSS.
@@ -68,7 +70,21 @@ A private, personal "people log": remember everyone you meet, where you met them
 - Obsidian-style graph of everyone; no central "you" node. Links are the explicit `knows` lists on people (`linksOf` in `src/lib/people.ts`). Densely linked groups clump tighter (link strength grows with mutual neighbors).
 - **Dots** are small gradient orbs (the person's avatar, no white ring), so the color is how you know them (work / social / community / family). The color key is a glass panel under the search bar (top left) that is always visible: a black pill naming the current mode, with the list of values below. **Tap** the pill (or **hold and drag** it, releasing on one) to swap the list for Relationship / City / Job / Last seen; picking one switches back to the key. The six most common values get a color, the rest grey. Size grows a little with link count. The glass look is on the legend, group chips, labels and territory names.
 - **Group-by** is a vertical glass stack at the top right, level with the color pill (None / City / Met at / Job). The group stack, color pill and dropdowns use the same `--glass*` look as the search bar and nav pill, so the style panel's glass sliders change them too. A group pulls its people together and gets a soft pastel "territory" cloud with its name. Tap the name to isolate that group (everyone else fades); tap empty space to clear. Groups of one person stay ungrouped. The top search bar also narrows the graph, **except when it matches exactly one person**: then the whole graph stays and that person is selected like a tap (zoom, name pill, first-degree links lit; `focusId` in `Prototype.tsx` → `MindmapScreen`).
-- Tap a node: the view zooms to center it with its direct connections in frame (the user can then pan freely). It lights up, direct connections dim to 55% and everyone else fades to about 8% (only first-degree links are shown). A fully round glass pill shows name, job and a black **View** button (stub, no profile screen yet). Drag a dot to move it (only zoomed in past about 0.6x; zoomed out, dragging anywhere pans), drag background to pan, wheel / pinch to zoom, with rubber-band limits: zooming out past 85% of the "everyone in frame" zoom (or in past 3x) stretches with resistance, then springs back on release (pinch end, or 140ms after the wheel stops; `settle()` in `MindmapScreen.tsx`). The view auto-fits until the user pans, zooms or taps a person. Reduced motion settles instantly.
+- Tap a node: the view zooms to center it with its direct connections in frame (the user can then pan freely). It lights up, direct connections dim to 55% and everyone else fades to about 8% (only first-degree links are shown). A fully round glass pill shows name, job and a black **View** button that opens their profile. Drag a dot to move it (only zoomed in past about 0.6x; zoomed out, dragging anywhere pans), drag background to pan, wheel / pinch to zoom, with rubber-band limits: zooming out past 85% of the "everyone in frame" zoom (or in past 3x) stretches with resistance, then springs back on release (pinch end, or 140ms after the wheel stops; `settle()` in `MindmapScreen.tsx`). The view auto-fits until the user pans, zooms or taps a person. Reduced motion settles instantly.
+
+**Capture (+ button and Log a moment)** — Scarlett's flow, ported from her coded prototype
+- One screen for both: "Tell me about them" (new person) or "What happened with Jordan?" (moment). An orb in a dashed ring, a serif title, and a **Try to cover** checklist that fills in as you talk. Person prompts: name, where you met, what they do, anyone you both know, one thing to remember, follow-up. Moment prompts: what happened, something new, follow-up.
+- **Voice is a scripted demo** (the user's call: no real mic). Tap to talk plays the Jordan Lee script word by word with a live transcript, timer and waveform; each line ticks a prompt. Pause / Done (✓) sit in the recording pill; Done enables once there's a name (or "what happened").
+- **Keyboard button** switches to a typed note (and the mic button back), morphing with a view transition. Typing fills the same checklist by simple parsing; mutuals are spotted by matching names of people you already have.
+- Saving a person shows **Saved**: they land in the middle of their bit of the network (solid lines to people they know, dashed to suggestions: same "met at" or same city). Actions: **View profile** (primary), **Add another**, X to close.
+- Saving a moment returns to the profile with the new moment open, bumps closeness one step (Just met → Getting to know → Know well), and adds the follow-up to "Things to talk about".
+
+**Person profile**
+- Opens from a list row, the mindmap's **View**, a map popup's **View**, a mutual on another profile, or after saving.
+- Night hero tinted by how you know them (context core / deep), avatar, name, job · city, closeness and context chips. Then: field notes + tags, things to talk about (checkable), location trio with **View map**, mutuals with **View connections**, and moments (collapsed by default; tap to expand; voice notes have a play button and transcript). Sticky bar: **Log a moment** + mic (starts recording right away).
+- **View map** / **View connections** switch tab and focus the person (`navFocus` in `Prototype.tsx`); a black "← Jordan" pill gets back to the profile.
+- `closeness` (1-3) on a person drives aura depth when set; otherwise depth still follows how recently you were in touch.
+- New screens use only the foundation tokens in `:root` (plus `--grain`, `--shadow-float`, `--on-dark-*`), so a design system update there restyles them.
 
 **Rejected alternatives (don't bring back unless asked):** labeled, expanding, or docked nav bars; a filter bar under the search bar; timeline, segmented, swipe-card, center pop-up, or anchored dropdown filters; a wide labeled filter pill; and a side button next to the search bar.
 
@@ -76,9 +92,9 @@ A private, personal "people log": remember everyone you meet, where you met them
 
 - **AI search (requested, not started):** the user wants an AI search that sits "before the list page". They describe it as a general free-text filter, e.g. "everyone interested in baseball", that returns matching people. Still to decide with the user: where it lives (a new nav tab before People, a screen that opens first, or an AI mode in the search bar) and whether it uses real Claude (needs an Anthropic API key and a small local server) or a simulated matcher. Sample people will need richer interests (e.g. baseball).
 
-- **+ button:** does nothing yet. The user chose "button only" for now. The PRD calls for voice capture and manual entry.
-- **Person profile screen:** list arrows and map pins should open it (photo, story, tags, where you met, timeline).
-- **Mindmap:** built (see above). Still open: voice capture on the + button should extract mutual links into `knows`; **View** is a stub until the profile screen exists.
+- **+ button:** built (capture flow above). Voice is scripted; real speech-to-text and AI field extraction are not planned yet.
+- **Person profile screen:** built (above). Stubs that only show a toast: + tag, + Add something to do, Link.
+- **Mindmap:** built (see above). Capture fills `knows` from mutuals mentioned (scripted: Aisha Khan; typed: any existing name), and **View** opens the profile.
 - **Mindmap looks A, B, D** were generated with OpenDesign and rejected; no need to keep them.
 - **Map credits:** the map uses OpenStreetMap data (via OpenFreeMap tiles), which requires attribution. That's fine for a private prototype, but add a credit (e.g. in a settings/About screen) before any public release.
-- No persistence: people live in `src/data/people.ts`.
+- Persistence is per browser (`localStorage`, see `peopleStore.ts`); the sample people still live in `src/data/people.ts`.

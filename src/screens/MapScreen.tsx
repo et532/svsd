@@ -17,14 +17,20 @@ type Props = {
   mode: Mode
   look?: MapLook
   focusId?: string | null
+  onView?: (id: string) => void
 }
 
-export function MapScreen({ people, mode, look = 'a', focusId = null }: Props) {
+export function MapScreen({ people, mode, look = 'a', focusId = null, onView }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
   const popupRef = useRef<maplibregl.Popup | null>(null)
   const isFirstData = useRef(true)
   const [ready, setReady] = useState(false)
+  // The map's click handlers are set up once, so they read the latest callback from here.
+  const onViewRef = useRef(onView)
+  useEffect(() => {
+    onViewRef.current = onView
+  })
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -167,7 +173,7 @@ export function MapScreen({ people, mode, look = 'a', focusId = null }: Props) {
       popupRef.current?.remove()
       popupRef.current = new maplibregl.Popup({ offset: 13, closeButton: false, className: 'person-popup' })
         .setLngLat(pointCoords(feature))
-        .setDOMContent(popupContent(feature.properties.name, feature.properties.caption))
+        .setDOMContent(popupContent(feature.properties.id, feature.properties.name, feature.properties.caption, onViewRef))
         .addTo(map)
     })
 
@@ -202,7 +208,7 @@ export function MapScreen({ people, mode, look = 'a', focusId = null }: Props) {
       map.flyTo({ center: at, zoom: 10, duration: 1400, padding: { top: 0, bottom: 60, left: 0, right: 0 } })
       popupRef.current = new maplibregl.Popup({ offset: 13, closeButton: false, className: 'person-popup' })
         .setLngLat(at)
-        .setDOMContent(popupContent(f.properties?.name, f.properties?.caption))
+        .setDOMContent(popupContent(f.properties?.id, f.properties?.name, f.properties?.caption, onViewRef))
         .addTo(map)
     }, 350)
     return () => clearTimeout(timer)
@@ -268,12 +274,20 @@ function pointCoords(feature: MapGeoJSONFeature): [number, number] {
   return [lng, lat]
 }
 
-function popupContent(name: string, caption: string): HTMLElement {
+function popupContent(id: string, name: string, caption: string, onView: { current?: (id: string) => void }): HTMLElement {
   const root = document.createElement('div')
+  root.className = 'popup-body'
+  const text = document.createElement('div')
   const title = document.createElement('strong')
   title.textContent = name
   const sub = document.createElement('div')
   sub.textContent = caption
-  root.append(title, sub)
+  text.append(title, sub)
+  const view = document.createElement('button')
+  view.type = 'button'
+  view.className = 'mm-view'
+  view.textContent = 'View'
+  view.addEventListener('click', () => onView.current?.(id))
+  root.append(text, view)
   return root
 }

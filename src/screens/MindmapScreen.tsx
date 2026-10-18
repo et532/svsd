@@ -56,7 +56,7 @@ const radius = (degree: number) => 11 + Math.min(degree, 5) * 1.2
 const GRAB_ZOOM = 0.6
 const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
-export function MindmapScreen({ people, focusId = null }: { people: Person[]; focusId?: string | null }) {
+export function MindmapScreen({ people, focusId = null, onView }: { people: Person[]; focusId?: string | null; onView?: (id: string) => void }) {
   const pfp = usePfpStyle()
   const [groupBy, setGroupBy] = useState<GroupBy>('none')
   const [colorBy, setColorBy] = useState<ColorBy>('relationship')
@@ -474,8 +474,7 @@ export function MindmapScreen({ people, focusId = null }: { people: Person[]; fo
             <strong>{person.name}</strong>
             <small>{person.profession}</small>
           </span>
-          {/* The profile screen isn't built yet. */}
-          <button type="button" className="mm-view">
+          <button type="button" className="mm-view" onClick={() => onView?.(person.id)}>
             View
           </button>
         </div>
