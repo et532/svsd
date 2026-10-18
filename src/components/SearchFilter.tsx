@@ -60,9 +60,9 @@ export function SearchFilter({ value, onChange, entries }: Props) {
             <div className="sf-scrim" onClick={() => setOpen(false)} aria-hidden />
             <div className="sf-sheet" role="dialog" aria-modal="true" aria-labelledby="sf-title">
               <div className="sf-handle" aria-hidden />
-              <h3 id="sf-title">Filter</h3>
-              <div className="sf-label">Color by</div>
-              <div className="sf-chips" role="radiogroup" aria-label="Color by">
+              <h3 id="sf-title">Filters</h3>
+              <div className="sf-label">Sort by</div>
+              <div className="sf-chips" role="radiogroup" aria-label="Sort by">
                 {colorOptions.map((o) => (
                   <button
                     key={o.id}
