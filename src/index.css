@@ -2414,21 +2414,27 @@ button {
 
 .looks-grid {
   display: flex;
-  flex-wrap: wrap;
-  gap: 32px;
+  /* Line the phones up along the bottom so their nav bars sit level */
+  align-items: flex-end;
+  gap: 20px;
   margin-top: 28px;
 }
 
+/* Each phone is the real 375px app, shrunk by --looks-scale so all options fit in one row */
 .looks-frame {
-  width: 375px;
-  max-width: 100%;
+  flex: none;
+  width: calc(375px * var(--looks-scale, 1));
   margin: 0;
 }
 
+.looks-phone {
+  width: 375px;
+  zoom: var(--looks-scale, 1);
+}
+
 .looks-frame figcaption {
-  min-height: 112px;
   margin-bottom: 12px;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .looks-name {
