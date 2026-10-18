@@ -39,10 +39,7 @@ body,
 }
 
 body {
-  background:
-    radial-gradient(circle at 18% 22%, #fbe8f1 0, rgba(251, 232, 241, 0) 38%),
-    radial-gradient(circle at 82% 78%, #e8edff 0, rgba(232, 237, 255, 0) 40%),
-    #f5f5f7;
+  background: #ffffff;
 }
 
 button {
@@ -1084,5 +1081,284 @@ button {
 
 .chip-option-name {
   font-size: 14px;
+  font-weight: 500;
+}
+
+/* Style playground beside the phone (desktop only, not part of the app).
+   Uses a fixed translucent white, not the live --glass-* variables, so it stays readable
+   while those are being dragged to extremes. */
+.style-panel {
+  display: none;
+}
+
+@media (min-width: 1000px) {
+  .style-panel {
+    position: fixed;
+    top: 24px;
+    left: 24px;
+    bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    width: 280px;
+    overflow-y: auto;
+    padding: 18px 16px;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    border-radius: 24px;
+    box-shadow: var(--shadow);
+    /* The panel always uses Inter so it doesn't change while you compare */
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+.style-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.style-panel h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+}
+
+.style-reset {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.style-reset:hover {
+  color: var(--ink);
+}
+
+.style-group h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.style-hint {
+  margin: 2px 0 10px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+/* Glass presets: a two-column grid of little option cards */
+.glass-presets {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.glass-preset {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 7px 9px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: var(--hover);
+  text-align: left;
+}
+
+.glass-preset:hover {
+  background: rgba(17, 17, 19, 0.07);
+}
+
+.glass-preset.is-selected {
+  background: #fff;
+  border-color: var(--ink);
+}
+
+.glass-preset-name {
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.style-note {
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--muted);
+}
+
+/* Sliders: made prominent with a filled track and a clear thumb so the controls stand out */
+.sliders {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px 13px;
+  background: rgba(17, 17, 19, 0.03);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+
+.slider-row {
+  display: block;
+}
+
+.slider-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 7px;
+}
+
+.slider-label {
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.slider-value {
+  min-width: 42px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.slider-row input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  margin: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  /* Filled portion (ink) up to --pct, soft grey track after it */
+  background: linear-gradient(
+    to right,
+    var(--ink) 0,
+    var(--ink) var(--pct, 50%),
+    rgba(17, 17, 19, 0.12) var(--pct, 50%),
+    rgba(17, 17, 19, 0.12) 100%
+  );
+}
+
+.slider-row input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2.5px solid var(--ink);
+  box-shadow: 0 2px 6px rgba(17, 17, 19, 0.3);
+}
+
+.slider-row input[type='range']::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2.5px solid var(--ink);
+  box-shadow: 0 2px 6px rgba(17, 17, 19, 0.3);
+}
+
+.slider-row input[type='range']:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+/* Profile picture style swatches */
+.pfp-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.pfp-swatch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  width: 64px;
+}
+
+.pfp-orb {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.6),
+    0 2px 6px -2px rgba(60, 50, 110, 0.3);
+  transition: transform 0.12s;
+}
+
+.pfp-swatch:hover .pfp-orb {
+  transform: translateY(-1px) scale(1.04);
+}
+
+.pfp-swatch.is-selected .pfp-orb {
+  box-shadow:
+    0 0 0 2px var(--ink),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+}
+
+.pfp-name {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.pfp-swatch.is-selected .pfp-name {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+/* Gradient swatches, side by side */
+.gradient-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.gradient-swatch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 72px;
+}
+
+.gradient-chip {
+  width: 100%;
+  height: 46px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+  transition: transform 0.12s;
+}
+
+.gradient-swatch:hover .gradient-chip {
+  transform: translateY(-1px);
+}
+
+.gradient-swatch.is-selected .gradient-chip {
+  border-color: var(--ink);
+  box-shadow:
+    0 0 0 2px var(--ink),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+}
+
+.gradient-name {
+  font-size: 11px;
+  line-height: 1.2;
+  text-align: center;
+  color: var(--muted);
+}
+
+.gradient-swatch.is-selected .gradient-name {
+  color: var(--ink);
   font-weight: 500;
 }

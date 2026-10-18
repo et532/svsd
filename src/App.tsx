@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { DesignPanel } from './components/DesignPanel'
+import { StylePanel } from './components/StylePanel'
 import { Prototype } from './Prototype'
 import { MapLooksPage } from './screens/MapLooksPage'
 import { mapLooks, type MapLook } from './screens/mapLooks'
@@ -42,7 +42,7 @@ export default function App() {
 
   return (
     <div className="app">
-      <DesignPanel />
+      <StylePanel />
       <div className="device" style={{ '--device-scale': scale } as React.CSSProperties}>
         <Prototype key={route.look} mapLook={route.look} initialTab={route.look ? 'map' : 'list'} />
       </div>

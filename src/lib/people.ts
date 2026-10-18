@@ -54,15 +54,61 @@ export function personColor(id: string): string {
   return orbPalette(id)[0]
 }
 
-// A sphere-like gradient with a soft highlight, stable for each person.
-export function orbBackground(id: string): string {
+// Different looks for the gradient orb avatars. The colors are the same per person
+// (from orbPalette); only the shape/arrangement of the gradient changes.
+export type PfpStyle = 'sphere' | 'soft' | 'duotone' | 'mesh' | 'aurora' | 'vivid'
+
+export const pfpStyles: { id: PfpStyle; name: string }[] = [
+  { id: 'sphere', name: 'Sphere' },
+  { id: 'soft', name: 'Soft' },
+  { id: 'duotone', name: 'Duotone' },
+  { id: 'mesh', name: 'Mesh' },
+  { id: 'aurora', name: 'Aurora' },
+  { id: 'vivid', name: 'Vivid' },
+]
+
+// A gradient for a person's avatar, stable for each person, in the chosen style.
+export function orbBackground(id: string, style: PfpStyle = 'sphere'): string {
   const [glow, accent, base] = orbPalette(id)
-  return [
-    'radial-gradient(circle at 30% 26%, rgba(255,255,255,0.95) 0, rgba(255,255,255,0) 34%)',
-    `radial-gradient(circle at 76% 78%, ${accent} 0, transparent 62%)`,
-    `radial-gradient(circle at 22% 80%, ${glow} 0, transparent 58%)`,
-    base,
-  ].join(', ')
+  switch (style) {
+    case 'soft':
+      return [
+        'radial-gradient(circle at 32% 28%, rgba(255,255,255,0.9) 0, rgba(255,255,255,0) 46%)',
+        `radial-gradient(circle at 78% 80%, ${accent} 0, transparent 72%)`,
+        `radial-gradient(circle at 20% 82%, ${glow} 0, transparent 70%)`,
+        base,
+      ].join(', ')
+    case 'duotone':
+      return `linear-gradient(140deg, ${glow} 0%, ${accent} 100%)`
+    case 'mesh':
+      return [
+        `radial-gradient(circle at 16% 18%, ${glow} 0, transparent 52%)`,
+        `radial-gradient(circle at 84% 22%, ${accent} 0, transparent 52%)`,
+        `radial-gradient(circle at 22% 86%, ${accent} 0, transparent 50%)`,
+        `radial-gradient(circle at 82% 82%, ${glow} 0, transparent 52%)`,
+        base,
+      ].join(', ')
+    case 'aurora':
+      return [
+        'radial-gradient(circle at 30% 24%, rgba(255,255,255,0.8) 0, rgba(255,255,255,0) 38%)',
+        `conic-gradient(from 210deg at 50% 50%, ${glow}, ${accent}, ${base}, ${glow})`,
+      ].join(', ')
+    case 'vivid':
+      return [
+        'radial-gradient(circle at 32% 26%, rgba(255,255,255,0.92) 0, rgba(255,255,255,0) 22%)',
+        `radial-gradient(circle at 72% 74%, ${accent} 0, transparent 52%)`,
+        `radial-gradient(circle at 24% 78%, ${glow} 0, transparent 48%)`,
+        base,
+      ].join(', ')
+    case 'sphere':
+    default:
+      return [
+        'radial-gradient(circle at 30% 26%, rgba(255,255,255,0.95) 0, rgba(255,255,255,0) 34%)',
+        `radial-gradient(circle at 76% 78%, ${accent} 0, transparent 62%)`,
+        `radial-gradient(circle at 22% 80%, ${glow} 0, transparent 58%)`,
+        base,
+      ].join(', ')
+  }
 }
 
 export function timeSince(isoDate: string, now = new Date()): string {

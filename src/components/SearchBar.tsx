@@ -1,6 +1,7 @@
 import { useId, useMemo, useRef, useState } from 'react'
 import type { Person } from '../data/people'
 import { initials, matchesQuery, orbBackground } from '../lib/people'
+import { usePfpStyle } from '../lib/pfpStyle'
 import { CloseIcon, PinIcon, SearchIcon, TagIcon } from './Icons'
 
 type Props = {
@@ -187,11 +188,12 @@ export function SearchBar({ value, onChange, people, onOpenChange, accessory, pl
 }
 
 function OptionContent({ option, query }: { option: Option; query: string }) {
+  const pfp = usePfpStyle()
   if (option.kind === 'person') {
     const { person } = option
     return (
       <>
-        <span className="avatar avatar-sm" style={{ background: orbBackground(person.id) }} aria-hidden>
+        <span className="avatar avatar-sm" style={{ background: orbBackground(person.id, pfp) }} aria-hidden>
           {initials(person.name)}
         </span>
         <span className="option-text">
