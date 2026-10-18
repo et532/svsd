@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
+import { modeInfo } from '../modes'
+import { SproutIcon } from './Icons'
 
-// Desktop-only panel beside the phone for trying out fonts. Not part of the app itself.
+// Desktop-only panel beside the phone for trying out design options (map filter chip, fonts).
+// Not part of the app itself.
 
 type FontOption = { name: string; stack: string; note: string }
 
@@ -29,23 +32,63 @@ const headingFonts: FontOption[] = [
   { name: 'Manrope', stack: sans('Manrope'), note: 'Rounded sans' },
 ]
 
-const STORAGE_KEY = 'peepl-fonts'
+// Layouts for the From / Met / Now chip in the map's search bar. Each sets the --chip-* variables in index.css.
+type ChipOption = { name: string; note: string; vars: Record<string, string> }
 
-type Choice = { body: string; heading: string }
-const DEFAULT_CHOICE: Choice = { body: 'Inter', heading: SAME_AS_TEXT }
+const chipOptions: ChipOption[] = [
+  {
+    name: 'Current',
+    note: 'Stacked, semibold',
+    vars: { w: '51px', h: '38px', pad: '0px', dir: 'column', gap: '1px', icon: '15px', stroke: '2', text: '10.5px', weight: '600' },
+  },
+  {
+    name: 'Roomier',
+    note: 'Bigger chip, same content, more padding',
+    vars: { w: '58px', h: '40px', pad: '0px', dir: 'column', gap: '3px', icon: '14px', stroke: '1.8', text: '10px', weight: '500' },
+  },
+  {
+    name: 'Smaller contents',
+    note: 'Same chip, smaller icon and text',
+    vars: { w: '51px', h: '38px', pad: '0px', dir: 'column', gap: '2px', icon: '12px', stroke: '1.8', text: '9.5px', weight: '500' },
+  },
+  {
+    name: 'Airy and light',
+    note: 'Bigger chip, thin icon, regular weight',
+    vars: { w: '56px', h: '40px', pad: '0px', dir: 'column', gap: '3px', icon: '13px', stroke: '1.5', text: '10px', weight: '400' },
+  },
+  {
+    name: 'Side by side',
+    note: 'Icon next to the word, medium weight',
+    vars: { w: 'auto', h: '32px', pad: '12px', dir: 'row', gap: '5px', icon: '13px', stroke: '1.8', text: '12px', weight: '500' },
+  },
+  {
+    name: 'Side by side, light',
+    note: 'Icon next to the word, thin and regular',
+    vars: { w: 'auto', h: '34px', pad: '13px', dir: 'row', gap: '5px', icon: '12px', stroke: '1.5', text: '11.5px', weight: '400' },
+  },
+]
+
+// The --chip-* variables as a style object, for previews and for the page itself.
+const chipStyle = (option: ChipOption) =>
+  Object.fromEntries(Object.entries(option.vars).map(([key, value]) => [`--chip-${key}`, value]))
+
+const STORAGE_KEY = 'peepl-design'
+
+type Choice = { body: string; heading: string; chip: string }
+const DEFAULT_CHOICE: Choice = { body: 'Inter', heading: SAME_AS_TEXT, chip: 'Current' }
 
 // Remember the choice in this browser only, as a convenience. Fine to lose.
 function loadChoice(): Choice {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null')
-    if (saved && typeof saved.body === 'string' && typeof saved.heading === 'string') return saved
+    if (saved && typeof saved === 'object') return { ...DEFAULT_CHOICE, ...saved }
   } catch {
     // Storage unavailable: use the default
   }
   return DEFAULT_CHOICE
 }
 
-export function FontPanel() {
+export function DesignPanel() {
   const [choice, setChoice] = useState<Choice>(loadChoice)
 
   useEffect(() => {
@@ -54,6 +97,8 @@ export function FontPanel() {
     const root = document.documentElement.style
     root.setProperty('--font-body', body.stack)
     root.setProperty('--font-heading', heading.stack)
+    const chip = chipOptions.find((c) => c.name === choice.chip) ?? chipOptions[0]
+    for (const [name, value] of Object.entries(chipStyle(chip))) root.setProperty(name, value)
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(choice))
     } catch {
@@ -62,23 +107,56 @@ export function FontPanel() {
   }, [choice])
 
   return (
-    <aside className="font-panel" aria-label="Font options">
+    <aside className="font-panel" aria-label="Design options">
       <div className="font-panel-header">
-        <h2>Fonts</h2>
+        <h2>Design options</h2>
         <button className="font-reset" onClick={() => setChoice(DEFAULT_CHOICE)}>
           Reset
         </button>
       </div>
 
+      <section className="font-group">
+        <h3>Map filter chip</h3>
+        <p className="font-hint">The From / Met / Now chip in the search bar on the map tab</p>
+        <div role="radiogroup" aria-label="Map filter chip" className="chip-options">
+          {chipOptions.map((option) => (
+            <button
+              key={option.name}
+              role="radio"
+              aria-checked={option.name === choice.chip}
+              className={`font-option chip-option${option.name === choice.chip ? ' is-selected' : ''}`}
+              onClick={() => setChoice({ ...choice, chip: option.name })}
+            >
+              <span className="chip-preview">
+                <span
+                  className="filter-chip"
+                  style={{
+                    ...chipStyle(option),
+                    background: `linear-gradient(135deg, ${modeInfo.from.color}55, ${modeInfo.from.color}1a)`,
+                  }}
+                >
+                  <SproutIcon />
+                  <span className="filter-tiny">{modeInfo.from.tiny}</span>
+                </span>
+              </span>
+              <span className="chip-option-text">
+                <span className="chip-option-name">{option.name}</span>
+                <span className="font-note">{option.note}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+      </section>
+
       <FontGroup
-        title="Text"
+        title="Font: text"
         hint="Names, search, buttons, everything else"
         options={bodyFonts}
         selected={choice.body}
         onSelect={(body) => setChoice({ ...choice, body })}
       />
       <FontGroup
-        title="Headings"
+        title="Font: headings"
         hint="“Show on map”, “People / Places”, “Mindmap is coming soon”"
         options={headingFonts}
         selected={choice.heading}

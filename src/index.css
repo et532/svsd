@@ -322,24 +322,46 @@ button {
   background: var(--line);
 }
 
-/* Map filter chip: pill-shaped to match the search bar's rounded ends, tinted with the mode's gradient */
+/* Map filter chip: pill-shaped to match the search bar's rounded ends, tinted with the mode's gradient.
+   Sized with --chip-* variables so the design panel beside the phone can try different layouts. */
+:root {
+  --chip-w: 51px;
+  --chip-h: 38px;
+  --chip-pad: 0px;
+  --chip-dir: column;
+  --chip-gap: 1px;
+  --chip-icon: 15px;
+  --chip-stroke: 2;
+  --chip-text: 10.5px;
+  --chip-weight: 600;
+}
+
 .filter-chip {
+  flex: none;
   display: flex;
-  flex-direction: column;
+  flex-direction: var(--chip-dir);
   align-items: center;
   justify-content: center;
-  gap: 1px;
-  width: 51px;
-  height: 38px;
+  gap: var(--chip-gap);
+  width: var(--chip-w);
+  height: var(--chip-h);
+  padding: 0 var(--chip-pad);
   margin-right: -6px;
-  border-radius: 19px;
+  border-radius: 999px;
   color: var(--ink);
 }
 
+.filter-chip svg {
+  width: var(--chip-icon);
+  height: var(--chip-icon);
+  stroke-width: var(--chip-stroke);
+}
+
 .filter-tiny {
-  font-size: 10.5px;
-  font-weight: 600;
+  font-size: var(--chip-text);
+  font-weight: var(--chip-weight);
   line-height: 1;
+  white-space: nowrap;
 }
 
 /* Bottom bar */
@@ -1020,4 +1042,41 @@ button {
   font-size: 11.5px;
   line-height: 1.4;
   color: var(--muted);
+}
+
+/* Chip layout options in the design panel */
+.chip-option {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+
+/* A slice of search bar for each chip preview to sit in */
+.chip-preview {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 92px;
+  height: 46px;
+  padding-right: 10px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 23px;
+}
+
+.chip-preview .filter-chip {
+  margin-right: 0;
+}
+
+.chip-option-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.chip-option-name {
+  font-size: 14px;
+  font-weight: 500;
 }
