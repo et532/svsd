@@ -112,15 +112,11 @@ export function AskScreen({ people, tab, onClose, onOpenProfile, onAdd, onLogMom
     setPhase('idle')
   }
 
-  const status =
-    phase === 'listening' ? 'Listening…' : phase === 'thinking' ? 'Looking through your people…' : phase === 'answer' ? 'Ask Peepl' : 'Ask Peepl'
-
   return (
     <div className="ask">
       <div className="ask-scrim" onClick={onClose} aria-hidden />
       <div className={`ask-sheet is-${phase}`} role="dialog" aria-modal="true" aria-label="Ask Peepl">
         <div className="ask-head">
-          <span className="label">{status}</span>
           <button className="round-button glass-button is-sm" onClick={onClose} aria-label="Close">
             <CloseIcon size={16} />
           </button>
@@ -133,30 +129,8 @@ export function AskScreen({ people, tab, onClose, onOpenProfile, onAdd, onLogMom
         <div className="ask-body" aria-live="polite">
           {phase === 'idle' && (
             <>
-              <h2 className="ask-title">What can I help with?</h2>
-              <p className="ask-hint">Speak or type a request — here’s what you can do.</p>
-              <ul className="ask-actions">
-                <li>
-                  <b>Find people</b>
-                  <span>By interests, work, places, or how long it’s been.</span>
-                </li>
-                <li>
-                  <b>Add someone new</b>
-                  <span>Say “add someone new” to start a new person.</span>
-                </li>
-                <li>
-                  <b>Log a moment</b>
-                  <span>“Log a moment with Maya” to note what happened.</span>
-                </li>
-                <li>
-                  <b>Open a profile</b>
-                  <span>“Open Aisha’s profile” to jump straight there.</span>
-                </li>
-                <li>
-                  <b>Catch up</b>
-                  <span>“Who haven’t I talked to in a while?”</span>
-                </li>
-              </ul>
+              <h2 className="ask-title">Welcome, Emily</h2>
+              <p className="ask-hint">Add a new person, or ask me to find specific people by their interests, work, or how you know them.</p>
             </>
           )}
 
