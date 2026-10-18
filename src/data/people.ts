@@ -110,7 +110,7 @@ const basePeople: Person[] = [
     met: { city: 'New York', lat: 40.752, lng: -73.977, context: 'Demo Day' },
     livesNow: { city: 'Manhattan, NY', lat: 40.776, lng: -73.971 },
     lastContacted: '2026-10-12',
-    knows: ['hannah-cohen', 'noah-patel'],
+    knows: ['hannah-cohen', 'noah-patel', 'jordan-lee'],
   },
   {
     id: 'kenji-watanabe',
@@ -254,6 +254,39 @@ const basePeople: Person[] = [
     livesNow: { city: 'Brooklyn, NY', lat: 40.707, lng: -73.957 },
     lastContacted: '2026-10-15',
     knows: [],
+  },
+  {
+    id: 'jordan-lee',
+    name: 'Jordan Lee',
+    context: 'work',
+    profession: 'Climate tech founder',
+    story: 'Building battery recycling for e-bikes. Grew up in Seattle, just moved to Brooklyn. Climbs Tuesdays and wants a climbing buddy.',
+    tags: ['climate tech', 'founder', 'climbing', 'e-bikes'],
+    from: { city: 'Seattle', lat: 47.606, lng: -122.332 },
+    met: { city: 'Brooklyn, NY', lat: 40.712, lng: -73.95, context: 'Climate Demo Day' },
+    livesNow: { city: 'Brooklyn, NY', lat: 40.69, lng: -73.99 },
+    lastContacted: '2026-10-16',
+    knows: ['aisha-khan'],
+    closeness: 2,
+    todos: [
+      { id: 'jt-intro', text: 'Introduce them to a hardware engineer', done: false },
+      { id: 'jt-climb', text: 'Join him climbing on a Tuesday', done: false },
+    ],
+    moments: [
+      {
+        id: 'jm-coffee',
+        date: '2026-10-16',
+        title: 'Grabbed coffee near his office',
+        text: 'Talked about his battery-recycling startup and the hardware hire he’s trying to make.',
+      },
+      {
+        id: 'jm-met',
+        date: '2026-10-10',
+        title: 'Met at Climate Demo Day',
+        text: 'Introduced by Aisha. Climate founder, climbs Tuesdays and is after a climbing buddy.',
+        firstMeeting: true,
+      },
+    ],
   },
 ]
 
