@@ -12,7 +12,6 @@ import { MindmapScreen } from './screens/MindmapScreen'
 import { ProfileScreen } from './screens/ProfileScreen'
 import { SavedScreen } from './screens/SavedScreen'
 import type { FilterLayout } from './lib/filterLayouts'
-import type { NavLayout } from './lib/navLayouts'
 import { AskScreen } from './screens/AskScreen'
 
 // Full-screen layers above the tabs, newest last. Back / close pops the top one.
@@ -24,12 +23,11 @@ type Layer =
 
 type Props = {
   filterLayout?: FilterLayout
-  navLayout?: NavLayout
   initialTab?: Tab
 }
 
 // The app's phone screen. Rendered once, or several times on the filter looks page.
-export function Prototype({ filterLayout, navLayout, initialTab = 'list' }: Props) {
+export function Prototype({ filterLayout, initialTab = 'list' }: Props) {
   const allPeople = usePeople()
   const [tab, setTab] = useState<Tab>(initialTab)
   const [query, setQuery] = useState('')
@@ -168,7 +166,6 @@ export function Prototype({ filterLayout, navLayout, initialTab = 'list' }: Prop
 
       <BottomBar
         active={tab}
-        layout={navLayout}
         onChange={changeTab}
         onAsk={() => {
           setNavFocus(null)
