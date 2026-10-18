@@ -14,9 +14,10 @@ A private, personal "people log": remember everyone you meet, where you met them
 
 - `src/Prototype.tsx` — the phone screen: search bar on top, current screen, bottom nav. Holds the tab, search query, and map mode state.
 - `src/App.tsx` — wraps it in an iPhone 15 frame on desktop and scales the frame to fit the window. On screens 1000px or wider it also shows the **style panel** (`src/components/StylePanel.tsx`), a tool beside the phone with three sections: glassmorphism looks (preset variants + prominent blur / saturation / fill / edge sliders, driving the `--glass-*` variables); the **phone background** `--bg` (swatches side by side, White default plus pastel gradients); and the **profile-picture gradient style** (swatches, driving `orbBackground`'s style via the `src/lib/pfpStyle.ts` store). The area *behind* the phone (the `body`) is plain white. It's not part of the app. (The earlier font + map-chip `DesignPanel.tsx` was removed from the layout "for now" at the user's request; the file is kept but unused, and the current font and chip layout now come from the `:root` defaults in `index.css`.)
-- `src/screens/` — `ListScreen`, `MapScreen`, `MindmapScreen` (placeholder). `mapLooks.ts` holds the base-map looks; `MapLooksPage` (route `#/map-looks`) compares them side by side.
+- `src/screens/` — `ListScreen`, `MapScreen`, `MindmapScreen` (the people graph). `mapLooks.ts` holds the base-map looks; `MapLooksPage` (route `#/map-looks`) compares them side by side.
 - `src/components/` — `SearchBar` (with suggestions dropdown), `FilterMenu` (map filter chip + bottom sheet), `BottomBar`, `StatusBar`, `Icons`.
-- `src/data/people.ts` — 15 sample people. `src/modes.ts` — the three map modes. `src/lib/people.ts` — search matching and helpers.
+- `src/lib/forceGraph.ts` — hand-rolled force simulation for the mindmap (no dependency). `src/data/mockPeople.ts` — seeded generator of fabricated people (mostly social, some work, few family; each knows 1-3 others, max 5, a few know nobody); open `/?mock=200` (up to 500) to stress-test the whole app with that many.
+- `src/data/people.ts` — 15 sample people (each has a `knows` list of ids; links are symmetric). `src/modes.ts` — the three map modes. `src/lib/people.ts` — search matching and helpers.
 
 ## Design decisions (agreed with the user)
 
@@ -58,6 +59,12 @@ A private, personal "people log": remember everyone you meet, where you met them
 - Tapping the chip opens a **bottom sheet** that slides up. It has a left-aligned "Show on map" title, **no X button**, three radio rows, and an **Apply** button. It closes on tapping the backdrop, swiping down, or pressing Esc.
 - The map's attribution / info icon was removed at the user's request.
 
+**Mindmap** (look C "glass", chosen by the user)
+- Obsidian-style graph of everyone; no central "you" node. Links are the explicit `knows` lists on people (`linksOf` in `src/lib/people.ts`). Densely linked groups clump tighter (link strength grows with mutual neighbors).
+- **Dots** are small gradient orbs (the person's avatar, no white ring), so the color is how you know them (work / social / community / family). The color key is a glass panel under the search bar (top left) that is always visible: a black pill naming the current mode, with the list of values below. **Tap** the pill (or **hold and drag** it, releasing on one) to swap the list for Relationship / City / Job / Last seen; picking one switches back to the key. The six most common values get a color, the rest grey. Size grows a little with link count. The glass look is on the legend, group chips, labels and territory names.
+- **Group-by** is a vertical glass stack at the top right, level with the color pill (None / City / Met at / Job). The group stack, color pill and dropdowns use the same `--glass*` look as the search bar and nav pill, so the style panel's glass sliders change them too. A group pulls its people together and gets a soft pastel "territory" cloud with its name. Tap the name to isolate that group (everyone else fades); tap empty space to clear. Groups of one person stay ungrouped. The top search bar also narrows the graph.
+- Tap a node: the view zooms to center it with its direct connections in frame (the user can then pan freely). It lights up, direct connections dim to 55% and everyone else fades to about 8% (only first-degree links are shown). A fully round glass pill shows name, job and a black **View** button (stub, no profile screen yet). Drag a dot to move it (only zoomed in past about 0.6x; zoomed out, dragging anywhere pans), drag background to pan, wheel / pinch to zoom. The view auto-fits until the user pans, zooms or taps a person. Reduced motion settles instantly.
+
 **Rejected alternatives (don't bring back unless asked):** labeled, expanding, or docked nav bars; a filter bar under the search bar; timeline, segmented, swipe-card, center pop-up, or anchored dropdown filters; a wide labeled filter pill; and a side button next to the search bar.
 
 ## Next steps / open items
@@ -66,6 +73,7 @@ A private, personal "people log": remember everyone you meet, where you met them
 
 - **+ button:** does nothing yet. The user chose "button only" for now. The PRD calls for voice capture and manual entry.
 - **Person profile screen:** list arrows and map pins should open it (photo, story, tags, where you met, timeline).
-- **Mindmap:** placeholder "coming soon" screen only.
+- **Mindmap:** built (see above). Still open: voice capture on the + button should extract mutual links into `knows`; **View** is a stub until the profile screen exists.
+- **Mindmap looks A, B, D** were generated with OpenDesign and rejected; no need to keep them.
 - **Map credits:** the map uses OpenStreetMap data (via OpenFreeMap tiles), which requires attribution. That's fine for a private prototype, but add a credit (e.g. in a settings/About screen) before any public release.
 - No persistence: people live in `src/data/people.ts`.

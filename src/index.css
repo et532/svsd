@@ -1,32 +1,73 @@
-/* Visual style: white base, black type, soft pastel gradients, frosted glass surfaces. */
+/* Peepl design foundation (Figma "Peepl foundations"): warm cream ground, aubergine ink, glass cards,
+   context-colored auras. People carry the color; the chrome stays cream, ink and glass. */
 :root {
-  --bg: #ffffff;
-  --ink: #111113;
-  --muted: #8a8a93;
-  --line: rgba(17, 17, 19, 0.07);
-  --hover: rgba(17, 17, 19, 0.04);
+  /* Neutrals */
+  --bg: #f4efe7; /* ground-100 */
+  --ground-200: #e9e1d5;
+  --night: #1c1522;
+  --ink: #16121c;
+  --ink-muted: #5b5361;
+  --ink-faint: #8d8590;
+  --on-ink: #ffffff;
+  --muted: var(--ink-muted);
+  --line: rgba(22, 18, 28, 0.12); /* hairline */
+  --hover: rgba(22, 18, 28, 0.04);
+  --live: #c6f04a; /* recording only */
+  --focus: #2f4fd0;
 
-  /* Frosted glass. Two looks: "frost" (heavy, milky) on the search bar and nav pill,
-     and a more saturated "vivid" look on the other glass items (cards, dropdown, popups, sheet). */
-  --glass: rgba(255, 255, 255, 0.78);
-  --glass-strong: rgba(255, 255, 255, 1);
-  --glass-edge: rgba(255, 255, 255, 0.92);
-  --glass-blur: blur(34px) saturate(150%);
+  /* Profile color coding: hue = how you know someone. wash / core / deep per context. */
+  --work-wash: #dde3fb;
+  --work-core: #2f4fd0;
+  --work-deep: #1b2c86;
+  --social-wash: #fde0d4;
+  --social-core: #ec5a32;
+  --social-deep: #8f2f16;
+  --community-wash: #fbf0c4;
+  --community-core: #e8c22e;
+  --community-deep: #6e5600;
+  --family-wash: #fadbe8;
+  --family-core: #d6347f;
+  --family-deep: #8a1a50;
+  --unsorted-wash: #ebe5de;
+  --unsorted-core: #a99d93;
+  --unsorted-deep: #5b5361;
 
-  --glass-vivid: rgba(255, 255, 255, 0.5);
-  --glass-vivid-strong: rgba(255, 255, 255, 0.74);
-  --glass-vivid-edge: rgba(255, 255, 255, 0.85);
-  --glass-vivid-blur: blur(24px) saturate(230%);
+  /* Glass: frosts whatever sits behind it. Grain goes on auras and night surfaces, never on buttons or chips. */
+  --glass: rgba(255, 255, 255, 0.6);
+  --glass-strong: rgba(255, 255, 255, 0.85);
+  --glass-edge: #ffffff;
+  --glass-blur: blur(24px);
+
+  /* Second glass look (cards, dropdown, popups, sheet): same foundation glass. */
+  --glass-vivid: rgba(255, 255, 255, 0.6);
+  --glass-vivid-strong: rgba(255, 255, 255, 0.85);
+  --glass-vivid-edge: #ffffff;
+  --glass-vivid-blur: blur(24px);
 
   --shadow:
-    0 12px 32px -10px rgba(60, 50, 110, 0.16),
-    0 2px 6px rgba(60, 50, 110, 0.05),
-    0 0 0 1px rgba(17, 17, 19, 0.04);
-  --gutter: 16px;
+    0 8px 32px rgba(22, 18, 28, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
 
-  /* Switchable from the font panel beside the phone (components/FontPanel.tsx) */
-  --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-heading: var(--font-body);
+  /* Spacing (4px base) and radius */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  --radius-pill: 999px;
+  --gutter: var(--space-4);
+
+  /* Type: Instrument Serif for one display moment per screen, Geist for UI, Geist Mono for meta. */
+  --font-body: 'Geist', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-heading: 'Instrument Serif', 'Iowan Old Style', Georgia, serif;
+  --font-mono: 'Geist Mono', ui-monospace, Menlo, monospace;
   font-family: var(--font-body);
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
@@ -45,7 +86,7 @@ body,
 }
 
 body {
-  background: #ffffff;
+  background: var(--ground-200);
 }
 
 button {
@@ -194,7 +235,7 @@ button {
   right: -90px;
   width: 290px;
   height: 290px;
-  background: radial-gradient(circle at 35% 35%, #ffc6a8, #ffb6d3 55%, rgba(255, 182, 211, 0) 72%);
+  background: radial-gradient(circle at 35% 35%, var(--social-wash), var(--family-wash) 55%, transparent 72%);
 }
 
 .aura-orb:nth-child(2) {
@@ -202,7 +243,7 @@ button {
   left: -150px;
   width: 310px;
   height: 310px;
-  background: radial-gradient(circle, #d2c6ff, #bcd5ff 55%, rgba(188, 213, 255, 0) 72%);
+  background: radial-gradient(circle, var(--work-wash), var(--unsorted-wash) 55%, transparent 72%);
   animation-duration: 24s;
   animation-delay: -8s;
 }
@@ -212,7 +253,7 @@ button {
   bottom: -70px;
   width: 260px;
   height: 260px;
-  background: radial-gradient(circle, #c4f0de, #d6e6ff 55%, rgba(214, 230, 255, 0) 72%);
+  background: radial-gradient(circle, var(--community-wash), var(--social-wash) 55%, transparent 72%);
   animation-duration: 28s;
   animation-delay: -14s;
 }
@@ -222,7 +263,7 @@ button {
   left: 34%;
   width: 170px;
   height: 170px;
-  background: radial-gradient(circle, #ffeab8, rgba(255, 234, 184, 0) 70%);
+  background: radial-gradient(circle, var(--family-wash), transparent 70%);
   opacity: 0.5;
   animation-duration: 18s;
   animation-delay: -4s;
@@ -241,8 +282,7 @@ button {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .aura-orb,
-  .hero-orb {
+  .aura-orb {
     animation: none;
   }
 }
@@ -552,63 +592,293 @@ button {
   color: var(--ink);
 }
 
-/* Mindmap placeholder */
-.placeholder-screen {
+/* Mindmap */
+.mindmap-screen {
+  user-select: none;
+  -webkit-user-select: none;
+  overflow: hidden;
+  touch-action: none;
+  cursor: grab;
+}
+
+.mm-world {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+}
+
+.mm-lines {
+  position: absolute;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.mm-line {
+  stroke: rgba(110, 80, 190, 0.5);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  transition: opacity 0.25s;
+}
+
+.mm-turf {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  opacity: 0.85;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.mm-turf-name {
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: var(--glass-vivid);
+  border: 1px solid var(--glass-vivid-edge);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  pointer-events: auto;
+  cursor: pointer;
+  transform: scale(var(--inv, 1));
+}
+
+.mm-turf.is-focus .mm-turf-name {
+  background: var(--ink);
+  color: #fff;
+}
+
+.has-sel .mm-turf,
+.has-focus .mm-turf:not(.is-focus) {
+  opacity: 0.2;
+}
+
+/* Each person is a gradient orb dot (the same as their avatar) */
+.mm-node {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--orb);
+  cursor: pointer;
+  will-change: transform;
+  transition: opacity 0.25s;
+}
+
+.mm-node b {
+  position: relative;
+  font-weight: 600;
+}
+
+.mm-node.is-lit {
+  z-index: 2;
+  box-shadow: 0 8px 22px rgba(150, 120, 230, 0.55);
+}
+
+.mm-node.is-near {
+  opacity: 0.55;
+}
+
+.mm-node.is-far,
+.mm-line.is-far {
+  opacity: 0.08;
+}
+
+.mm-line.is-near {
+  stroke: rgba(110, 80, 190, 0.9);
+}
+
+.mm-label {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 6px 6px 6px 18px;
+  border-radius: 999px;
+  background: var(--glass-vivid-strong);
+  backdrop-filter: var(--glass-vivid-blur);
+  -webkit-backdrop-filter: var(--glass-vivid-blur);
+  border: 1px solid var(--glass-vivid-edge);
+  box-shadow: var(--shadow);
+  white-space: nowrap;
+  cursor: default;
+}
+
+.mm-label span {
+  display: flex;
+  flex-direction: column;
+}
+
+.mm-label strong {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.mm-label small {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.mm-view {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Two rows under the search bar: group-by, then the color key */
+.mm-chips {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  cursor: default;
+  background: var(--glass-strong);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-edge);
+  border-radius: 999px;
+  box-shadow: var(--shadow);
+}
+
+.mm-chips {
+  top: calc(var(--safe-top) + 80px);
+  left: auto;
+  right: 10px;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+  border-radius: 24px;
+  overflow: visible;
+}
+
+.mm-chips button {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 0 40px 60px;
-  text-align: center;
+  gap: 3px;
+  width: 50px;
+  height: 50px;
+  border-radius: 18px;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--muted);
+  transition: background 0.2s, color 0.2s;
 }
 
-.hero-orb {
-  width: 150px;
-  height: 150px;
-  margin-bottom: 36px;
+.mm-chips button:hover {
+  color: var(--ink);
+}
+
+.mm-chips button.is-on {
+  background: var(--ink);
+  color: #fff;
+}
+
+/* Color key: always shown. Tap or hold its black pill to swap the list for the things you can color by */
+.mm-colors {
+  position: absolute;
+  top: calc(var(--safe-top) + 80px);
+  left: var(--gutter);
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 170px;
+  padding: 6px 16px 14px 6px;
+  border-radius: 24px;
+  cursor: default;
+  background: var(--glass-strong);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-edge);
+  box-shadow: var(--shadow);
+}
+
+.mm-color-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 17px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  touch-action: none;
+}
+
+.mm-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding-left: 10px;
+  font-size: 12px;
+}
+
+.mm-list span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mm-list i {
+  flex: none;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
-  background:
-    radial-gradient(circle at 34% 28%, #ffffff 0, rgba(255, 255, 255, 0) 30%),
-    radial-gradient(circle at 72% 72%, #b4a2ff 0, rgba(180, 162, 255, 0) 58%),
-    radial-gradient(circle at 24% 76%, #ffb497 0, rgba(255, 180, 151, 0) 56%),
-    radial-gradient(circle at 78% 24%, #ff9fc9 0, rgba(255, 159, 201, 0) 52%),
-    #ebe5ff;
-  filter: blur(1.5px);
-  box-shadow:
-    0 0 60px 6px rgba(190, 165, 255, 0.4),
-    0 0 120px 30px rgba(255, 190, 210, 0.25);
-  animation: breathe 7s ease-in-out infinite;
 }
 
-@keyframes breathe {
-  50% {
-    transform: scale(1.05) rotate(8deg);
-  }
+.mm-menu {
+  align-self: stretch;
+  gap: 2px;
+  padding: 0;
 }
 
-.placeholder-screen h2,
+.mm-menu button {
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 17px;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.mm-menu button.is-on {
+  font-weight: 700;
+}
+
+.mm-menu button {
+  transition: background 0.12s, color 0.12s, transform 0.12s;
+}
+
+.mm-menu button:hover,
+.mm-menu button.is-hover {
+  background: var(--ink);
+  color: #fff;
+  transform: translateX(3px);
+}
+
 .sheet-grab h3,
 .dropdown-title {
   font-family: var(--font-heading);
-}
-
-.placeholder-screen h2 {
-  margin: 0 0 10px;
-  font-size: 25px;
-  font-weight: 300;
-  letter-spacing: -0.6px;
-}
-
-.placeholder-screen h2 strong {
-  font-weight: 600;
-}
-
-.placeholder-screen p {
-  margin: 0;
-  max-width: 250px;
-  font-size: 14.5px;
-  color: var(--muted);
-  line-height: 1.5;
 }
 
 /* Search dropdown */

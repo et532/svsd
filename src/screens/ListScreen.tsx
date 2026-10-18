@@ -1,6 +1,6 @@
 import type { Person } from '../data/people'
 import { ChevronRightIcon } from '../components/Icons'
-import { initials, orbBackground } from '../lib/people'
+import { initials, orbBackground, orbTextColor } from '../lib/people'
 import { usePfpStyle } from '../lib/pfpStyle'
 
 type Props = {
@@ -25,7 +25,7 @@ export function ListScreen({ people, query }: Props) {
       <ul className="people-list">
         {sorted.map((person) => (
           <li key={person.id} className="person-row">
-            <div className="avatar" style={{ background: orbBackground(person.id, pfp) }} aria-hidden>
+            <div className="avatar" style={{ background: orbBackground(person.id, pfp), color: orbTextColor(person.id) }} aria-hidden>
               {initials(person.name)}
             </div>
             <div className="person-name">{person.name}</div>

@@ -5,7 +5,7 @@ import type { PfpStyle } from './people'
 // list and search avatars update live without threading a prop through everything.
 // This is a design-exploration control, not app state.
 
-let current: PfpStyle = 'sphere'
+let current: PfpStyle = 'aura'
 const listeners = new Set<() => void>()
 
 export function setPfpStyle(style: PfpStyle) {

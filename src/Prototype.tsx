@@ -36,7 +36,7 @@ export function Prototype({ mapLook, initialTab = 'list' }: Props) {
       <StatusBar />
       {tab === 'list' && <ListScreen people={people} query={query} />}
       {tab === 'map' && <MapScreen people={people} mode={mode} look={mapLook} />}
-      {tab === 'mindmap' && <MindmapScreen />}
+      {tab === 'mindmap' && <MindmapScreen people={people} />}
 
       {searchOpen && <div className="search-scrim" aria-hidden />}
 

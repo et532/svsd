@@ -1,4 +1,4 @@
-import type { Person } from '../data/people'
+import { samplePeople, type Context, type Person } from '../data/people'
 
 export function initials(name: string): string {
   const parts = name.trim().split(/\s+/)
@@ -33,32 +33,52 @@ function normalize(text: string): string {
     .replace(/[̀-ͯ]/g, '')
 }
 
-// Soft pastel palettes for the gradient orb avatars: [glow, accent, base].
-const orbPalettes = [
-  ['#ffb48f', '#ff9fc4', '#ffe6d9'],
-  ['#a8b6ff', '#d6b8ff', '#eef0ff'],
-  ['#8fe0c6', '#b6dcff', '#ecfbf5'],
-  ['#ffd27f', '#ffa3a3', '#fff3dc'],
-  ['#c4a8ff', '#92d4ff', '#f1ebff'],
-  ['#ff9fca', '#ffc7a6', '#fff0f6'],
-]
-
-function orbPalette(id: string) {
-  let hash = 0
-  for (const ch of id) hash = (hash * 31 + ch.charCodeAt(0)) | 0
-  return orbPalettes[(hash >>> 0) % orbPalettes.length]
+// Peepl foundation: hue = how you know someone. [core, deep, wash] per context.
+const contextHues: Record<Context, [string, string, string]> = {
+  work: ['#2f4fd0', '#1b2c86', '#dde3fb'],
+  social: ['#ec5a32', '#8f2f16', '#fde0d4'],
+  community: ['#e8c22e', '#6e5600', '#fbf0c4'],
+  family: ['#d6347f', '#8a1a50', '#fadbe8'],
+  unsorted: ['#a99d93', '#5b5361', '#ebe5de'],
 }
 
-// A person's main pastel color, used for their glowing dot on the map (matches their avatar).
+// The core color for a kind of relationship (work, social...), for legends.
+export const contextColor = (c: Context) => contextHues[c][0]
+
+function personById(id: string): Person | undefined {
+  return samplePeople.find((p) => p.id === id)
+}
+
+function hues(id: string) {
+  return contextHues[personById(id)?.context ?? 'unsorted']
+}
+
+// Aura depth 1-3 = how close you are. There is no closeness field yet, so it follows how recently
+// you were in touch: this month = 3, last four months = 2, longer = 1.
+export function auraDepth(id: string, now = new Date()): 1 | 2 | 3 {
+  const last = personById(id)?.lastContacted
+  if (!last) return 1
+  const days = (now.getTime() - new Date(last).getTime()) / 86_400_000
+  return days <= 30 ? 3 : days <= 120 ? 2 : 1
+}
+
+// Initials sit on the core color: white on the dark cores, ink on the light ones.
+export function orbTextColor(id: string): string {
+  const ctx = personById(id)?.context ?? 'unsorted'
+  return ctx === 'community' || ctx === 'unsorted' ? 'var(--ink)' : '#ffffff'
+}
+
+// A person's core hue, used for their glowing dot on the map (matches their avatar).
 export function personColor(id: string): string {
-  return orbPalette(id)[0]
+  return hues(id)[0]
 }
 
 // Different looks for the gradient orb avatars. The colors are the same per person
 // (from orbPalette); only the shape/arrangement of the gradient changes.
-export type PfpStyle = 'sphere' | 'soft' | 'duotone' | 'mesh' | 'aurora' | 'vivid'
+export type PfpStyle = 'aura' | 'sphere' | 'soft' | 'duotone' | 'mesh' | 'aurora' | 'vivid'
 
 export const pfpStyles: { id: PfpStyle; name: string }[] = [
+  { id: 'aura', name: 'Aura' },
   { id: 'sphere', name: 'Sphere' },
   { id: 'soft', name: 'Soft' },
   { id: 'duotone', name: 'Duotone' },
@@ -69,8 +89,26 @@ export const pfpStyles: { id: PfpStyle; name: string }[] = [
 
 // A gradient for a person's avatar, stable for each person, in the chosen style.
 export function orbBackground(id: string, style: PfpStyle = 'sphere'): string {
-  const [glow, accent, base] = orbPalette(id)
+  const [glow, deep, base] = hues(id)
+  const accent = glow
   switch (style) {
+    case 'aura': {
+      // Foundation aura: depth 1 flat core to wash, 2 two-tone, 3 deep heart with a highlight.
+      const d = auraDepth(id)
+      if (d === 1) return `radial-gradient(circle at 50% 50%, ${glow} 0%, ${base} 74%)`
+      if (d === 2)
+        return [
+          `radial-gradient(circle at 40% 38%, ${glow} 0%, transparent 58%)`,
+          `radial-gradient(circle at 66% 68%, ${glow} 0%, transparent 62%)`,
+          base,
+        ].join(', ')
+      return [
+        `radial-gradient(circle at 46% 48%, ${deep} 0%, transparent 34%)`,
+        `radial-gradient(circle at 32% 30%, ${glow} 0%, transparent 58%)`,
+        'radial-gradient(circle at 74% 26%, #fff 0%, transparent 18%)',
+        base,
+      ].join(', ')
+    }
     case 'soft':
       return [
         'radial-gradient(circle at 32% 28%, rgba(255,255,255,0.9) 0, rgba(255,255,255,0) 46%)',
@@ -119,4 +157,19 @@ export function timeSince(isoDate: string, now = new Date()): string {
   if (days < 30) return `${Math.floor(days / 7)}w ago`
   if (days < 365) return `${Math.floor(days / 30)}mo ago`
   return `${Math.floor(days / 365)}y ago`
+}
+
+// Symmetric, de-duplicated links between the given people (ignores ids that aren't in the list).
+export function linksOf(people: Person[]): [string, string][] {
+  const ids = new Set(people.map((p) => p.id))
+  const seen = new Set<string>()
+  const links: [string, string][] = []
+  for (const p of people)
+    for (const other of p.knows) {
+      const key = [p.id, other].sort().join('|')
+      if (!ids.has(other) || other === p.id || seen.has(key)) continue
+      seen.add(key)
+      links.push([p.id, other])
+    }
+  return links
 }

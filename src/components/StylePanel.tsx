@@ -19,11 +19,11 @@ const glassPresets: { name: string; note: string; glass: Glass }[] = [
 
 type Gradient = { name: string; css: string }
 
-// Each option sets the phone's --bg (the screen behind the app's content). White is the
+// Each option sets the phone's --bg (the screen behind the app's content). Cream (the foundation ground) is the
 // default; the rest vary both color AND orientation — the mesh points and linear/conic
 // angles differ from one to the next, so the options don't all flow the same direction.
 const gradients: Gradient[] = [
-  { name: 'White', css: '#ffffff' },
+  { name: 'Cream', css: '#f4efe7' },
   {
     // diagonal mesh, top-left → bottom-right
     name: 'Pastel dawn',

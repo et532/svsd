@@ -1,12 +1,18 @@
+import { makeMockPeople } from './mockPeople'
+
 export type Place = {
   city: string
   lat: number
   lng: number
 }
 
+// How you know someone. Drives the hue of their aura (Peepl design foundation: profile color coding).
+export type Context = 'work' | 'social' | 'community' | 'family' | 'unsorted'
+
 export type Person = {
   id: string
   name: string
+  context: Context
   profession: string
   story: string
   tags: string[]
@@ -14,13 +20,16 @@ export type Person = {
   met: Place & { context: string }
   livesNow: Place
   lastContacted: string // ISO date
+  // Ids of people this person knows (mutuals mentioned when adding them). Links are symmetric.
+  knows: string[]
 }
 
 // Sample people so the list and map have something to show.
-export const samplePeople: Person[] = [
+const basePeople: Person[] = [
   {
     id: 'maya-chen',
     name: 'Maya Chen',
+    context: 'work',
     profession: 'Climate tech founder',
     story: 'Building a startup that turns food waste into fertilizer.',
     tags: ['climate', 'founder'],
@@ -28,10 +37,12 @@ export const samplePeople: Person[] = [
     met: { city: 'New York', lat: 40.741, lng: -73.99, context: 'Climate Week' },
     livesNow: { city: 'Brooklyn, NY', lat: 40.678, lng: -73.944 },
     lastContacted: '2026-10-02',
+    knows: ['aisha-khan', 'hannah-cohen', 'zara-ahmed', 'priya-nair'],
   },
   {
     id: 'daniel-okafor',
     name: 'Daniel Okafor',
+    context: 'work',
     profession: 'Product designer',
     story: 'Runs a monthly sketch club and collects old film cameras.',
     tags: ['design', 'art'],
@@ -39,10 +50,12 @@ export const samplePeople: Person[] = [
     met: { city: 'San Francisco', lat: 37.776, lng: -122.417, context: 'Config' },
     livesNow: { city: 'San Francisco', lat: 37.761, lng: -122.435 },
     lastContacted: '2026-08-21',
+    knows: ['priya-nair', 'omar-haddad'],
   },
   {
     id: 'sofia-ramirez',
     name: 'Sofía Ramírez',
+    context: 'work',
     profession: 'Recruiter',
     story: 'Training for her first marathon; loves spicy food.',
     tags: ['recruiting', 'running'],
@@ -50,10 +63,12 @@ export const samplePeople: Person[] = [
     met: { city: 'Austin', lat: 30.267, lng: -97.743, context: 'SXSW' },
     livesNow: { city: 'Austin', lat: 30.285, lng: -97.733 },
     lastContacted: '2026-06-11',
+    knows: [],
   },
   {
     id: 'liam-oconnor',
     name: "Liam O'Connor",
+    context: 'community',
     profession: 'Software engineer',
     story: 'Moved to Berlin for a robotics job. Plays in a jazz trio.',
     tags: ['engineering', 'music'],
@@ -61,10 +76,12 @@ export const samplePeople: Person[] = [
     met: { city: 'Dublin', lat: 53.343, lng: -6.254, context: 'College' },
     livesNow: { city: 'Berlin', lat: 52.52, lng: 13.405 },
     lastContacted: '2025-12-24',
+    knows: ['emma-wright'],
   },
   {
     id: 'aisha-khan',
     name: 'Aisha Khan',
+    context: 'work',
     profession: 'VC associate',
     story: 'Invests in health startups. Just adopted a corgi named Toast.',
     tags: ['investing', 'health'],
@@ -72,10 +89,12 @@ export const samplePeople: Person[] = [
     met: { city: 'New York', lat: 40.752, lng: -73.977, context: 'Demo Day' },
     livesNow: { city: 'Manhattan, NY', lat: 40.776, lng: -73.971 },
     lastContacted: '2026-10-12',
+    knows: ['hannah-cohen', 'noah-patel'],
   },
   {
     id: 'kenji-watanabe',
     name: 'Kenji Watanabe',
+    context: 'social',
     profession: 'Chef',
     story: 'Opening a ramen counter next spring. Promised me a tasting.',
     tags: ['food', 'founder'],
@@ -83,10 +102,12 @@ export const samplePeople: Person[] = [
     met: { city: 'Tokyo', lat: 35.676, lng: 139.65, context: 'Friend’s dinner' },
     livesNow: { city: 'Tokyo', lat: 35.662, lng: 139.704 },
     lastContacted: '2026-03-05',
+    knows: ['lucas-silva'],
   },
   {
     id: 'priya-nair',
     name: 'Priya Nair',
+    context: 'work',
     profession: 'Data scientist',
     story: 'Working on wildfire prediction models. Big board game fan.',
     tags: ['climate', 'data'],
@@ -94,10 +115,12 @@ export const samplePeople: Person[] = [
     met: { city: 'San Francisco', lat: 37.789, lng: -122.401, context: 'Climate meetup' },
     livesNow: { city: 'Oakland, CA', lat: 37.804, lng: -122.271 },
     lastContacted: '2026-09-18',
+    knows: ['omar-haddad'],
   },
   {
     id: 'tom-becker',
     name: 'Tom Becker',
+    context: 'work',
     profession: 'Journalist',
     story: 'Writes about cities and transit. Bikes everywhere.',
     tags: ['media', 'cities'],
@@ -105,10 +128,12 @@ export const samplePeople: Person[] = [
     met: { city: 'London', lat: 51.507, lng: -0.128, context: 'Conference' },
     livesNow: { city: 'London', lat: 51.52, lng: -0.09 },
     lastContacted: '2026-01-30',
+    knows: ['noah-patel', 'liam-oconnor'],
   },
   {
     id: 'grace-kim',
     name: 'Grace Kim',
+    context: 'community',
     profession: 'Med student',
     story: 'Roommate from freshman year. Wants to specialize in pediatrics.',
     tags: ['health', 'college'],
@@ -116,10 +141,12 @@ export const samplePeople: Person[] = [
     met: { city: 'Boston', lat: 42.36, lng: -71.059, context: 'College' },
     livesNow: { city: 'Boston', lat: 42.336, lng: -71.104 },
     lastContacted: '2026-07-04',
+    knows: ['liam-oconnor', 'emma-wright'],
   },
   {
     id: 'lucas-silva',
     name: 'Lucas Silva',
+    context: 'community',
     profession: 'Community organizer',
     story: 'Hosts a Sunday supper club for people new to the city.',
     tags: ['community', 'food'],
@@ -127,10 +154,12 @@ export const samplePeople: Person[] = [
     met: { city: 'Lisbon', lat: 38.722, lng: -9.139, context: 'Web Summit' },
     livesNow: { city: 'Lisbon', lat: 38.711, lng: -9.146 },
     lastContacted: '2026-05-16',
+    knows: [],
   },
   {
     id: 'hannah-cohen',
     name: 'Hannah Cohen',
+    context: 'work',
     profession: 'Startup lawyer',
     story: 'Offered to look over our incorporation docs. Loves pottery.',
     tags: ['legal', 'founder'],
@@ -138,10 +167,12 @@ export const samplePeople: Person[] = [
     met: { city: 'New York', lat: 40.728, lng: -74.002, context: 'Founder dinner' },
     livesNow: { city: 'Manhattan, NY', lat: 40.735, lng: -74.003 },
     lastContacted: '2026-09-29',
+    knows: ['zara-ahmed'],
   },
   {
     id: 'omar-haddad',
     name: 'Omar Haddad',
+    context: 'social',
     profession: 'Architect',
     story: 'Designs passive houses. Just got back from hiking Patagonia.',
     tags: ['design', 'climate'],
@@ -149,10 +180,12 @@ export const samplePeople: Person[] = [
     met: { city: 'Paris', lat: 48.857, lng: 2.352, context: 'Mutual friend' },
     livesNow: { city: 'Paris', lat: 48.865, lng: 2.38 },
     lastContacted: '2026-04-09',
+    knows: [],
   },
   {
     id: 'emma-wright',
     name: 'Emma Wright',
+    context: 'community',
     profession: 'Teacher',
     story: 'Teaches middle school science. Childhood best friend.',
     tags: ['education', 'hometown'],
@@ -160,10 +193,12 @@ export const samplePeople: Person[] = [
     met: { city: 'Sydney', lat: -33.88, lng: 151.2, context: 'Primary school' },
     livesNow: { city: 'Melbourne', lat: -37.814, lng: 144.963 },
     lastContacted: '2025-11-12',
+    knows: [],
   },
   {
     id: 'noah-patel',
     name: 'Noah Patel',
+    context: 'work',
     profession: 'Growth marketer',
     story: 'Thinking about leaving his job to start a newsletter.',
     tags: ['marketing', 'media'],
@@ -171,10 +206,12 @@ export const samplePeople: Person[] = [
     met: { city: 'Toronto', lat: 43.645, lng: -79.39, context: 'Collision' },
     livesNow: { city: 'Toronto', lat: 43.665, lng: -79.4 },
     lastContacted: '2026-08-02',
+    knows: [],
   },
   {
     id: 'zara-ahmed',
     name: 'Zara Ahmed',
+    context: 'social',
     profession: 'Musician',
     story: 'Plays cello and produces ambient music. Has a show in November.',
     tags: ['music', 'art'],
@@ -182,5 +219,10 @@ export const samplePeople: Person[] = [
     met: { city: 'Brooklyn, NY', lat: 40.714, lng: -73.961, context: 'Gallery opening' },
     livesNow: { city: 'Brooklyn, NY', lat: 40.707, lng: -73.957 },
     lastContacted: '2026-10-15',
+    knows: [],
   },
 ]
+
+// ?mock=200 swaps in that many fabricated people (see mockPeople.ts) to stress-test the mindmap.
+const mockCount = Math.min(500, Number(new URLSearchParams(window.location.search).get('mock')) || 0)
+export const samplePeople: Person[] = mockCount ? makeMockPeople(mockCount) : basePeople

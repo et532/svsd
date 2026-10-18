@@ -1,6 +1,6 @@
 import { useId, useMemo, useRef, useState } from 'react'
 import type { Person } from '../data/people'
-import { initials, matchesQuery, orbBackground } from '../lib/people'
+import { initials, matchesQuery, orbBackground, orbTextColor } from '../lib/people'
 import { usePfpStyle } from '../lib/pfpStyle'
 import { CloseIcon, PinIcon, SearchIcon, TagIcon } from './Icons'
 
@@ -193,7 +193,7 @@ function OptionContent({ option, query }: { option: Option; query: string }) {
     const { person } = option
     return (
       <>
-        <span className="avatar avatar-sm" style={{ background: orbBackground(person.id, pfp) }} aria-hidden>
+        <span className="avatar avatar-sm" style={{ background: orbBackground(person.id, pfp), color: orbTextColor(person.id) }} aria-hidden>
           {initials(person.name)}
         </span>
         <span className="option-text">
