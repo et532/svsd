@@ -76,8 +76,9 @@ const gradients: Gradient[] = [
   },
 ]
 
-const STORAGE_KEY = 'peepl-style'
-const DEFAULT_PRESET = glassPresets[0]
+const STORAGE_KEY = 'peepl-style-v2'
+// Frost is the chosen look for the search bar + nav pill.
+const DEFAULT_PRESET = glassPresets.find((p) => p.name === 'Frost') ?? glassPresets[0]
 const DEFAULT_GRADIENT = gradients[0].name
 const DEFAULT_PFP: PfpStyle = 'sphere'
 

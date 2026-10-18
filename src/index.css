@@ -6,12 +6,12 @@
   --line: rgba(17, 17, 19, 0.07);
   --hover: rgba(17, 17, 19, 0.04);
 
-  /* Frosted glass. Two looks: the default ("current") on the search bar and nav pill,
+  /* Frosted glass. Two looks: "frost" (heavy, milky) on the search bar and nav pill,
      and a more saturated "vivid" look on the other glass items (cards, dropdown, popups, sheet). */
-  --glass: rgba(255, 255, 255, 0.58);
-  --glass-strong: rgba(255, 255, 255, 0.82);
-  --glass-edge: rgba(255, 255, 255, 0.85);
-  --glass-blur: blur(22px) saturate(170%);
+  --glass: rgba(255, 255, 255, 0.78);
+  --glass-strong: rgba(255, 255, 255, 1);
+  --glass-edge: rgba(255, 255, 255, 0.92);
+  --glass-blur: blur(34px) saturate(150%);
 
   --glass-vivid: rgba(255, 255, 255, 0.5);
   --glass-vivid-strong: rgba(255, 255, 255, 0.74);
