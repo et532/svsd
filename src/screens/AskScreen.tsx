@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { BackIcon, ChevronRightIcon, CloseIcon, MicIcon } from '../components/Icons'
+import { ChevronRightIcon, CloseIcon, KeyboardIcon, MicIcon } from '../components/Icons'
 import type { Person } from '../data/people'
-import { interpret, storyRequest, type Action, type AskResult, type Match } from '../lib/ask'
-import { updatePerson } from '../lib/peopleStore'
+import { demoRequests, interpret, type AskResult } from '../lib/ask'
 import { firstName, initials, orbBackground, orbTextColor } from '../lib/people'
 import type { Tab } from '../components/BottomBar'
 
@@ -14,7 +13,6 @@ type Props = {
   onAdd: () => void
   onLogMoment: (id: string) => void
   onShow: (ids: string[], label: string) => void
-  onToast: (text: string) => void
 }
 
 type Phase = 'idle' | 'listening' | 'thinking' | 'answer'
@@ -24,14 +22,14 @@ const BARS = 26
 
 // Ask Peepl: the voice AI search behind the mic button. Speak (a scripted demo, like capture) or type a request;
 // it finds people or jumps to the right action.
-export function AskScreen({ people, tab, onClose, onOpenProfile, onAdd, onLogMoment, onShow, onToast }: Props) {
+export function AskScreen({ people, tab, onClose, onOpenProfile, onAdd, onLogMoment, onShow }: Props) {
   const [phase, setPhase] = useState<Phase>('idle')
   const [heard, setHeard] = useState('')
+  const [typing, setTyping] = useState(false)
   const [draft, setDraft] = useState('')
   const [result, setResult] = useState<AskResult | null>(null)
   const [bars, setBars] = useState<number[]>(() => Array(BARS).fill(4))
-  // A drafted message / intro open over the results
-  const [drafting, setDrafting] = useState<Action | null>(null)
+  const nextDemo = useRef(0)
   const timers = useRef<number[]>([])
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -75,6 +73,7 @@ export function AskScreen({ people, tab, onClose, onOpenProfile, onAdd, onLogMom
   // "Speak" a request word by word, then answer it
   function say(text: string) {
     clearTimers()
+    setTyping(false)
     setResult(null)
     setHeard('')
     setPhase('listening')
@@ -87,12 +86,21 @@ export function AskScreen({ people, tab, onClose, onOpenProfile, onAdd, onLogMom
 
   function tapMic() {
     if (phase === 'listening') return answer(heard) // stop early: go with what was heard
-    say(storyRequest(people))
+    say(demoRequests[nextDemo.current % demoRequests.length])
+    nextDemo.current += 1
+  }
+
+  function startTyping() {
+    clearTimers()
+    setPhase(result ? 'answer' : 'idle')
+    setTyping(true)
+    setTimeout(() => inputRef.current?.focus(), 50)
   }
 
   function submitTyped(e: React.FormEvent) {
     e.preventDefault()
     if (!draft.trim()) return
+    setTyping(false)
     answer(draft.trim())
     setDraft('')
   }
@@ -104,92 +112,109 @@ export function AskScreen({ people, tab, onClose, onOpenProfile, onAdd, onLogMom
     setPhase('idle')
   }
 
-  // While recording, the spoken words stream into the text bar (not a separate heading)
-  const recording = phase === 'listening' || phase === 'thinking'
+  const status =
+    phase === 'listening' ? 'Listening…' : phase === 'thinking' ? 'Looking through your people…' : phase === 'answer' ? 'Ask Peepl' : 'Ask Peepl'
 
   return (
     <div className="ask">
       <div className="ask-scrim" onClick={onClose} aria-hidden />
       <div className={`ask-sheet is-${phase}`} role="dialog" aria-modal="true" aria-label="Ask Peepl">
         <div className="ask-head">
-          <button className="ask-back" onClick={onClose} aria-label="Back">
-            <BackIcon size={16} />
-            {tab === 'mindmap' ? 'Mindmap' : 'People'}
+          <span className="label">{status}</span>
+          <button className="round-button glass-button is-sm" onClick={onClose} aria-label="Close">
+            <CloseIcon size={16} />
           </button>
-          <h1 className="ask-h1">Ask</h1>
+        </div>
+
+        <div className="ask-orb" aria-hidden>
+          <span />
         </div>
 
         <div className="ask-body" aria-live="polite">
           {phase === 'idle' && (
             <>
-              <h2 className="ask-title">Welcome, Emily</h2>
-              <p className="ask-hint">Add a new person, or ask me to find specific people by their interests, work, or how you know them.</p>
+              <h2 className="ask-title">What can I help with?</h2>
+              <p className="ask-hint">Speak or type a request — here’s what you can do.</p>
+              <ul className="ask-actions">
+                <li>
+                  <b>Find people</b>
+                  <span>By interests, work, places, or how long it’s been.</span>
+                </li>
+                <li>
+                  <b>Add someone new</b>
+                  <span>Say “add someone new” to start a new person.</span>
+                </li>
+                <li>
+                  <b>Log a moment</b>
+                  <span>“Log a moment with Maya” to note what happened.</span>
+                </li>
+                <li>
+                  <b>Open a profile</b>
+                  <span>“Open Aisha’s profile” to jump straight there.</span>
+                </li>
+                <li>
+                  <b>Catch up</b>
+                  <span>“Who haven’t I talked to in a while?”</span>
+                </li>
+              </ul>
             </>
           )}
 
+          {(phase === 'listening' || phase === 'thinking') && <p className="ask-heard">{heard || '…'}</p>}
+
           {phase === 'answer' && result && (
             <>
-              <p className="ask-you">{heard}</p>
+              <p className="ask-you">“{heard}”</p>
               <Answer
                 result={result}
                 tab={tab}
                 onOpenProfile={onOpenProfile}
                 onShow={onShow}
                 onAgain={reset}
-                onAction={setDrafting}
               />
             </>
           )}
         </div>
 
-        {drafting && (
-          <Draft
-            action={drafting}
-            onCancel={() => setDrafting(null)}
-            onSend={(text) => {
-              const { closes } = drafting
-              if (closes) {
-                const owner = people.find((p) => p.id === closes.personId)
-                if (owner) updatePerson(owner.id, { todos: (owner.todos ?? []).map((t) => (t.id === closes.todoId ? { ...t, done: true } : t)) })
-              }
-              setDrafting(null)
-              onToast(
-                closes
-                  ? `Sent · ticked off “${people.find((p) => p.id === closes.personId)?.todos?.find((t) => t.id === closes.todoId)?.text}”`
-                  : `Sent to ${drafting.to.split(' ')[0]}`,
-              )
-              void text
-            }}
-          />
-        )}
-
-        <form className="ask-bar" onSubmit={submitTyped}>
-          <input
-            ref={inputRef}
-            className="ask-input"
-            value={recording ? heard : draft}
-            onChange={(e) => setDraft(e.target.value)}
-            placeholder="Ask about your people…"
-            aria-label="Ask about your people"
-            readOnly={recording}
-          />
-          <button
-            type="button"
-            className={`ask-mic-btn${phase === 'listening' ? ' is-live' : ''}`}
-            onClick={tapMic}
-            aria-label={phase === 'listening' ? 'Stop listening' : 'Tap to talk'}
-          >
-            {phase === 'listening' ? (
-              <span className="ask-wave" aria-hidden>
-                {bars.slice(0, 5).map((h, i) => (
-                  <i key={i} style={{ height: Math.max(4, h * 0.6) }} />
-                ))}
-              </span>
-            ) : (
+        {typing ? (
+          <form className="ask-bar is-typing" onSubmit={submitTyped}>
+            <input
+              ref={inputRef}
+              className="ask-input"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder="e.g. who’s into baseball?"
+              aria-label="Type a request"
+            />
+            <button type="button" className="round-button soft" onClick={() => setTyping(false)} aria-label="Speak instead">
               <MicIcon size={18} />
-            )}
-          </button>
-        </form>
+            </button>
+          </form>
+        ) : (
+          <div className="ask-bar">
+            <button
+              className={`ask-mic${phase === 'listening' ? ' is-live' : ''}`}
+              onClick={tapMic}
+              aria-label={phase === 'listening' ? 'Stop listening' : 'Tap to talk'}
+            >
+              {phase === 'listening' ? (
+                <span className="ask-wave" aria-hidden>
+                  {bars.map((h, i) => (
+                    <i key={i} style={{ height: h }} />
+                  ))}
+                </span>
+              ) : (
+                <>
+                  <MicIcon size={20} />
+                  {phase === 'answer' ? 'Ask again' : 'Tap to talk'}
+                </>
+              )}
+            </button>
+            <button className="round-button soft" onClick={startTyping} aria-label="Type instead">
+              <KeyboardIcon size={18} />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -201,10 +226,9 @@ type AnswerProps = {
   onOpenProfile: (id: string) => void
   onShow: (ids: string[], label: string) => void
   onAgain: () => void
-  onAction: (action: Action) => void
 }
 
-function Answer({ result, tab, onOpenProfile, onShow, onAgain, onAction }: AnswerProps) {
+function Answer({ result, tab, onOpenProfile, onShow, onAgain }: AnswerProps) {
   if (result.kind === 'add') return <h2 className="ask-title">Okay, let’s add someone new.</h2>
   if (result.kind === 'moment') return <h2 className="ask-title">Logging a moment with {firstName(result.person.name)}…</h2>
   if (result.kind === 'profile') return <h2 className="ask-title">Opening {firstName(result.person.name)}’s profile…</h2>
@@ -222,21 +246,23 @@ function Answer({ result, tab, onOpenProfile, onShow, onAgain, onAction }: Answe
   const { matches, title } = result
   return (
     <>
-      <p className="ask-count">
-        {matches.length} {matches.length === 1 ? 'person' : 'people'} · from your notes
-      </p>
+      <h2 className="ask-title is-small">{title}</h2>
       {matches.length > 0 && (
         <>
-          {(result.groups ?? [{ label: '', matches }]).map((g) => (
-            <div key={g.label} className="ask-group">
-              {g.label && <span className="label ask-group-label">{g.label}</span>}
-              <div className="ask-results">
-                {g.matches.slice(0, 6).map((m) => (
-                  <Row key={m.person.id} match={m} onOpenProfile={onOpenProfile} onAction={onAction} />
-                ))}
-              </div>
-            </div>
-          ))}
+          <div className="ask-results">
+            {matches.slice(0, 6).map(({ person, why }) => (
+              <button key={person.id} className="ask-row" onClick={() => onOpenProfile(person.id)}>
+                <span className="avatar avatar-sm" style={{ background: orbBackground(person.id), color: orbTextColor(person.id) }}>
+                  {initials(person.name)}
+                </span>
+                <span className="ask-row-text">
+                  <b>{person.name}</b>
+                  <span>{why}</span>
+                </span>
+                <ChevronRightIcon size={16} />
+              </button>
+            ))}
+          </div>
           {matches.length > 6 && <p className="ask-hint">and {matches.length - 6} more</p>}
           <button
             className="ask-show"
@@ -252,70 +278,5 @@ function Answer({ result, tab, onOpenProfile, onShow, onAgain, onAction }: Answe
         </>
       )}
     </>
-  )
-}
-
-function Row({ match, onOpenProfile, onAction }: { match: Match; onOpenProfile: (id: string) => void; onAction: (a: Action) => void }) {
-  const { person, why, say, via, action } = match
-  if (!say && !action)
-    return (
-      <button className="ask-row" onClick={() => onOpenProfile(person.id)}>
-        <span className="avatar avatar-sm" style={{ background: orbBackground(person.id), color: orbTextColor(person.id) }}>
-          {initials(person.name)}
-        </span>
-        <span className="ask-row-text">
-          <b>{person.name}</b>
-          <span>{why}</span>
-        </span>
-        <ChevronRightIcon size={16} />
-      </button>
-    )
-  return (
-    <div className="ask-card">
-      <button className="ask-row" onClick={() => onOpenProfile(person.id)}>
-        <span className="avatar avatar-sm" style={{ background: orbBackground(person.id), color: orbTextColor(person.id) }}>
-          {initials(person.name)}
-        </span>
-        <span className="ask-row-text">
-          <b>{person.name}</b>
-          <span>{why}</span>
-        </span>
-        <ChevronRightIcon size={16} />
-      </button>
-      {via && <span className="ask-via">{via}</span>}
-      {say && <p className="ask-say">{say}</p>}
-      {action && (
-        <button className="ask-action" onClick={() => onAction(action)}>
-          {action.label}
-        </button>
-      )}
-    </div>
-  )
-}
-
-// Peepl drafts it; you decide whether to send.
-function Draft({ action, onCancel, onSend }: { action: Action; onCancel: () => void; onSend: (text: string) => void }) {
-  const [text, setText] = useState(action.draft)
-  const title = action.kind === 'intro' ? 'Draft intro' : action.kind === 'coffee' ? 'Plan coffee' : 'Message'
-  return (
-    <div className="ask-draft" role="dialog" aria-label={title}>
-      <div className="ask-draft-head">
-        <span className="label">{title}</span>
-        <button className="round-button glass-button is-sm" onClick={onCancel} aria-label="Back to results">
-          <CloseIcon size={14} />
-        </button>
-      </div>
-      <p className="ask-draft-to">To: {action.to}</p>
-      <textarea value={text} onChange={(e) => setText(e.target.value)} rows={6} aria-label="Message" />
-      {action.closes && <p className="ask-draft-note">Sending this ticks off the follow-up on their profile.</p>}
-      <div className="ask-draft-actions">
-        <button className="pill-button ghost" onClick={onCancel}>
-          Not now
-        </button>
-        <button className="pill-button ink grow" onClick={() => onSend(text)}>
-          Send
-        </button>
-      </div>
-    </div>
   )
 }
