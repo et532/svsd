@@ -1,15 +1,55 @@
-// A person's avatar: a soft flat-gradient circle with a happy face, picked at random but always the same for the
-// same id (after Luma's characters). Pass the size with a class (avatar-lg, avatar-xl) as on any .avatar.
-const palettes = [
-  ['#ffd3ea', '#c9d3ff'],
-  ['#dccbff', '#8fa2ea'],
-  ['#c6f2e3', '#6fcfc0'],
-  ['#ffeaa6', '#f4c761'],
-  ['#ffbba8', '#ff8c7a'],
-  ['#c0e7ff', '#70bef2'],
-  ['#ffd0a0', '#e89c55'],
-  ['#fac5da', '#ef90b6'],
-]
+// A person's avatar: one of the 18 "Blob club" stickers from the Figma (the Originals in "Blob club — 54 sticker
+// collection", node 196:5644), exported as transparent PNGs in src/assets/blobs. Each sample person has their own
+// blob; anyone added later gets one picked from their id, always the same for the same id.
+// Pass the size with a class (avatar-lg, avatar-xl) as on any .avatar.
+const images = import.meta.glob<string>('../assets/blobs/*.png', { eager: true, import: 'default' })
+const src = (blob: string) => images[`../assets/blobs/${blob}.png`]
+
+// Each blob's two colors (light, then deeper); the profile's aura is tinted with them.
+const blobs: Record<string, [string, string]> = {
+  mint: ['#c6f2e3', '#6fcfc0'],
+  lilac: ['#e4d9ff', '#a99cf0'],
+  coral: ['#ffcdbf', '#ff8c7a'],
+  sky: ['#cfe6ff', '#7fb6f2'],
+  pistachio: ['#e6f5c0', '#a9d46a'],
+  apricot: ['#ffe0b8', '#f0a95a'],
+  aqua: ['#c4f1f5', '#5fc9d6'],
+  rose: ['#ffd6df', '#f291a8'],
+  mango: ['#ffe7a6', '#f5b73d'],
+  sage: ['#dfe8d6', '#93a98a'],
+  jelly: ['#e8dcff', '#b39cf0'],
+  indigo: ['#d5dcff', '#7d8ef0'],
+  lemon: ['#fff1b8', '#f2cf5c'],
+  peach: ['#ffe0d2', '#f7a68c'],
+  tangerine: ['#ffd2ae', '#f58a3c'],
+  jade: ['#c8f0d6', '#3fae78'],
+  opal: ['#d9dcff', '#8f9ef5'],
+  orchid: ['#ffd8f0', '#ee8fcf'],
+}
+const names = Object.keys(blobs)
+
+// The sample people, one blob each, roughly by how you know them (work: cool blues and greens, social: warm
+// oranges, community: yellows and pinks).
+const assigned: Record<string, string> = {
+  'jordan-lee': 'mint',
+  'daniel-okafor': 'sky',
+  'sofia-ramirez': 'opal',
+  'aisha-khan': 'indigo',
+  'priya-nair': 'lilac',
+  'tom-becker': 'sage',
+  'hannah-cohen': 'jelly',
+  'noah-patel': 'aqua',
+  'ana-ruiz': 'jade',
+  'maya-chen': 'coral',
+  'kenji-watanabe': 'tangerine',
+  'omar-haddad': 'apricot',
+  'jordan-smith': 'peach',
+  'zara-ahmed': 'rose',
+  'grace-kim': 'pistachio',
+  'lucas-silva': 'lemon',
+  'emma-wright': 'orchid',
+  'liam-oconnor': 'mango',
+}
 
 function hash(id: string) {
   let h = 2166136261
@@ -17,48 +57,17 @@ function hash(id: string) {
   return h >>> 0
 }
 
-const ink = '#16121c'
-
-// Eyes (centered at x 36 and 64, y 42), then mouths (centered at x 50, y ~60).
-const eyes = [
-  <g key="dots" fill={ink}>
-    <circle cx="36" cy="42" r="3.6" />
-    <circle cx="64" cy="42" r="3.6" />
-  </g>,
-  <g key="ovals" fill={ink}>
-    <ellipse cx="36" cy="42" rx="3.2" ry="5" />
-    <ellipse cx="64" cy="42" rx="3.2" ry="5" />
-  </g>,
-  <g key="happy" fill="none" stroke={ink} strokeWidth="3.4" strokeLinecap="round">
-    <path d="M30 45q6-8 12 0M58 45q6-8 12 0" />
-  </g>,
-  <g key="wink" fill={ink} stroke={ink} strokeWidth="3.4" strokeLinecap="round">
-    <circle cx="36" cy="42" r="3.6" stroke="none" />
-    <path d="M58 44q6-7 12 0" fill="none" />
-  </g>,
-]
-
-const mouths = [
-  <path key="open" d="M38 56q12 0 24 0-1 14-12 14T38 56z" fill={ink} />,
-  <path key="smile" d="M36 58q14 14 28 0" fill="none" stroke={ink} strokeWidth="3.6" strokeLinecap="round" />,
-  <ellipse key="small" cx="50" cy="63" rx="6" ry="7" fill={ink} />,
-  <path key="grin" d="M34 56h32q-2 15-16 15T34 56z" fill={ink} />,
-]
+const blobOf = (id: string) => assigned[id] ?? names[hash(id) % names.length]
 
 // The two colors of someone's avatar (light, then deeper); the profile's aura is tinted with them too.
 export function avatarColors(id: string) {
-  return palettes[hash(id) % palettes.length]
+  return blobs[blobOf(id)]
 }
 
 export function Avatar({ id, className = '' }: { id: string; className?: string }) {
-  const h = hash(id)
-  const [a, b] = avatarColors(id)
   return (
-    <span className={`avatar ${className}`} style={{ background: `radial-gradient(circle at 30% 25%, ${a}, ${b})` }} aria-hidden>
-      <svg viewBox="0 0 100 100" width="100%" height="100%">
-        {eyes[(h >>> 3) % eyes.length]}
-        {mouths[(h >>> 6) % mouths.length]}
-      </svg>
+    <span className={`avatar is-blob ${className}`} aria-hidden>
+      <img src={src(blobOf(id))} alt="" draggable={false} />
     </span>
   )
 }

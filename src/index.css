@@ -2655,3 +2655,20 @@ button {
     animation: none;
   }
 }
+
+/* Blob club sticker avatars (components/Avatar.tsx): the sticker itself, no circle, ring or fill behind it */
+.avatar.is-blob {
+  background: none;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: visible;
+}
+
+.avatar.is-blob img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
