@@ -21,7 +21,7 @@ type Origin = { x: number; y: number }
 
 type Layer =
   | { kind: 'capture'; mutualOf?: string; origin?: Origin }
-  | { kind: 'profile'; id: string; fresh?: string | null; full?: boolean }
+  | { kind: 'profile'; id: string; fresh?: string | null }
   | { kind: 'ask'; start: 'type' | 'voice'; origin?: Origin }
 
 function originOf(el: HTMLElement): Origin | undefined {
@@ -64,9 +64,6 @@ export function Prototype() {
     return () => clearTimeout(t)
   }, [toast])
 
-  // A profile sheet grown to full screen (it remembers, so going back to it keeps the dark status bar)
-  const profileFull = top?.kind === 'profile' && !!top.full
-
   const [closing, setClosing] = useState(false)
   // Play the top layer's closing animation first, then drop it.
   const closeTop = (ms: number) => {
@@ -77,8 +74,8 @@ export function Prototype() {
       setClosing(false)
     }, ms)
   }
-  // A profile sheet slides down; Ask / Add shrink back into the button they grew from.
-  const closeSheet = () => closeTop(320)
+  // A profile slides back out to the right; Ask / Add shrink back into the button they grew from.
+  const closeProfile = () => closeTop(320)
   const [shrinkTo, setShrinkTo] = useState<Origin>()
   const closeGrow = () => {
     const layerEls = document.querySelectorAll<HTMLElement>('.layer')
@@ -138,7 +135,7 @@ export function Prototype() {
   const backTo = navFocus && layers.length === 0 ? byId(navFocus) : undefined
 
   return (
-    <div className={`phone${top?.kind === 'profile' && profileFull ? ' is-dark-top' : ''}${kbTarget ? ' has-kb' : ''}`}>
+    <div className={`phone${top?.kind === 'profile' ? ' is-dark-top' : ''}${kbTarget ? ' has-kb' : ''}`}>
       <StatusBar />
       {tab === 'list' && <ListScreen people={people} onOpen={openProfile} />}
       {tab === 'mindmap' && <MindmapScreen people={focusId ? allPeople : people} focusId={focusId} onView={openProfile} groupBy={groupBy} />}
@@ -221,17 +218,13 @@ export function Prototype() {
         const person = byId(layer.id)
         if (!person) return null
         return (
-          <div key={key + layer.id} className={`layer is-sheet${shut}`}>
-            <div className="sheet-scrim" onClick={closeSheet} aria-hidden />
+          <div key={key + layer.id} className={`layer is-profile${shut}`}>
             <ProfileScreen
-              onExpand={(full) => setLayers((l) => l.map((x, j) => (j === i ? { ...x, full } : x)))}
-              startFull={layer.full}
               person={person}
               people={allPeople}
               freshMomentId={layer.fresh}
-              onBack={closeSheet}
-              // From one profile to another: straight to full screen, no half sheet
-              onOpen={(id) => push({ kind: 'profile', id, full: true })}
+              onBack={closeProfile}
+              onOpen={(id) => push({ kind: 'profile', id })}
               onViewConnections={() => goTo('mindmap', person.id)}
               onAddMoment={(sent) => {
                 const fresh = addMoment(person.id, sent)

@@ -988,39 +988,8 @@ button {
   color: var(--on-ink);
 }
 
-/* Half sheet: a drag handle instead of the buttons; full screen: the bar comes back */
 .profile-bar {
   transition: opacity 0.25s var(--ios-press);
-}
-
-.layer.is-sheet .profile:not(.is-full) .profile-bar {
-  padding-top: 14px;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.profile-handle {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  z-index: 4;
-  width: 96px;
-  height: 28px;
-  transform: translateX(-50%);
-  touch-action: none;
-  cursor: grab;
-}
-
-.profile-handle::after {
-  content: '';
-  position: absolute;
-  top: 9px;
-  left: 50%;
-  width: 40px;
-  height: 5px;
-  border-radius: 3px;
-  background: rgba(255, 255, 255, 0.55);
-  transform: translateX(-50%);
 }
 
 /* Scrolled past the hero: the bar fills with their color and shows their name */
@@ -1366,64 +1335,26 @@ button {
   }
 }
 
-/* Profile opens as an 80% bottom sheet; scrolling grows it to full screen */
-.layer.is-sheet .sheet-scrim {
-  position: absolute;
-  inset: 0;
-  background: rgba(17, 17, 19, 0.28);
-  animation: fade-in 0.3s var(--ios-press);
+/* Profile: always a full-screen page that slides in from the right and back out on Back (no half sheet) */
+.layer.is-profile {
+  animation: layer-right 0.4s var(--ios-spring);
 }
 
-.layer.is-sheet .profile {
-  inset: auto 0 0 0;
-  height: 80%;
-  overflow: hidden;
-  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-  box-shadow: 0 -10px 40px rgba(60, 40, 110, 0.22);
-  animation: sheet-up 0.5s var(--ios-spring);
-  transition: height 0.45s var(--ios-spring), border-radius 0.45s var(--ios-spring);
+.layer.is-profile.is-closing {
+  animation: layer-right-out 0.32s var(--ios-spring) forwards;
 }
 
-.layer.is-sheet .profile.is-full {
-  height: 100%;
-  border-radius: 0;
-}
-
-.layer.is-sheet .profile:not(.is-full) .profile-hero {
-  padding-top: 76px;
-}
-
-@keyframes sheet-up {
-  from {
-    transform: translateY(100%);
+@keyframes layer-right-out {
+  to {
+    opacity: 0;
+    transform: translateX(40%);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .layer.is-sheet .profile,
-  .layer.is-sheet .sheet-scrim {
+  .layer.is-profile,
+  .layer.is-profile.is-closing {
     animation: none;
-    transition: none;
-  }
-}
-
-.layer.is-sheet.is-closing .profile {
-  animation: sheet-down 0.32s var(--ios-spring) forwards;
-}
-
-.layer.is-sheet.is-closing .sheet-scrim {
-  animation: fade-out 0.32s ease forwards;
-}
-
-@keyframes sheet-down {
-  to {
-    transform: translateY(100%);
-  }
-}
-
-@keyframes fade-out {
-  to {
-    opacity: 0;
   }
 }
 

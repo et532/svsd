@@ -13,10 +13,7 @@ type Props = {
   people: Person[]
   // A moment that was just logged opens expanded and glows once.
   freshMomentId?: string | null
-  // Opens straight at full screen (from another profile) instead of as the 80% sheet
-  startFull?: boolean
   onBack: () => void
-  onExpand?: (full: boolean) => void
   onOpen: (id: string) => void
   onViewConnections: () => void
   onAddMoment: (sent: Sent) => void
@@ -29,20 +26,14 @@ function dateLabel(iso: string) {
   return d.toDateString() === new Date().toDateString() ? 'Today' : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
-export function ProfileScreen({ person: p, people, freshMomentId = null, startFull = false, onBack, onExpand, onOpen, onViewConnections, onAddMoment, onAddMutual, onSoon }: Props) {
+export function ProfileScreen({ person: p, people, freshMomentId = null, onBack, onOpen, onViewConnections, onAddMoment, onAddMutual, onSoon }: Props) {
   const [addingTag, setAddingTag] = useState(false)
   const [addingTodo, setAddingTodo] = useState(false)
   const [open, setOpen] = useState<Set<string>>(() => new Set(freshMomentId ? [freshMomentId] : []))
-  // Opens as an 80% sheet; the first scroll grows it to full screen.
-  const [full, setFull] = useState(startFull)
   // Scrolled past the hero: the bar behind the back button fills in with their name.
   const [scrolled, setScrolled] = useState(false)
   // Bumped after each send so the composer starts empty again
   const [sends, setSends] = useState(0)
-  const grow = () => {
-    setFull(true)
-    onExpand?.(true)
-  }
   const moments = momentsOf(p)
   const todos = todosOf(p)
   const mutuals = p.knows.map((id) => people.find((x) => x.id === id)).filter((x): x is Person => !!x)
@@ -75,33 +66,11 @@ export function ProfileScreen({ person: p, people, freshMomentId = null, startFu
 
   return (
     <section
-      className={`profile${full ? ' is-full' : ''}${scrolled ? ' is-scrolled' : ''}${addingTag || addingTodo ? ' is-adding' : ''}`}
+      className={`profile${scrolled ? ' is-scrolled' : ''}${addingTag || addingTodo ? ' is-adding' : ''}`}
       style={{ '--ctx': blob.base, '--aura-a': avatarColors(p.id)[0], '--aura-b': avatarColors(p.id)[1] } as React.CSSProperties}
       aria-label={p.name}
     >
       <div className="profile-aura" aria-hidden />
-      {!full && (
-        <button
-          className="profile-handle"
-          aria-label="Drag up to open, down to close"
-          onClick={grow}
-          onPointerDown={(e) => {
-            const y0 = e.clientY
-            const move = (m: PointerEvent) => {
-              if (Math.abs(m.clientY - y0) < 24) return
-              cleanup()
-              if (m.clientY < y0) grow()
-              else onBack()
-            }
-            const cleanup = () => {
-              window.removeEventListener('pointermove', move)
-              window.removeEventListener('pointerup', cleanup)
-            }
-            window.addEventListener('pointermove', move)
-            window.addEventListener('pointerup', cleanup)
-          }}
-        />
-      )}
       <div className="profile-bar">
         <button className="round-button on-dark" onClick={onBack} aria-label="Back">
           <BackIcon />
@@ -115,14 +84,12 @@ export function ProfileScreen({ person: p, people, freshMomentId = null, startFu
         className="profile-scroll"
         onScroll={(e) => {
           const top = e.currentTarget.scrollTop
-          if (!full && top > 4) grow()
           // once the hero has scrolled up past the buttons (the bar's bottom edge)
           const root = e.currentTarget.closest('.profile')!
           const hero = root.querySelector('.profile-hero') as HTMLElement
           const bar = root.querySelector('.profile-bar') as HTMLElement
           setScrolled(top >= hero.offsetHeight - bar.offsetHeight)
         }}
-        onWheel={(e) => e.deltaY > 0 && !full && grow()}
       >
         <div className="profile-hero">
           {/* As in the Figma "Profile" / hero: the person's blob base with three blurred shapes in their colors */}
