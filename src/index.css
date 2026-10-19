@@ -14,7 +14,7 @@
   --pressed: rgba(22, 18, 28, 0.08); /* light gray for pressed and selected controls */
   --live: #c6f04a; /* recording only */
   /* The Figma ground: a fine dot grid */
-  --dots: radial-gradient(circle, rgba(22, 18, 28, 0.16) 1px, transparent 1.3px) 0 0 / 14px 14px;
+  --dots: radial-gradient(circle, rgba(22, 18, 28, 0.11) 1px, transparent 1.3px) 0 0 / 14px 14px;
   --focus: #2f4fd0;
 
   /* Profile color coding: hue = how you know someone. wash / core / deep per context. */
