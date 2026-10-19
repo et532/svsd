@@ -2933,53 +2933,28 @@ button {
   height: 100%;
 }
 
+/* The grain, faded so it's as faint as on the Add / Find auras (there it only shows where the pale orbs are) */
 .main-bg::after {
   content: '';
   position: absolute;
   inset: 0;
   background-image: var(--noise);
   background-size: 200px;
+  opacity: 0.3;
 }
 
-/* Top controls glass (the user's glass-card CSS, 2026-10-19): the view toggle and the Filters pill. Width / height
-   are left to the controls, and they stay pill-shaped instead of 20px corners. */
+/* Liquid glass, as the Figma "Nav pill" (node 248:2181): a 60% white fill over Figma's Glass effect (refraction 0.8,
+   depth 20, dispersion 0.5, no frost; the backdrop filter is set by useGlass in lib/glass.ts) and its light at -45°,
+   intensity 0.8, drawn as a bright rim on the top-left edges and a fainter one bottom-right. No border or shadow.
+   On the top controls and the Connections list rows. */
 .view-toggle,
-.filters-button {
-  position: relative;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: var(--radius-pill);
+.filters-button,
+.person-row {
+  background: rgba(255, 255, 255, 0.6);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  border: 1px solid transparent;
   box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.1),
-    inset 0 0 20px 10px rgba(255, 255, 255, 1);
-}
-
-/* Shine along the top edge and down the left edge */
-.view-toggle::before,
-.filters-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
-  pointer-events: none;
-}
-
-.view-toggle::after,
-.filters-button::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 1px;
-  height: 100%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.8), transparent, rgba(255, 255, 255, 0.3));
-  pointer-events: none;
+    inset 1.5px 1.5px 1px -1px rgba(255, 255, 255, 0.8),
+    inset -1.5px -1.5px 1px -1px rgba(255, 255, 255, 0.45);
 }

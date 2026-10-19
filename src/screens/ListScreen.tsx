@@ -1,6 +1,7 @@
 import type { Person } from '../data/people'
 import { ChevronRightIcon } from '../components/Icons'
 import { Avatar } from '../components/Avatar'
+import { useGlass } from '../lib/glass'
 
 type Props = {
   people: Person[]
@@ -9,6 +10,7 @@ type Props = {
 
 export function ListScreen({ people, onOpen }: Props) {
   const sorted = [...people].sort((a, b) => a.name.localeCompare(b.name))
+  const glass = useGlass(20)
 
   if (sorted.length === 0) {
     return (
@@ -24,7 +26,7 @@ export function ListScreen({ people, onOpen }: Props) {
       <ul className="people-list">
         {sorted.map((person) => (
           <li key={person.id}>
-            <button className="person-row" onClick={() => onOpen(person.id)}>
+            <button ref={glass} className="person-row" onClick={() => onOpen(person.id)}>
               <Avatar id={person.id} />
               <span className="person-text">
                 <span className="person-name">{person.name}</span>
