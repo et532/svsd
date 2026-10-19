@@ -183,7 +183,7 @@ export function draftToPerson(draft: Draft, how: { voice: boolean; text: string;
         id: uid(),
         date: today(),
         firstMeeting: true,
-        title: how.voice ? `Voice note · ${formatTime(how.seconds)}` : 'Typed note',
+        title: draft.met ? `Met at ${draft.met}` : 'First meeting',
         transcript: how.text.trim(),
         seconds: how.voice ? how.seconds : undefined,
       },

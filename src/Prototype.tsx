@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AskBar } from './components/AskBar'
 import type { Sent } from './components/Composer'
+import { Keyboard, useKeyboardTarget } from './components/Keyboard'
 import { BackIcon, CheckIcon, CloseIcon } from './components/Icons'
 import { HomeIndicator, StatusBar } from './components/StatusBar'
 import { TopControls, type GroupBy, type Tab } from './components/TopControls'
@@ -16,7 +17,7 @@ import { ProfileScreen } from './screens/ProfileScreen'
 
 // Full-screen layers above the tabs, newest last. Back / close pops the top one.
 type Layer =
-  | { kind: 'capture' }
+  | { kind: 'capture'; mutualOf?: string }
   | { kind: 'profile'; id: string; fresh?: string | null }
   | { kind: 'ask'; start: 'type' | 'voice' }
 
@@ -76,12 +77,17 @@ export function Prototype() {
   }
 
   // A note about someone new. Someone you already have by that name isn't added twice.
-  function createPerson(sent: Sent): Person {
+  // With mutualOf, they and that person are linked both ways.
+  function createPerson(sent: Sent, mutualOf?: string): Person {
     const draft = parsePerson(sent.text, allPeople)
     const same = allPeople.find((p) => p.name.toLowerCase() === draft.name?.trim().toLowerCase())
-    if (same) return same
-    const person = draftToPerson(draft, sent, new Set(allPeople.map((p) => p.id)))
-    addPerson(person)
+    const person = same ?? draftToPerson({ ...draft, knowsIds: [...(draft.knowsIds ?? []), ...(mutualOf ? [mutualOf] : [])] }, sent, new Set(allPeople.map((p) => p.id)))
+    if (!same) addPerson(person)
+    const other = mutualOf && mutualOf !== person.id ? byId(mutualOf) : undefined
+    if (other) {
+      if (same && !same.knows.includes(other.id)) updatePerson(same.id, { knows: [...same.knows, other.id] })
+      if (!other.knows.includes(person.id)) updatePerson(other.id, { knows: [...other.knows, person.id] })
+    }
     return person
   }
 
@@ -101,10 +107,11 @@ export function Prototype() {
     return moment.id
   }
 
+  const kbTarget = useKeyboardTarget()
   const backTo = navFocus && layers.length === 0 ? byId(navFocus) : undefined
 
   return (
-    <div className={`phone${top?.kind === 'profile' && profileFull ? ' is-dark-top' : ''}`}>
+    <div className={`phone${top?.kind === 'profile' && profileFull ? ' is-dark-top' : ''}${kbTarget ? ' has-kb' : ''}`}>
       <div className="aura" aria-hidden>
         <span className="aura-orb" />
         <span className="aura-orb" />
@@ -160,7 +167,7 @@ export function Prototype() {
         if (i < layers.length - 2) return null
         if (layer.kind === 'ask')
           return (
-            <div key={key} className="layer is-fade">
+            <div key={key} className="layer is-grow-pill">
               <AskScreen
                 people={allPeople}
                 tab={tab}
@@ -178,11 +185,12 @@ export function Prototype() {
           )
         if (layer.kind === 'capture')
           return (
-            <div key={key} className="layer is-up">
+            <div key={key} className="layer is-grow-add">
               <CaptureScreen
                 people={allPeople}
                 onClose={pop}
-                onCreate={createPerson}
+                onCreate={(sent) => createPerson(sent, layer.mutualOf)}
+                mutualWith={layer.mutualOf ? firstName(byId(layer.mutualOf)?.name ?? '') : undefined}
                 onMoment={(id, sent) => replaceTop({ kind: 'profile', id, fresh: addMoment(id, sent) })}
                 onOpenProfile={(id) => replaceTop({ kind: 'profile', id })}
               />
@@ -205,6 +213,7 @@ export function Prototype() {
                 const fresh = addMoment(person.id, sent)
                 setLayers((l) => l.map((x, j) => (j === i ? { ...x, fresh } : x)))
               }}
+              onAddMutual={() => push({ kind: 'capture', mutualOf: person.id })}
               onSoon={(what) => say(`${what} isn't built yet`)}
             />
           </div>
@@ -221,6 +230,7 @@ export function Prototype() {
           {toast.text}
         </div>
       )}
+      <Keyboard target={kbTarget} />
       <HomeIndicator />
     </div>
   )

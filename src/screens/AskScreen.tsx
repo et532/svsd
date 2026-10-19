@@ -4,7 +4,7 @@ import { ChevronRightIcon, CloseIcon, GamepadIcon, PartyIcon, PinIcon } from '..
 import type { Person } from '../data/people'
 import { interpret, storyRequest, type Action, type AskResult, type Match } from '../lib/ask'
 import { updatePerson } from '../lib/peopleStore'
-import { initials, orbBackground, orbTextColor } from '../lib/people'
+import { Avatar } from '../components/Avatar'
 import type { Tab } from '../components/TopControls'
 
 type Props = {
@@ -20,17 +20,19 @@ type Props = {
 }
 
 // What you can search by, as examples.
+const THINK_MS = 1600
+
 const ways = [
-  { Icon: GamepadIcon, label: 'Interest', example: 'Someone to go climbing with' },
-  { Icon: PartyIcon, label: 'Occasion', example: 'Someone to invite to a house party' },
-  { Icon: PinIcon, label: 'Location', example: 'Someone to hang out in the city' },
+  { Icon: GamepadIcon, label: 'Interest', example: 'Someone to go climbing with', query: 'Someone to go climbing with' },
+  { Icon: PartyIcon, label: 'Occasion', example: 'Someone to invite to a house party', query: 'friends' },
+  { Icon: PinIcon, label: 'Location', example: 'Someone to hang out in the city', query: 'friends in New York' },
 ]
 
 // "Search for someone by…": type or speak a request; Peepl finds the people, says why, and can draft the message.
 export function AskScreen({ people, tab, start, onClose, onOpenProfile, onAdd, onShow, onToast }: Props) {
   const [asked, setAsked] = useState<{ text: string; result: AskResult } | null>(null)
-  // A drafted message / intro open over the results
-  const [drafting, setDrafting] = useState<Action | null>(null)
+  // The request being "made": shown for a beat so it reads as a real search, not an instant answer
+  const [pending, setPending] = useState<string | null>(null)
   const timer = useRef(0)
   useEffect(() => () => window.clearTimeout(timer.current), [])
 
@@ -40,12 +42,27 @@ export function AskScreen({ people, tab, start, onClose, onOpenProfile, onAdd, o
     return () => document.removeEventListener('keydown', onKey)
   }, [onClose])
 
-  function ask({ text }: Sent) {
-    const result = interpret(text, people)
-    setAsked({ text, result })
-    // Actions hand off to the right screen after a beat, so you see what's happening
-    const go = result.kind === 'add' ? onAdd : result.kind === 'none' || result.kind === 'people' ? null : () => onOpenProfile(result.person.id)
-    if (go) timer.current = window.setTimeout(go, 900)
+  // `query` is what gets searched when the shown text is a loose example (the cards)
+  function ask({ text, query }: Sent & { query?: string }) {
+    window.clearTimeout(timer.current)
+    setAsked(null)
+    setPending(text)
+    timer.current = window.setTimeout(() => {
+      const result = interpret(query ?? text, people)
+      setPending(null)
+      setAsked({ text, result })
+      // Actions hand off to the right screen after a beat, so you see what's happening
+      const go = result.kind === 'add' ? onAdd : result.kind === 'none' || result.kind === 'people' ? null : () => onOpenProfile(result.person.id)
+      if (go) timer.current = window.setTimeout(go, 900)
+    }, THINK_MS)
+  }
+
+  // Copying or sharing a draft counts as sending it: tick off the follow-up it answers
+  function sent(action: Action) {
+    const { closes } = action
+    const owner = closes && people.find((p) => p.id === closes.personId)
+    if (closes && owner) updatePerson(owner.id, { todos: (owner.todos ?? []).map((t) => (t.id === closes.todoId ? { ...t, done: true } : t)) })
+    onToast(`Draft for ${action.to.split(' ')[0]} ready`)
   }
 
   const result = asked?.result
@@ -57,54 +74,41 @@ export function AskScreen({ people, tab, start, onClose, onOpenProfile, onAdd, o
       </button>
 
       <div className="flow-main is-top">
-        {!asked && (
+        {!asked && !pending && (
           <>
             <h2 className="flow-title">Search for someone by…</h2>
             <div className="flow-cards">
-              {ways.map(({ Icon, label, example }) => (
-                <div key={label} className="way">
+              {ways.map(({ Icon, label, example, query }) => (
+                <button key={label} className="way" onClick={() => ask({ text: example, query, voice: false, seconds: 0 })}>
                   <Icon size={22} />
                   <span>
                     <b>{label}</b>
                     <small>“{example}”</small>
                   </span>
-                </div>
+                </button>
               ))}
             </div>
           </>
         )}
 
+        {pending && (
+          <div className="ask-answer" aria-live="polite">
+            <h2 className="flow-title is-ink">{pending}</h2>
+            <Thinking />
+          </div>
+        )}
+
         {asked && result && (
           <div className="ask-answer" aria-live="polite">
             <h2 className="flow-title is-ink">{asked.text}</h2>
-            <Answer result={result} tab={tab} onOpenProfile={onOpenProfile} onShow={onShow} onAction={setDrafting} />
+            <Answer result={result} tab={tab} onOpenProfile={onOpenProfile} onShow={onShow} onSent={sent} />
           </div>
         )}
       </div>
 
-      {drafting && (
-        <Draft
-          action={drafting}
-          onCancel={() => setDrafting(null)}
-          onSend={() => {
-            const { closes } = drafting
-            if (closes) {
-              const owner = people.find((p) => p.id === closes.personId)
-              if (owner) updatePerson(owner.id, { todos: (owner.todos ?? []).map((t) => (t.id === closes.todoId ? { ...t, done: true } : t)) })
-            }
-            setDrafting(null)
-            onToast(
-              closes
-                ? `Sent · ticked off “${people.find((p) => p.id === closes.personId)?.todos?.find((t) => t.id === closes.todoId)?.text}”`
-                : `Sent to ${drafting.to.split(' ')[0]}`,
-            )
-          }}
-        />
-      )}
-
       <div className="flow-bottom">
         {/* Remounted per answer so the next question starts empty */}
-        <Composer key={asked?.text ?? 'first'} placeholder="Ask me about people" script={storyRequest(people)} start={asked ? undefined : start} onSend={ask} />
+        <Composer key={pending ?? asked?.text ?? 'first'} placeholder="Ask me about people" script={storyRequest(people)} start={asked || pending ? undefined : start} onSend={ask} />
       </div>
     </section>
   )
@@ -115,10 +119,10 @@ type AnswerProps = {
   tab: Tab
   onOpenProfile: (id: string) => void
   onShow: (ids: string[], label: string) => void
-  onAction: (action: Action) => void
+  onSent: (action: Action) => void
 }
 
-function Answer({ result, tab, onOpenProfile, onShow, onAction }: AnswerProps) {
+function Answer({ result, tab, onOpenProfile, onShow, onSent }: AnswerProps) {
   if (result.kind === 'add') return <p className="flow-note">Okay, let’s add someone new…</p>
   if (result.kind === 'moment' || result.kind === 'profile') return <p className="flow-note">Opening {result.person.name}…</p>
   if (result.kind === 'none')
@@ -137,7 +141,7 @@ function Answer({ result, tab, onOpenProfile, onShow, onAction }: AnswerProps) {
           {g.label && <span className="label ask-group-label">{g.label}</span>}
           <div className="ask-results">
             {g.matches.slice(0, 6).map((m) => (
-              <ResultCard key={m.person.id} match={m} onOpenProfile={onOpenProfile} onAction={onAction} />
+              <ResultCard key={m.person.id} match={m} onOpenProfile={onOpenProfile} onSent={onSent} />
             ))}
           </div>
         </div>
@@ -159,14 +163,13 @@ function Answer({ result, tab, onOpenProfile, onShow, onAction }: AnswerProps) {
 }
 
 // Name and "job · city", then why they came up, then the drafted next step.
-function ResultCard({ match, onOpenProfile, onAction }: { match: Match; onOpenProfile: (id: string) => void; onAction: (a: Action) => void }) {
+function ResultCard({ match, onOpenProfile, onSent }: { match: Match; onOpenProfile: (id: string) => void; onSent: (a: Action) => void }) {
   const { person: p, why, via, action } = match
+  const [text, setText] = useState<string | null>(null) // the draft, once opened inline
   return (
     <div className="result-card">
       <button className="result-head" onClick={() => onOpenProfile(p.id)}>
-        <span className="avatar avatar-lg" style={{ background: orbBackground(p.id), color: orbTextColor(p.id) }}>
-          {initials(p.name)}
-        </span>
+        <Avatar id={p.id} className="avatar-lg" />
         <span className="result-who">
           <b>{p.name}</b>
           <span>{[p.profession, p.livesNow.city].filter((x) => x && x !== 'Unknown').join(' · ')}</span>
@@ -176,39 +179,74 @@ function ResultCard({ match, onOpenProfile, onAction }: { match: Match; onOpenPr
       <div className="result-body">
         {via && <span className="ask-via">{via}</span>}
         <p>{why}</p>
-        {action && (
-          <button className="result-action" onClick={() => onAction(action)}>
+        {action && text === null && (
+          <button className="result-action" onClick={() => setText(action.draft)}>
             {action.label}
           </button>
+        )}
+        {action && text !== null && (
+          <div className="result-draft">
+            <textarea value={text} onChange={(e) => setText(e.target.value)} rows={3} aria-label="Message" />
+            <div className="result-draft-actions">
+              <button
+                className="pill-button ghost"
+                onClick={() => {
+                  void navigator.clipboard?.writeText(text)
+                  onSent(action)
+                }}
+              >
+                Copy Text
+              </button>
+              <button
+                className="pill-button soft"
+                onClick={() => {
+                  void navigator.share?.({ text }).catch(() => {})
+                  onSent(action)
+                }}
+              >
+                Share
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </div>
   )
 }
 
-// Peepl drafts it; you decide whether to send it.
-function Draft({ action, onCancel, onSend }: { action: Action; onCancel: () => void; onSend: (text: string) => void }) {
-  const [text, setText] = useState(action.draft)
-  const title = action.kind === 'intro' ? 'Draft intro' : action.kind === 'coffee' ? 'Plan coffee' : 'Message'
+// Shimmering status line (it changes as the "search" moves along) over placeholder cards
+function Thinking() {
+  const steps = ['Reading your notes…', 'Looking through your people…', 'Picking the best matches…']
+  const [step, setStep] = useState(0)
+  useEffect(() => {
+    const t = window.setInterval(() => setStep((n) => Math.min(n + 1, steps.length - 1)), THINK_MS / steps.length)
+    return () => window.clearInterval(t)
+  }, [steps.length])
   return (
-    <div className="ask-draft" role="dialog" aria-label={title}>
-      <div className="ask-draft-head">
-        <span className="label">{title}</span>
-        <button className="round-button glass-button is-sm" onClick={onCancel} aria-label="Back to results">
-          <CloseIcon size={14} />
-        </button>
+    <>
+      <p className="ask-thinking" key={step}>
+        <span className="ask-thinking-dots" aria-hidden>
+          <i />
+          <i />
+          <i />
+        </span>
+        {steps[step]}
+      </p>
+      <div className="ask-results" aria-hidden>
+        {[0, 1].map((i) => (
+          <div key={i} className="result-card is-skeleton" style={{ animationDelay: `${i * 0.15}s` }}>
+            <div className="skel-row">
+              <span className="skel skel-avatar" />
+              <span className="skel-lines">
+                <span className="skel" />
+                <span className="skel is-short" />
+              </span>
+            </div>
+            <span className="skel" />
+            <span className="skel is-short" />
+          </div>
+        ))}
       </div>
-      <p className="ask-draft-to">To: {action.to}</p>
-      <textarea value={text} onChange={(e) => setText(e.target.value)} rows={6} aria-label="Message" />
-      {action.closes && <p className="ask-draft-note">Sending this ticks off the follow-up on their profile.</p>}
-      <div className="ask-draft-actions">
-        <button className="pill-button ghost" onClick={onCancel}>
-          Not now
-        </button>
-        <button className="pill-button ink grow" onClick={() => onSend(text)}>
-          Send
-        </button>
-      </div>
-    </div>
+    </>
   )
 }

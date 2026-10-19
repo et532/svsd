@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Composer, type Sent } from '../components/Composer'
-import { CloseIcon } from '../components/Icons'
+import { ArrowRightIcon, CloseIcon } from '../components/Icons'
 import type { Person } from '../data/people'
 import { momentCandidates, parsePerson, voiceScript } from '../lib/capture'
-import { cardBackground, initials, orbBackground, orbTextColor } from '../lib/people'
+import { Avatar } from '../components/Avatar'
+import { cardBackground } from '../lib/people'
 
 type Props = {
   people: Person[]
@@ -13,6 +14,8 @@ type Props = {
   // Saves a note as a moment with someone you already know, then opens their profile.
   onMoment: (personId: string, sent: Sent) => void
   onOpenProfile: (id: string) => void
+  // Opened from a profile's "Add" mutual: first name of that person. The note is always about someone new.
+  mutualWith?: string
 }
 
 type Stage =
@@ -25,7 +28,7 @@ const monthYear = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', y
 
 // One input for both: "Tell me about a new person or moment". A note about someone new becomes a profile;
 // a note about someone you know becomes a moment (asking which one when two share a name).
-export function CaptureScreen({ people, onClose, onCreate, onMoment, onOpenProfile }: Props) {
+export function CaptureScreen({ people, onClose, onCreate, onMoment, onOpenProfile, mutualWith }: Props) {
   const [stage, setStage] = useState<Stage>({ kind: 'input' })
 
   useEffect(() => {
@@ -44,7 +47,7 @@ export function CaptureScreen({ people, onClose, onCreate, onMoment, onOpenProfi
   }, [stage])
 
   function submit(sent: Sent) {
-    const options = momentCandidates(sent.text, people)
+    const options = mutualWith ? [] : momentCandidates(sent.text, people)
     if (options.length === 1) return onMoment(options[0].id, sent)
     if (options.length > 1) return setStage({ kind: 'select', sent, options })
     setStage({ kind: 'processing', sent, name: parsePerson(sent.text, people).name ?? 'them' })
@@ -59,14 +62,26 @@ export function CaptureScreen({ people, onClose, onCreate, onMoment, onOpenProfi
         <CloseIcon size={20} />
       </button>
 
-      <div className={`flow-main${stage.kind === 'input' ? '' : ' is-top'}`}>
+      <div className="flow-main is-top">
         {note && <p className="flow-note">{note}</p>}
-        {stage.kind === 'input' && <h2 className="flow-title">Tell me about a new person or moment</h2>}
-        {stage.kind === 'processing' && <h2 className="flow-title is-ink">Creating a new profile for {stage.name}…</h2>}
+        {stage.kind === 'input' && <h2 className="flow-title">{mutualWith ? `Who does ${mutualWith} know?` : 'Tell me about a new person or moment'}</h2>}
+        {stage.kind === 'processing' && (
+          <>
+            <h2 className="flow-title is-ink">Creating a new profile for {stage.name}…</h2>
+            <div className="person-card is-skeleton" aria-hidden>
+              <span className="skel skel-avatar" />
+              <span className="person-card-text">
+                <span className="skel" style={{ width: '70%', height: 18 }} />
+                <span className="skel is-short" />
+                <span className="skel is-short" style={{ width: '35%' }} />
+              </span>
+            </div>
+          </>
+        )}
         {stage.kind === 'preview' && (
           <>
             <h2 className="flow-title is-ink">Creating a new profile for {stage.person.name}…</h2>
-            <PersonCard person={stage.person} line={`Met ${monthYear(new Date())}`} onClick={() => onOpenProfile(stage.person.id)} />
+            <PersonCard person={stage.person} line={`Met ${monthYear(new Date())}`} typed onClick={() => onOpenProfile(stage.person.id)} />
           </>
         )}
         {stage.kind === 'select' && (
@@ -101,18 +116,56 @@ export function CaptureScreen({ people, onClose, onCreate, onMoment, onOpenProfi
   )
 }
 
+// Reveals the parts one after another, a letter at a time, like the profile being filled in.
+function useTyped(parts: string[], on: boolean) {
+  const [n, setN] = useState(0)
+  const total = parts.reduce((t, x) => t + x.length, 0)
+  useEffect(() => {
+    if (!on) return
+    // Wait for the color to paint in and the avatar to pop before the text starts
+    let t = 0
+    const start = setTimeout(() => {
+      t = window.setInterval(() => setN((x) => Math.min(x + 1, total)), 38)
+    }, 1000)
+    return () => {
+      clearTimeout(start)
+      clearInterval(t)
+    }
+  }, [on, total])
+  if (!on) return { shown: parts, done: true }
+  let left = n
+  const shown = parts.map((x) => {
+    const take = Math.max(0, Math.min(left, x.length))
+    left -= take
+    return x.slice(0, take)
+  })
+  return { shown, done: n >= total }
+}
+
 // The dark gradient card for a person: avatar, name, "job · city", and a line of small print.
-function PersonCard({ person: p, line, onClick }: { person: Person; line: string; onClick: () => void }) {
+// `typed` fills the text in letter by letter; the arrow says the card opens their profile.
+function PersonCard({ person: p, line, onClick, typed = false }: { person: Person; line: string; onClick: () => void; typed?: boolean }) {
   const sub = [p.profession, p.livesNow.city].filter((x) => x && x !== 'Unknown').join(' · ')
+  const { shown, done } = useTyped([p.name, sub, line], typed)
   return (
-    <button className="person-card" style={{ background: cardBackground(p) }} onClick={onClick}>
-      <span className="avatar avatar-lg" style={{ background: orbBackground(p.id), color: orbTextColor(p.id) }} aria-hidden>
-        {initials(p.name)}
-      </span>
+    <button className={`person-card${typed ? ' is-filling' : ''}`} style={typed ? ({ '--card-bg': cardBackground(p) } as React.CSSProperties) : { background: cardBackground(p) }} onClick={onClick}>
+      <Avatar id={p.id} className="avatar-lg" />
       <span className="person-card-text">
-        <b>{p.name}</b>
-        <span>{sub}</span>
-        <small>{line}</small>
+        {[p.name, sub, line].map((full, i) => {
+          const Tag = (['b', 'span', 'small'] as const)[i]
+          // The full text is laid out invisibly first, so the card keeps its final height while the text types in
+          return typed ? (
+            <Tag key={i} className="tt">
+              <i className="tt-full">{full}</i>
+              <i className="tt-shown">{shown[i]}</i>
+            </Tag>
+          ) : (
+            <Tag key={i}>{full}</Tag>
+          )
+        })}
+      </span>
+      <span className={`person-card-go${done ? ' is-on' : ''}`} aria-hidden>
+        <ArrowRightIcon size={16} />
       </span>
     </button>
   )

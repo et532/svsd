@@ -62,7 +62,12 @@ export function Composer({ placeholder, script, start, onSend, className = '' }:
 
   const open = voice || typing
   return (
-    <div className={`composer${open ? ' is-open' : ''}${voice ? ' is-voice' : ''} ${className}`}>
+    <div
+      className={`composer${open ? ' is-open' : ''}${voice ? ' is-voice' : ''} ${className}`}
+      // Keep focus on the text while its buttons are pressed: otherwise the keyboard drops on mouse-down, the bar
+      // slides away from under the cursor and the click never lands (it took a second tap to start recording)
+      onMouseDown={(e) => (e.target as HTMLElement).closest('button') && e.preventDefault()}
+    >
       <textarea
         ref={taRef}
         rows={1}

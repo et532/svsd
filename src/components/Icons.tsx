@@ -225,3 +225,11 @@ export function PartyIcon({ size = 20 }: IconProps) {
     </svg>
   )
 }
+
+export function ArrowRightIcon({ size = 16 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...base} aria-hidden>
+      <path d="M5 12h14M13 6l6 6-6 6" />
+    </svg>
+  )
+}

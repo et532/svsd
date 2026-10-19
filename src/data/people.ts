@@ -22,6 +22,8 @@ export type Person = {
   lastContacted: string // ISO date
   // Ids of people this person knows (mutuals mentioned when adding them). Links are symmetric.
   knows: string[]
+  // Optional caption per mutual, shown under their avatar (e.g. "introduced you").
+  mutualNotes?: Record<string, string>
   // Set by capture: how well you know them (aura depth 1-3). Falls back to recency when missing.
   closeness?: 1 | 2 | 3
   // Things to talk about next time (from capture's "follow up" and "remember" answers).
@@ -256,6 +258,7 @@ const basePeople: Person[] = [
     livesNow: { city: 'Brooklyn', lat: 40.678, lng: -73.944 },
     lastContacted: '2026-10-13',
     knows: ['aisha-khan'],
+    mutualNotes: { 'aisha-khan': 'introduced you' },
     closeness: 2,
     todos: [
       { id: 'jordan-priya', text: 'Intro to Priya for battery data', done: false },
@@ -275,7 +278,7 @@ const basePeople: Person[] = [
         id: 'jordan-first',
         date: '2026-10-11',
         firstMeeting: true,
-        title: 'Voice note · 0:19',
+        title: 'Met at Climate Demo Day',
         transcript:
           'Just met Jordan Lee at Climate Demo Day. Founder, they do battery recycling for e-bikes. Aisha Khan introduced us. Grew up in Seattle, just moved to Brooklyn. Climbs on Tuesdays and wants a climbing buddy. Asked me for an intro to someone in hardware.',
         seconds: 19,

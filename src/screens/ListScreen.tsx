@@ -1,6 +1,6 @@
 import type { Person } from '../data/people'
 import { ChevronRightIcon } from '../components/Icons'
-import { initials, orbBackground, orbTextColor } from '../lib/people'
+import { Avatar } from '../components/Avatar'
 
 type Props = {
   people: Person[]
@@ -25,9 +25,7 @@ export function ListScreen({ people, onOpen }: Props) {
         {sorted.map((person) => (
           <li key={person.id}>
             <button className="person-row" onClick={() => onOpen(person.id)}>
-              <span className="avatar" style={{ background: orbBackground(person.id), color: orbTextColor(person.id) }} aria-hidden>
-                {initials(person.name)}
-              </span>
+              <Avatar id={person.id} />
               <span className="person-name">{person.name}</span>
               <span className="person-arrow" aria-hidden>
                 <ChevronRightIcon size={19} />

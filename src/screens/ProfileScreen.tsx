@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { Avatar } from '../components/Avatar'
 import { Composer, type Sent } from '../components/Composer'
 import { BackIcon, ChevronRightIcon, MoreIcon, PauseIcon, PlayIcon, PlusIcon } from '../components/Icons'
 import type { Moment, Person } from '../data/people'
-import { formatTime, momentScript } from '../lib/capture'
+import { formatTime, momentScript, newTodo } from '../lib/capture'
 import { updatePerson } from '../lib/peopleStore'
-import { firstName, initials, momentsOf, orbBackground, todosOf } from '../lib/people'
+import { firstName, momentsOf, todosOf } from '../lib/people'
 
 type Props = {
   person: Person
@@ -16,6 +17,7 @@ type Props = {
   onOpen: (id: string) => void
   onViewConnections: () => void
   onAddMoment: (sent: Sent) => void
+  onAddMutual: () => void
   onSoon: (what: string) => void
 }
 
@@ -24,7 +26,9 @@ function dateLabel(iso: string) {
   return d.toDateString() === new Date().toDateString() ? 'Today' : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
-export function ProfileScreen({ person: p, people, freshMomentId = null, onBack, onExpand, onOpen, onViewConnections, onAddMoment, onSoon }: Props) {
+export function ProfileScreen({ person: p, people, freshMomentId = null, onBack, onExpand, onOpen, onViewConnections, onAddMoment, onAddMutual, onSoon }: Props) {
+  const [addingTag, setAddingTag] = useState(false)
+  const [addingTodo, setAddingTodo] = useState(false)
   const [open, setOpen] = useState<Set<string>>(() => new Set(freshMomentId ? [freshMomentId] : []))
   // Opens as an 80% sheet; the first scroll grows it to full screen.
   const [full, setFull] = useState(false)
@@ -48,7 +52,22 @@ export function ProfileScreen({ person: p, people, freshMomentId = null, onBack,
   }, [freshMomentId])
 
   const toggleTodo = (id: string) => updatePerson(p.id, { todos: todos.map((t) => (t.id === id ? { ...t, done: !t.done } : t)) })
-  const toggleMoment = (id: string) =>
+  const addTag = (text: string | null) => {
+    setAddingTag(false)
+    const tag = text?.toLowerCase()
+    if (tag && !p.tags.includes(tag)) updatePerson(p.id, { tags: [...p.tags, tag] })
+  }
+  const addTodo = (text: string | null) => {
+    setAddingTodo(false)
+    if (text) updatePerson(p.id, { todos: [...todos, newTodo(text)] })
+  }
+  // Tags other people have that this person doesn't, most common first
+  const tagIdeas = (() => {
+    const count = new Map<string, number>()
+    for (const x of people) for (const t of x.tags) if (!p.tags.includes(t)) count.set(t, (count.get(t) ?? 0) + 1)
+    return [...count].sort((a, b) => b[1] - a[1]).slice(0, 4).map(([t]) => t)
+  })()
+  const toggleMoment =(id: string) =>
     setOpen((s) => {
       const next = new Set(s)
       if (next.has(id)) next.delete(id)
@@ -58,10 +77,32 @@ export function ProfileScreen({ person: p, people, freshMomentId = null, onBack,
 
   return (
     <section
-      className={`profile${full ? ' is-full' : ''}${scrolled ? ' is-scrolled' : ''}`}
+      className={`profile${full ? ' is-full' : ''}${scrolled ? ' is-scrolled' : ''}${addingTag || addingTodo ? ' is-adding' : ''}`}
       style={{ '--ctx': `var(--${p.context}-deep)` } as React.CSSProperties}
       aria-label={p.name}
     >
+      {!full && (
+        <button
+          className="profile-handle"
+          aria-label="Drag up to open, down to close"
+          onClick={grow}
+          onPointerDown={(e) => {
+            const y0 = e.clientY
+            const move = (m: PointerEvent) => {
+              if (Math.abs(m.clientY - y0) < 24) return
+              cleanup()
+              if (m.clientY < y0) grow()
+              else onBack()
+            }
+            const cleanup = () => {
+              window.removeEventListener('pointermove', move)
+              window.removeEventListener('pointerup', cleanup)
+            }
+            window.addEventListener('pointermove', move)
+            window.addEventListener('pointerup', cleanup)
+          }}
+        />
+      )}
       <div className="profile-bar">
         <button className="round-button on-dark" onClick={onBack} aria-label="Back">
           <BackIcon />
@@ -76,7 +117,11 @@ export function ProfileScreen({ person: p, people, freshMomentId = null, onBack,
         onScroll={(e) => {
           const top = e.currentTarget.scrollTop
           if (!full && top > 4) grow()
-          setScrolled(top > 96)
+          // once the hero has scrolled up past the buttons (the bar's bottom edge)
+          const root = e.currentTarget.closest('.profile')!
+          const hero = root.querySelector('.profile-hero') as HTMLElement
+          const bar = root.querySelector('.profile-bar') as HTMLElement
+          setScrolled(top >= hero.offsetHeight - bar.offsetHeight)
         }}
         onWheel={(e) => e.deltaY > 0 && !full && grow()}
       >
@@ -85,9 +130,7 @@ export function ProfileScreen({ person: p, people, freshMomentId = null, onBack,
           <span className="profile-blob" style={{ width: 240, height: 200, right: -20, bottom: -110, background: `var(--${other}-core)`, opacity: 0.85 }} />
           <span className="profile-blob" style={{ width: 260, height: 240, left: -110, bottom: -80, background: `var(--${p.context}-deep)` }} />
           <div className="profile-who">
-            <span className="avatar avatar-xl" style={{ background: orbBackground(p.id) }}>
-              {initials(p.name)}
-            </span>
+            <Avatar id={p.id} className="avatar-xl" />
             <div>
               <h2>{p.name}</h2>
               <div className="profile-sub">{[p.profession, p.livesNow.city].filter((x) => x && x !== 'Unknown').join(' · ')}</div>
@@ -106,10 +149,26 @@ export function ProfileScreen({ person: p, people, freshMomentId = null, onBack,
                   {t}
                 </span>
               ))}
-              <button className="chip is-ghost" onClick={() => onSoon('Adding tags')}>
-                + tag
-              </button>
+              {addingTag ? (
+                <span className="chip is-editing">
+                  <InlineInput placeholder="New tag" onDone={addTag} />
+                </span>
+              ) : (
+                <button className="chip is-ghost" onClick={() => setAddingTag(true)}>
+                  + tag
+                </button>
+              )}
             </div>
+            {addingTag && tagIdeas.length > 0 && (
+              <div className="chips tag-ideas">
+                {tagIdeas.map((t) => (
+                  // pointer down, so the field doesn't save its half-typed text first
+                  <button key={t} className="chip is-ghost" onPointerDown={(e) => { e.preventDefault(); addTag(t) }}>
+                    {t}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="profile-section">
@@ -120,9 +179,15 @@ export function ProfileScreen({ person: p, people, freshMomentId = null, onBack,
                   {t.text}
                 </button>
               ))}
-              <button className="profile-item is-add" onClick={() => onSoon('Adding to-dos')}>
-                <PlusIcon size={14} /> Add something to do
-              </button>
+              {addingTodo ? (
+                <div className="profile-item is-editing">
+                  <InlineInput placeholder={`Something to do with ${firstName(p.name)}`} onDone={addTodo} />
+                </div>
+              ) : (
+                <button className="profile-item is-add" onClick={() => setAddingTodo(true)}>
+                  <PlusIcon size={14} /> Add something to do
+                </button>
+              )}
             </div>
           </div>
 
@@ -150,7 +215,7 @@ export function ProfileScreen({ person: p, people, freshMomentId = null, onBack,
               </button>
             </div>
             <div className="profile-mutuals">
-              <button className="profile-mutual" onClick={() => onSoon('Linking people')}>
+              <button className="profile-mutual" onClick={onAddMutual}>
                 <span className="avatar is-add">
                   <PlusIcon size={20} />
                 </span>
@@ -158,10 +223,9 @@ export function ProfileScreen({ person: p, people, freshMomentId = null, onBack,
               </button>
               {mutuals.map((m) => (
                 <button key={m.id} className="profile-mutual" onClick={() => onOpen(m.id)}>
-                  <span className="avatar" style={{ background: orbBackground(m.id) }}>
-                    {initials(m.name)}
-                  </span>
+                  <Avatar id={m.id} />
                   {firstName(m.name)}
+                  {p.mutualNotes?.[m.id] && <small>{p.mutualNotes[m.id]}</small>}
                 </button>
               ))}
             </div>
@@ -190,6 +254,37 @@ export function ProfileScreen({ person: p, people, freshMomentId = null, onBack,
         />
       </div>
     </section>
+  )
+}
+
+// One-line text field for adding a tag / to-do in place. It's a textarea so the desktop keyboard types into it.
+// Return saves, Esc cancels, leaving it saves if there's text.
+function InlineInput({ placeholder, onDone, className }: { placeholder: string; onDone: (text: string | null) => void; className?: string }) {
+  const done = useRef(false)
+  const finish = (text: string) => {
+    if (done.current) return
+    done.current = true
+    onDone(text.trim() || null)
+  }
+  return (
+    <textarea
+      ref={(el) => el?.scrollIntoView({ block: 'center', behavior: 'smooth' })}
+      className={`inline-input ${className ?? ''}`}
+      rows={1}
+      autoFocus
+      maxLength={80}
+      placeholder={placeholder}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault()
+          finish(e.currentTarget.value)
+        } else if (e.key === 'Escape') {
+          e.stopPropagation()
+          finish('')
+        }
+      }}
+      onBlur={(e) => finish(e.currentTarget.value)}
+    />
   )
 }
 

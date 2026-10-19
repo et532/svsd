@@ -13,6 +13,8 @@
   --line: rgba(22, 18, 28, 0.12); /* hairline */
   --hover: rgba(22, 18, 28, 0.04);
   --live: #c6f04a; /* recording only */
+  /* The Figma ground: a fine dot grid */
+  --dots: radial-gradient(circle, rgba(22, 18, 28, 0.16) 1px, transparent 1.3px) 0 0 / 14px 14px;
   --focus: #2f4fd0;
 
   /* Profile color coding: hue = how you know someone. wash / core / deep per context. */
@@ -64,7 +66,10 @@
   --radius-lg: 24px;
   --radius-xl: 32px;
   --radius-pill: 999px;
+  --radius-bar: 31px; /* ask bar + composer: half of their 62px height, same closed and open */
   --gutter: var(--space-4);
+  /* Gap under the ask bar / composers: same as the gap at their left and right */
+  --bar-bottom: var(--gutter);
 
   /* Type: Geist for headings (tracked -4%) and UI, Geist Mono for meta. */
   --font-body: 'Geist', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -130,7 +135,7 @@ button {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: var(--bg);
+  background: var(--dots), var(--bg);
   /* Makes the phone the containing block for position: fixed overlays (sheets, pop-ups) */
   transform: translateZ(0);
   /* Space the system uses at the top and bottom of the screen */
@@ -301,18 +306,23 @@ button {
 
 /* List screen */
 .list-screen {
+  inset: 0 0 var(--bar-mid);
   overflow-y: auto;
-  padding: calc(var(--safe-top) + 92px) var(--gutter) calc(var(--safe-bottom) + 120px);
+  padding: calc(var(--safe-top) + 92px) var(--gutter) 56px;
   /* Fade rows out as they scroll under the top controls, letting the gradient show through */
   mask-image: linear-gradient(
     to bottom,
     transparent calc(var(--safe-top) + 78px),
-    #000 calc(var(--safe-top) + 100px)
+    #000 calc(var(--safe-top) + 100px),
+    #000 calc(100% - 56px),
+    transparent
   );
   -webkit-mask-image: linear-gradient(
     to bottom,
     transparent calc(var(--safe-top) + 78px),
-    #000 calc(var(--safe-top) + 100px)
+    #000 calc(var(--safe-top) + 100px),
+    #000 calc(100% - 56px),
+    transparent
   );
 }
 
@@ -334,7 +344,7 @@ button {
   backdrop-filter: var(--glass-vivid-blur);
   -webkit-backdrop-filter: var(--glass-vivid-blur);
   border: 1px solid var(--glass-vivid-edge);
-  border-radius: 20px;
+  border-radius: var(--radius-lg);
   box-shadow:
     0 6px 20px -12px rgba(60, 50, 110, 0.18),
     0 0 0 1px rgba(17, 17, 19, 0.03);
@@ -404,8 +414,8 @@ button {
 }
 
 .mm-line {
-  stroke: rgba(110, 80, 190, 0.5);
-  stroke-width: 1.5;
+  stroke: rgba(58, 42, 120, 0.7);
+  stroke-width: 1.6;
   stroke-linecap: round;
   transition: opacity 0.25s;
 }
@@ -446,7 +456,7 @@ button {
   opacity: 0.2;
 }
 
-/* Each person is a gradient orb dot (the same as their avatar) */
+/* Each person is a flat dot in their relationship color; the initials only show when zoomed in */
 .mm-node {
   position: absolute;
   left: 0;
@@ -454,20 +464,22 @@ button {
   display: grid;
   place-items: center;
   border-radius: 50%;
-  background: var(--orb);
+  /* pure color in the middle, darker toward the edge */
+  background: radial-gradient(circle closest-side, var(--orb) 55%, color-mix(in srgb, var(--orb) 78%, #000) 100%);
   cursor: pointer;
-  will-change: transform;
+  /* no will-change: it rasterizes the dot once and scales the bitmap, which blurs it when zoomed in */
   transition: opacity 0.25s;
 }
 
 .mm-node b {
   position: relative;
   font-weight: 600;
+  opacity: clamp(0, calc((var(--k, 1) - 0.9) * 2.5), 1);
 }
 
 .mm-node.is-lit {
   z-index: 2;
-  box-shadow: 0 8px 22px rgba(150, 120, 230, 0.55);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--orb) 28%, transparent);
 }
 
 .mm-node.is-near {
@@ -480,7 +492,7 @@ button {
 }
 
 .mm-line.is-near {
-  stroke: rgba(110, 80, 190, 0.9);
+  stroke: rgba(40, 28, 96, 0.95);
 }
 
 .mm-label {
@@ -650,7 +662,7 @@ button {
 }
 
 .layer.is-fade {
-  animation: fade-in 0.35s ease;
+  animation: fade-in 0.3s var(--ios-press);
 }
 
 @keyframes layer-up {
@@ -741,6 +753,10 @@ button {
   box-shadow: inset 0 0 0 1px var(--line);
 }
 
+.pill-button.soft {
+  background: var(--ground-200);
+}
+
 .pill-button.grow {
   flex: 1;
 }
@@ -781,6 +797,54 @@ button {
   color: var(--ink-muted);
 }
 
+/* Add a tag / to-do in place: the ghost chip or row turns into a field */
+.inline-input {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  resize: none;
+  overflow: hidden;
+  field-sizing: content;
+}
+
+.chip.is-editing {
+  padding: 0 12px;
+  box-shadow: inset 0 0 0 1.5px var(--ink);
+}
+
+.chip.is-editing .inline-input {
+  width: auto;
+  min-width: 72px;
+  max-width: 160px;
+  font-size: 16px;
+}
+
+.profile-item.is-editing {
+  padding: 8px 14px;
+  box-shadow: inset 0 0 0 1.5px var(--ink);
+  border-radius: var(--radius-lg);
+  border-bottom: 0;
+}
+
+.profile-item.is-editing .inline-input {
+  font-size: 16px;
+}
+
+/* Only the keyboard while adding a tag / to-do, not the "Add a moment" bar */
+.profile.is-adding .sheet-bar {
+  display: none;
+}
+
+.tag-ideas {
+  margin-top: 8px;
+}
+
 .text-link {
   font-size: 13px;
   text-decoration: underline;
@@ -809,15 +873,14 @@ button {
 
 /* A bottom action bar on capture, saved and profile */
 .sheet-bar {
-  padding: 24px var(--gutter) calc(var(--safe-bottom) + 18px);
-  background: linear-gradient(to top, var(--bg) 60%, transparent);
+  padding: 0 var(--gutter) var(--bar-bottom);
 }
 
 .toast {
   position: absolute;
   left: var(--gutter);
   right: var(--gutter);
-  bottom: calc(var(--safe-bottom) + 100px);
+  bottom: calc(var(--bar-bottom) + 62px + 14px);
   z-index: 12;
   display: flex;
   align-items: center;
@@ -858,12 +921,12 @@ button {
   font-size: 13px;
   font-weight: 500;
   box-shadow: var(--shadow-float);
-  animation: fade-in 0.3s ease;
+  animation: fade-in 0.3s var(--ios-press);
 }
 
 .mindmap-screen ~ .back-to {
   top: auto;
-  bottom: calc(var(--safe-bottom) + 104px);
+  bottom: calc(var(--bar-bottom) + 62px + 18px);
 }
 
 .popup-body {
@@ -884,7 +947,7 @@ button {
   inset: 0;
   display: flex;
   flex-direction: column;
-  background: var(--bg);
+  background: var(--dots), var(--bg);
 }
 
 .profile-scroll {
@@ -934,12 +997,43 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: calc(var(--safe-top) + 4px) var(--gutter) 10px;
+  padding: calc(var(--safe-top) + 4px) var(--gutter) var(--gutter);
   color: var(--on-ink);
+}
+
+/* Half sheet: a drag handle instead of the buttons; full screen: the bar comes back */
+.profile-bar {
+  transition: opacity 0.25s var(--ios-press);
 }
 
 .layer.is-sheet .profile:not(.is-full) .profile-bar {
   padding-top: 14px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.profile-handle {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  z-index: 4;
+  width: 96px;
+  height: 28px;
+  transform: translateX(-50%);
+  touch-action: none;
+  cursor: grab;
+}
+
+.profile-handle::after {
+  content: '';
+  position: absolute;
+  top: 9px;
+  left: 50%;
+  width: 40px;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.55);
+  transform: translateX(-50%);
 }
 
 /* Scrolled past the hero: the bar fills with their color and shows their name */
@@ -951,7 +1045,7 @@ button {
   border-radius: 0 0 24px 24px;
   background: var(--ctx, var(--night));
   opacity: 0;
-  transition: opacity 0.25s ease;
+  transition: opacity 0.25s var(--ios-press);
 }
 
 .profile.is-scrolled .profile-bar::before {
@@ -965,7 +1059,7 @@ button {
   font-size: 20px;
   font-weight: 400;
   opacity: 0;
-  transition: opacity 0.25s ease;
+  transition: opacity 0.25s var(--ios-press);
 }
 
 .profile.is-scrolled .profile-bar h2 {
@@ -1049,7 +1143,7 @@ button {
 
 .profile-list {
   overflow: hidden;
-  border-radius: 18px;
+  border-radius: var(--radius-lg);
 }
 
 .profile-item {
@@ -1175,7 +1269,7 @@ button {
 
 .moment-head svg {
   flex: none;
-  transition: transform 0.25s;
+  transition: transform 0.4s var(--ios-spring);
 }
 
 .moment.is-open .moment-head svg {
@@ -1192,7 +1286,7 @@ button {
 .moment-body {
   display: grid;
   grid-template-rows: 0fr;
-  transition: grid-template-rows 0.3s ease;
+  transition: grid-template-rows 0.4s var(--ios-spring);
 }
 
 .moment.is-open .moment-body {
@@ -1290,14 +1384,14 @@ button {
   position: absolute;
   inset: 0;
   background: rgba(17, 17, 19, 0.28);
-  animation: fade-in 0.3s ease;
+  animation: fade-in 0.3s var(--ios-press);
 }
 
 .layer.is-sheet .profile {
   inset: auto 0 0 0;
   height: 80%;
   overflow: hidden;
-  border-radius: 28px 28px 0 0;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
   box-shadow: 0 -10px 40px rgba(60, 40, 110, 0.22);
   animation: sheet-up 0.5s var(--ios-spring);
   transition: height 0.45s var(--ios-spring), border-radius 0.45s var(--ios-spring);
@@ -1362,7 +1456,7 @@ button {
 .ask-filter {
   position: absolute;
   left: 50%;
-  bottom: calc(var(--safe-bottom) + 104px);
+  bottom: calc(var(--bar-bottom) + 62px + 18px);
   z-index: 3;
   display: flex;
   align-items: center;
@@ -1380,7 +1474,7 @@ button {
   font-size: 13px;
   font-weight: 500;
   white-space: nowrap;
-  animation: fade-in 0.3s ease;
+  animation: fade-in 0.3s var(--ios-press);
 }
 
 .ask-filter-dot {
@@ -1436,59 +1530,46 @@ button {
   padding-left: 4px;
 }
 
-.ask-draft {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
+.result-draft {
+  align-self: stretch;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 16px;
-  border-radius: inherit;
-  background: var(--bg);
-  animation: layer-up 0.35s var(--ios-spring);
+  gap: 8px;
+  animation: menu-in 0.35s var(--ios-spring);
+  transform-origin: top;
 }
 
-.ask-draft-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.ask-draft-to {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.ask-draft textarea {
-  flex: 1;
-  min-height: 140px;
-  padding: 14px;
+.result-draft textarea {
+  width: 100%;
+  padding: 12px 14px;
   border: 0;
-  border-radius: 18px;
+  border-radius: var(--radius-md);
   background: #fff;
-  box-shadow: inset 0 0 0 1px var(--line);
   color: var(--ink);
   font: inherit;
   font-size: 15px;
-  line-height: 1.5;
+  line-height: 1.4;
   resize: none;
 }
 
-.ask-draft-note {
-  margin: 0;
-  color: var(--ink-muted);
-  font-size: 12.5px;
+.result-draft-actions {
+  display: flex;
+  gap: 8px;
 }
 
-.ask-draft-actions {
-  display: flex;
-  gap: 10px;
+.result-draft-actions .pill-button {
+  flex: 1;
+  height: 38px;
+  font-size: 14px;
+}
+
+.profile-mutual small {
+  color: var(--ink-muted);
+  font-size: 11px;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ask-draft {
+  .result-draft {
     animation: none;
   }
 }
@@ -1571,7 +1652,7 @@ button {
   top: calc(100% + 10px);
   width: 252px;
   padding: 8px;
-  border-radius: 26px;
+  border-radius: var(--radius-lg);
   background: var(--glass-strong);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
@@ -1601,7 +1682,7 @@ button {
   gap: 12px;
   width: 100%;
   padding: 10px 12px;
-  border-radius: 16px;
+  border-radius: var(--radius-md);
   text-align: left;
 }
 
@@ -1639,7 +1720,7 @@ button {
   position: absolute;
   left: var(--gutter);
   right: var(--gutter);
-  bottom: calc(var(--safe-bottom) + 28px);
+  bottom: var(--bar-bottom);
   z-index: 4;
   display: flex;
   align-items: center;
@@ -1652,7 +1733,7 @@ button {
   align-items: center;
   height: 62px;
   padding: 0 16px 0 20px;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-bar);
 }
 
 .ask-pill-text {
@@ -1687,12 +1768,11 @@ button {
   gap: 10px;
   min-height: 62px;
   padding: 10px 10px 10px 20px;
-  border-radius: 31px;
+  border-radius: var(--radius-bar);
 }
 
 .composer.is-open {
   align-items: flex-end;
-  border-radius: 28px;
 }
 
 .composer textarea {
@@ -1840,7 +1920,7 @@ button {
 
 .flow-bottom {
   position: relative;
-  padding: 0 var(--gutter) calc(var(--safe-bottom) + 28px);
+  padding: 0 var(--gutter) var(--bar-bottom);
 }
 
 .flow-cards {
@@ -1850,11 +1930,14 @@ button {
 }
 
 .way {
+  width: 100%;
+  text-align: left;
+  transition: transform 0.4s var(--ios-spring), opacity 0.2s var(--ios-press);
   display: flex;
   align-items: center;
   gap: 14px;
   padding: 14px 18px;
-  border-radius: 20px;
+  border-radius: var(--radius-lg);
   background: var(--glass-vivid);
   backdrop-filter: var(--glass-vivid-blur);
   -webkit-backdrop-filter: var(--glass-vivid-blur);
@@ -1888,7 +1971,7 @@ button {
   gap: 16px;
   width: 100%;
   padding: 16px 18px;
-  border-radius: 30px;
+  border-radius: var(--radius-xl);
   color: var(--on-ink);
   text-align: left;
   box-shadow: 0 10px 24px -10px rgba(22, 18, 28, 0.35);
@@ -1966,7 +2049,7 @@ button {
 
 .result-card {
   overflow: hidden;
-  border-radius: 26px;
+  border-radius: var(--radius-lg);
   background: var(--glass-vivid);
   backdrop-filter: var(--glass-vivid-blur);
   -webkit-backdrop-filter: var(--glass-vivid-blur);
@@ -2039,6 +2122,523 @@ button {
 @media (prefers-reduced-motion: reduce) {
   .person-card,
   .result-card {
+    animation: none;
+  }
+}
+
+/* ---- Press feedback for everything else that taps (Apple-style: shrink fast, spring back) ---- */
+:is(.ask-pill-text, .filters-item, .profile-item, .result-head, .text-link, .chip, .mm-turf-name, .moment-head, .composer-mic, .composer-send) {
+  transition:
+    transform 0.4s var(--ios-spring),
+    opacity 0.2s var(--ios-press),
+    background 0.2s var(--ios-press);
+}
+
+:is(.ask-pill-text, .filters-item, .profile-item, .result-head, .moment-head):active:not(:disabled) {
+  transform: scale(0.97);
+  opacity: 0.75;
+  transition-duration: 0.1s;
+}
+
+:is(.text-link, .chip, .mm-turf-name, .composer-mic, .composer-send):active:not(:disabled) {
+  transform: scale(0.92);
+  transition-duration: 0.1s;
+}
+
+/* Composer and ask bar: same corner, soft spring when the composer grows */
+.composer {
+  transition: border-radius 0.4s var(--ios-spring), min-height 0.4s var(--ios-spring), background 0.2s var(--ios-press);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(.ask-pill-text, .filters-item, .profile-item, .result-head, .moment-head, .text-link, .chip, .mm-turf-name, .composer-mic, .composer-send):active {
+    transform: none;
+  }
+}
+
+/* Ask / Add open by growing out of the bar button they were tapped from, then settle full-screen */
+.layer.is-grow-pill {
+  animation: grow-pill 0.55s var(--ios-spring);
+}
+
+.layer.is-grow-add {
+  animation: grow-add 0.55s var(--ios-spring);
+}
+
+@keyframes grow-pill {
+  from {
+    clip-path: inset(calc(100% - var(--gutter) - 62px) calc(var(--gutter) + 74px) var(--gutter) var(--gutter) round var(--radius-bar));
+  }
+  to {
+    clip-path: inset(0 0 0 0 round 0);
+  }
+}
+
+@keyframes grow-add {
+  from {
+    clip-path: inset(calc(100% - var(--gutter) - 62px) var(--gutter) var(--gutter) calc(100% - var(--gutter) - 62px) round var(--radius-bar));
+  }
+  to {
+    clip-path: inset(0 0 0 0 round 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .layer.is-grow-pill,
+  .layer.is-grow-add {
+    animation: none;
+  }
+}
+
+/* ---- iOS keyboard (Figma "Keyboard", iOS 26): slides up over the bottom of the phone ---- */
+:root {
+  --kb-h: 330px;
+  --kb-font: -apple-system, 'SF Pro Text', 'SF Pro', var(--font-body);
+}
+
+.kb {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 14;
+  display: flex;
+  flex-direction: column;
+  height: var(--kb-h);
+  padding-top: 8px;
+  border-radius: 27px 27px 55px 55px;
+  background: #e4e6eb;
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.05), 0 -6px 24px rgba(40, 30, 90, 0.1);
+  font-family: var(--kb-font);
+  color: #000;
+  user-select: none;
+  transform: translateY(100%);
+  pointer-events: none;
+  transition: transform 0.45s var(--ios-spring);
+}
+
+.kb.is-open {
+  transform: none;
+  pointer-events: auto;
+}
+
+.kb-suggest {
+  display: flex;
+  align-items: center;
+  height: 34px;
+  padding: 0 8px;
+}
+
+.kb-suggest button {
+  flex: 1;
+  height: 28px;
+  border-radius: 6px;
+  font-size: 18px;
+  letter-spacing: -0.43px;
+  color: #1a1a1a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kb-suggest button + button {
+  box-shadow: -1px 0 0 rgba(0, 0, 0, 0.1);
+}
+
+.kb-keys {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  padding: 0 6.67px;
+}
+
+.kb-row {
+  display: flex;
+  gap: 6px;
+}
+
+.kb-row.is-inset {
+  padding: 0 20px;
+}
+
+.kb-row-mid {
+  flex: 1;
+  display: flex;
+  gap: 6px;
+  margin: 0 7px;
+}
+
+.kb-key {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  height: 43px;
+  border-radius: 8.5px;
+  background: #fff;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08);
+  font-size: 23px;
+  transition: transform 0.4s var(--ios-spring), background 0.12s var(--ios-press);
+}
+
+.kb-key:active {
+  background: #d3d6dc;
+  transition-duration: 0.05s;
+}
+
+.kb-key.is-side {
+  flex: none;
+  width: 45px;
+  background: #fff;
+}
+
+.kb-key.is-side.is-on {
+  background: #fff;
+}
+
+.kb-key.is-wide {
+  flex: none;
+  width: 93px;
+}
+
+.kb-key.is-text {
+  font-size: 18px;
+}
+
+.kb-key.is-space {
+  flex: 1;
+}
+
+/* The magnified letter that pops up above a pressed key */
+.kb-key.is-char:active::after {
+  content: attr(data-k);
+  position: absolute;
+  left: 50%;
+  bottom: 52px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 58px;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+  font-size: 34px;
+  transform: translateX(-50%);
+  animation: key-pop 0.12s var(--ios-spring);
+}
+
+@keyframes key-pop {
+  from {
+    transform: translateX(-50%) scale(0.7);
+    opacity: 0.4;
+  }
+}
+
+.kb-emoji {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  align-content: start;
+  padding: 0 8px;
+  overflow-y: auto;
+  font-size: 28px;
+}
+
+.kb-emoji button {
+  height: 44px;
+  transition: transform 0.4s var(--ios-spring);
+}
+
+.kb-emoji button:active {
+  transform: scale(1.3);
+  transition-duration: 0.05s;
+}
+
+.kb-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+  padding: 0 32px 26px;
+}
+
+.kb-bottom button {
+  color: #000;
+}
+
+/* With the keyboard up, bars that sat above the home indicator ride on top of it */
+.flow-bottom,
+.sheet-bar {
+  transition: padding-bottom 0.45s var(--ios-spring);
+}
+
+.phone.has-kb {
+  --bar-bottom: calc(var(--kb-h) + 10px);
+}
+
+.has-kb .home-indicator {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kb,
+  .flow-bottom,
+  .sheet-bar {
+    transition: none;
+  }
+}
+
+.way:active {
+  transform: scale(0.97);
+  opacity: 0.75;
+  transition-duration: 0.1s;
+}
+
+/* Content scrolls under the bar and stops at its middle, fading out so the hand-off is smooth */
+.phone {
+  --bar-mid: calc(var(--bar-bottom) + 31px);
+}
+
+:root {
+  --bar-fade: linear-gradient(to bottom, #000 calc(100% - 56px), transparent);
+}
+
+.flow-main {
+  position: absolute;
+  inset: 0 0 var(--bar-mid);
+  padding-bottom: 56px;
+  mask-image: var(--bar-fade);
+  -webkit-mask-image: var(--bar-fade);
+  transition: bottom 0.45s var(--ios-spring);
+}
+
+.profile .profile-scroll {
+  margin-bottom: var(--bar-mid);
+  padding-bottom: 56px;
+  mask-image: var(--bar-fade);
+  -webkit-mask-image: var(--bar-fade);
+  transition: margin-bottom 0.45s var(--ios-spring);
+}
+
+.profile .sheet-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.flow-bottom {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+/* "Making the request": a status line that changes, and shimmering placeholder cards */
+.ask-thinking {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 16px;
+  animation: fade-in 0.3s var(--ios-press);
+}
+
+.ask-thinking-dots {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.ask-thinking-dots i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ink);
+  animation: think-dot 1s var(--ios-press) infinite;
+}
+
+.ask-thinking-dots i:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.ask-thinking-dots i:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes think-dot {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.8);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+.result-card.is-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  animation: card-in 0.45s var(--ios-spring) both;
+}
+
+.skel-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.skel-lines {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.skel {
+  display: block;
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(100deg, rgba(17, 17, 19, 0.06) 30%, rgba(17, 17, 19, 0.14) 50%, rgba(17, 17, 19, 0.06) 70%) 0 0 / 220% 100%;
+  animation: skel-shimmer 1.2s linear infinite;
+}
+
+.skel.is-short {
+  width: 60%;
+}
+
+.skel-avatar {
+  flex: none;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+}
+
+@keyframes skel-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ask-thinking-dots i,
+  .skel {
+    animation: none;
+  }
+}
+
+/* Add: a white skeleton card while the profile is made; then the color paints in from the left,
+   the avatar pops, and the text types in */
+.person-card.is-skeleton {
+  min-height: 101px; /* the height of the finished card, so nothing jumps */
+  background: #fff;
+  color: var(--ink);
+  animation: card-in 0.45s var(--ios-spring) both;
+}
+
+.person-card.is-skeleton .skel-avatar {
+  width: 62px;
+  height: 62px;
+}
+
+.person-card.is-skeleton .person-card-text {
+  flex: 1;
+  gap: 8px;
+}
+
+.person-card.is-filling {
+  background: #fff;
+}
+
+.person-card.is-filling::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background: var(--card-bg);
+  /* A feathered wipe from the left, so the color fades in as a gradient instead of a hard edge */
+  -webkit-mask-image: linear-gradient(90deg, #000 0, #000 33.33%, transparent 66.66%, transparent 100%);
+  mask-image: linear-gradient(90deg, #000 0, #000 33.33%, transparent 66.66%, transparent 100%);
+  -webkit-mask-size: 300% 100%;
+  mask-size: 300% 100%;
+  animation: paint-in 1.1s var(--ios-spring) both;
+}
+
+@keyframes paint-in {
+  from {
+    -webkit-mask-position: 100% 0;
+    mask-position: 100% 0;
+  }
+  to {
+    -webkit-mask-position: 0 0;
+    mask-position: 0 0;
+  }
+}
+
+.tt {
+  position: relative;
+  display: block;
+}
+
+.tt i {
+  font-style: normal;
+}
+
+.tt-full {
+  visibility: hidden;
+}
+
+.tt-shown {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+}
+
+.person-card.is-filling .avatar {
+  animation: avatar-pop 0.55s 0.45s var(--ios-spring) both;
+}
+
+@keyframes avatar-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+}
+
+.person-card-text b,
+.person-card-text span,
+.person-card-text small {
+  min-height: 1.2em;
+}
+
+.person-card-go {
+  flex: none;
+  margin-left: auto;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  opacity: 0.85;
+  transition: opacity 0.4s var(--ios-spring), transform 0.4s var(--ios-spring);
+}
+
+.person-card-go:not(.is-on) {
+  opacity: 0;
+  transform: translateX(-6px) scale(0.8);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .person-card.is-skeleton .skel {
     animation: none;
   }
 }

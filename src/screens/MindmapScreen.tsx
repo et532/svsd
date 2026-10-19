@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Person } from '../data/people'
 import { createGraph, type Graph } from '../lib/forceGraph'
-import { initials, linksOf, orbBackground, orbTextColor } from '../lib/people'
+import { auraDepth, initials, linksOf, momentsOf } from '../lib/people'
 import { colorKey, colorScale, type ColorBy } from '../lib/mindmapColors'
 import type { GroupBy } from '../components/TopControls'
 
@@ -17,7 +17,8 @@ const groupValue: Record<GroupBy, (p: Person) => string> = {
 // Territory clouds: one soft pastel per group.
 const territoryColors = ['#ffd6c2', '#d9f2e6', '#e3d9ff', '#ffd9ea', '#fbf0c4', '#d6e6ff']
 
-const radius = (degree: number) => 11 + Math.min(degree, 5) * 1.2
+// The more you've interacted with someone (moments logged + how close you are), the bigger their dot.
+const radiusOf = (p: Person) => 8 + Math.min(momentsOf(p).length + auraDepth(p.id), 10) * 2.4
 // Zoomed out past this, dragging anywhere pans the map instead of moving a person.
 const GRAB_ZOOM = 0.6
 const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -50,14 +51,9 @@ export function MindmapScreen({ people, focusId = null, onView, colorBy = 'relat
   const settleTimer = useRef(0)
 
   const links = useMemo(() => linksOf(people), [people])
-  const degree = useMemo(() => {
-    const d = new Map<string, number>()
-    for (const [a, b] of links) {
-      d.set(a, (d.get(a) ?? 0) + 1)
-      d.set(b, (d.get(b) ?? 0) + 1)
-    }
-    return d
-  }, [links])
+  const radii = useMemo(() => new Map(people.map((p) => [p.id, radiusOf(p)])), [people])
+  const radiiRef = useRef(radii)
+  radiiRef.current = radii
   // Selected person = 0, their direct connections = 1. Everyone else isn't listed.
   const depth = useMemo(() => {
     const d = new Map<string, number>()
@@ -128,6 +124,7 @@ export function MindmapScreen({ people, focusId = null, onView, colorBy = 'relat
       const { x, y, k } = view.current
       if (worldRef.current) {
         worldRef.current.style.transform = `translate(${x}px, ${y}px) scale(${k})`
+        worldRef.current.style.setProperty('--k', String(k)) // initials fade in as you zoom in
         worldRef.current.style.setProperty('--inv', String(Math.min(3, 1 / k))) // keeps group names readable when zoomed out
       }
       for (const n of graph.nodes) {
@@ -161,7 +158,7 @@ export function MindmapScreen({ people, focusId = null, onView, colorBy = 'relat
       const sel = graph.nodes.find((n) => n.id === selectedRef.current)
       const root = rootRef.current
       if (labelRef.current && root && sel) {
-        const r = radius(sel.degree) * k
+        const r = (radiiRef.current.get(sel.id) ?? 12) * k
         labelRef.current.style.transform = `translate(${root.clientWidth / 2 + x + sel.x * k}px, ${root.clientHeight / 2 + y + sel.y * k + r + 14}px) translateX(-50%)`
       }
     }
@@ -404,7 +401,7 @@ export function MindmapScreen({ people, focusId = null, onView, colorBy = 'relat
           ))}
         </svg>
         {people.map((p) => {
-          const r = radius(degree.get(p.id) ?? 0)
+          const r = radii.get(p.id) ?? 12
           return (
             <div
               key={p.id}
@@ -414,11 +411,14 @@ export function MindmapScreen({ people, focusId = null, onView, colorBy = 'relat
                 else nodeEls.current.delete(p.id)
               }}
               className={`mm-node${state(p.id)}`}
-              style={{ width: r * 2, height: r * 2, margin: -r, fontSize: r * 0.62, color: colorBy === 'relationship' ? orbTextColor(p.id) : '#fff',
-                ['--orb' as string]:
-                  colorBy === 'relationship'
-                    ? orbBackground(p.id)
-                    : `radial-gradient(circle at 32% 28%, #fff 0, ${colors.of.get(colorKey[colorBy](p))} 62%)`,
+              style={{
+                width: r * 2,
+                height: r * 2,
+                margin: -r,
+                fontSize: r * 0.62,
+                // Flat design-system colors: how you know them (work / social / ...)
+                color: colorBy === 'relationship' && (p.context === 'community' || p.context === 'unsorted') ? 'var(--ink)' : '#fff',
+                ['--orb' as string]: colorBy === 'relationship' ? `var(--${p.context}-core)` : colors.of.get(colorKey[colorBy](p)),
               }}
             >
               <b>{initials(p.name)}</b>

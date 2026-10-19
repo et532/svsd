@@ -186,9 +186,21 @@ export function auraGradient(context: Context, depth: 1 | 2 | 3): string {
   ].join(', ')
 }
 
-// Sample people have no logged moments or todos yet: show their story as the first meeting.
+// Sample people have no logged moments or todos yet: their story is the first meeting
 export function momentsOf(p: Person): Moment[] {
-  return p.moments ?? [{ id: `${p.id}-first`, date: p.lastContacted, firstMeeting: true, title: p.story, text: p.story }]
+  // ...as a voice note you can open, read and play
+  return (
+    p.moments ?? [
+      {
+        id: `${p.id}-first`,
+        date: p.lastContacted,
+        firstMeeting: true,
+        title: p.met.context ? `Met at ${p.met.context}` : 'First meeting',
+        transcript: p.story,
+        seconds: Math.max(8, Math.round(p.story.split(' ').length / 2.6)),
+      },
+    ]
+  )
 }
 
 export function todosOf(p: Person): Todo[] {
