@@ -10,6 +10,8 @@ type Props = {
   script: string
   // Open straight into typing or recording.
   start?: 'type' | 'voice'
+  // Hold focus (and so the keyboard) until the screen has nearly finished growing open.
+  waitForOpen?: boolean
   onSend: (sent: Sent) => void
   className?: string
 }
@@ -18,7 +20,7 @@ const WORD_MS = 150
 
 // The input shared by Find, Add and a profile's "Add a moment": a pill you type into, or a mic that "records"
 // the script word by word. Stop turns the recording into editable text; the arrow sends.
-export function Composer({ placeholder, script, start, onSend, className = '' }: Props) {
+export function Composer({ placeholder, script, start, waitForOpen = false, onSend, className = '' }: Props) {
   const [text, setText] = useState('')
   const [voice, setVoice] = useState(start === 'voice')
   const [typing, setTyping] = useState(start === 'type')
@@ -48,8 +50,28 @@ export function Composer({ placeholder, script, start, onSend, className = '' }:
     ta.style.height = `${ta.scrollHeight}px`
   }, [text, voice, typing])
   useEffect(() => {
-    if (typing && !voice) taRef.current?.focus()
-  }, [typing, voice])
+    if (!typing || voice) return
+    const ta = taRef.current
+    const opening = waitForOpen
+      ? ta
+          ?.closest('.layer')
+          ?.getAnimations()
+          .find((a) => a instanceof CSSAnimation && a.animationName === 'grow-circle')
+      : undefined
+    if (!opening) {
+      ta?.focus()
+      return
+    }
+    // Bring the keyboard up just before the reveal ends, while it is easing out. If the screen is
+    // closed mid-open the grow animation is cancelled (idle), and it never takes focus.
+    const LEAD_MS = 150
+    const ms = Number(opening.effect?.getComputedTiming().duration) || 0
+    const t = setTimeout(
+      () => opening.playState !== 'idle' && ta?.focus(),
+      Math.max(0, ms - LEAD_MS - (Number(opening.currentTime) || 0)),
+    )
+    return () => clearTimeout(t)
+  }, [typing, voice, waitForOpen])
 
   const send = () => {
     if (!text.trim()) return

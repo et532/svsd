@@ -16,10 +16,28 @@ import { MindmapScreen } from './screens/MindmapScreen'
 import { ProfileScreen } from './screens/ProfileScreen'
 
 // Full-screen layers above the tabs, newest last. Back / close pops the top one.
+// Where a flow was opened from, as % of the phone: Ask / Add grow out of that point in a circle.
+type Origin = { x: number; y: number }
+
 type Layer =
-  | { kind: 'capture'; mutualOf?: string }
+  | { kind: 'capture'; mutualOf?: string; origin?: Origin }
   | { kind: 'profile'; id: string; fresh?: string | null }
-  | { kind: 'ask'; start: 'type' | 'voice' }
+  | { kind: 'ask'; start: 'type' | 'voice'; origin?: Origin }
+
+function originOf(el: HTMLElement): Origin | undefined {
+  const phone = el.closest('.phone')
+  if (!phone) return undefined
+  const b = el.getBoundingClientRect()
+  const p = phone.getBoundingClientRect()
+  return { x: ((b.left + b.width / 2 - p.left) / p.width) * 100, y: ((b.top + b.height / 2 - p.top) / p.height) * 100 }
+}
+
+// Grow out of `from`; when closing, shrink into `to` (the X button).
+const growStyle = (from?: Origin, to?: Origin) =>
+  ({
+    ...(from && { '--ox': `${from.x}%`, '--oy': `${from.y}%` }),
+    ...(to && { '--cx': `${to.x}%`, '--cy': `${to.y}%` }),
+  }) as React.CSSProperties
 
 // The app's phone screen.
 export function Prototype() {
@@ -50,14 +68,23 @@ export function Prototype() {
   useEffect(() => setProfileFull(false), [top])
 
   const [closing, setClosing] = useState(false)
-  // Slide the sheet down first, then drop the layer.
-  const closeSheet = () => {
+  // Play the top layer's closing animation first, then drop it.
+  const closeTop = (ms: number) => {
     if (closing) return
     setClosing(true)
     setTimeout(() => {
       pop()
       setClosing(false)
-    }, 320)
+    }, ms)
+  }
+  // A profile sheet slides down; Ask / Add shrink back into the button they grew from.
+  const closeSheet = () => closeTop(320)
+  const [shrinkTo, setShrinkTo] = useState<Origin>()
+  const closeGrow = () => {
+    const layerEls = document.querySelectorAll<HTMLElement>('.layer')
+    const x = layerEls[layerEls.length - 1]?.querySelector<HTMLElement>('.flow-close')
+    setShrinkTo(x ? originOf(x) : undefined)
+    closeTop(500)
   }
 
   const push = (layer: Layer) => setLayers((l) => [...l, layer])
@@ -112,12 +139,6 @@ export function Prototype() {
 
   return (
     <div className={`phone${top?.kind === 'profile' && profileFull ? ' is-dark-top' : ''}${kbTarget ? ' has-kb' : ''}`}>
-      <div className="aura" aria-hidden>
-        <span className="aura-orb" />
-        <span className="aura-orb" />
-        <span className="aura-orb" />
-        <span className="aura-orb" />
-      </div>
       <StatusBar />
       {tab === 'list' && <ListScreen people={people} onOpen={openProfile} />}
       {tab === 'mindmap' && <MindmapScreen people={focusId ? allPeople : people} focusId={focusId} onView={openProfile} groupBy={groupBy} />}
@@ -150,29 +171,30 @@ export function Prototype() {
       )}
 
       <AskBar
-        onType={() => {
+        onType={(e) => {
           setNavFocus(null)
-          push({ kind: 'ask', start: 'type' })
+          push({ kind: 'ask', start: 'type', origin: originOf(e.currentTarget) })
         }}
-        onVoice={() => {
+        onVoice={(e) => {
           setNavFocus(null)
-          push({ kind: 'ask', start: 'voice' })
+          push({ kind: 'ask', start: 'voice', origin: originOf(e.currentTarget) })
         }}
-        onAdd={() => push({ kind: 'capture' })}
+        onAdd={(e) => push({ kind: 'capture', origin: originOf(e.currentTarget) })}
       />
 
       {layers.map((layer, i) => {
         const key = `${i}-${layer.kind}`
+        const shut = closing && i === layers.length - 1 ? ' is-closing' : ''
         // Only the top two layers render, so a profile stays under the flow opened over it.
         if (i < layers.length - 2) return null
         if (layer.kind === 'ask')
           return (
-            <div key={key} className="layer is-grow-pill">
+            <div key={key} className={`layer is-grow-pill${shut}`} style={growStyle(layer.origin, shut ? shrinkTo : undefined)}>
               <AskScreen
                 people={allPeople}
                 tab={tab}
                 start={layer.start}
-                onClose={pop}
+                onClose={closeGrow}
                 onOpenProfile={openProfile}
                 onAdd={() => replaceTop({ kind: 'capture' })}
                 onToast={say}
@@ -185,10 +207,10 @@ export function Prototype() {
           )
         if (layer.kind === 'capture')
           return (
-            <div key={key} className="layer is-grow-add">
+            <div key={key} className={`layer is-grow-add${shut}`} style={growStyle(layer.origin, shut ? shrinkTo : undefined)}>
               <CaptureScreen
                 people={allPeople}
-                onClose={pop}
+                onClose={closeGrow}
                 onCreate={(sent) => createPerson(sent, layer.mutualOf)}
                 mutualWith={layer.mutualOf ? firstName(byId(layer.mutualOf)?.name ?? '') : undefined}
                 onMoment={(id, sent) => replaceTop({ kind: 'profile', id, fresh: addMoment(id, sent) })}
@@ -199,7 +221,7 @@ export function Prototype() {
         const person = byId(layer.id)
         if (!person) return null
         return (
-          <div key={key + layer.id} className={`layer is-sheet${closing && i === layers.length - 1 ? ' is-closing' : ''}`}>
+          <div key={key + layer.id} className={`layer is-sheet${shut}`}>
             <div className="sheet-scrim" onClick={closeSheet} aria-hidden />
             <ProfileScreen
               onExpand={setProfileFull}
@@ -213,7 +235,7 @@ export function Prototype() {
                 const fresh = addMoment(person.id, sent)
                 setLayers((l) => l.map((x, j) => (j === i ? { ...x, fresh } : x)))
               }}
-              onAddMutual={() => push({ kind: 'capture', mutualOf: person.id })}
+              onAddMutual={(e) => push({ kind: 'capture', mutualOf: person.id, origin: originOf(e.currentTarget) })}
               onSoon={(what) => say(`${what} isn't built yet`)}
             />
           </div>

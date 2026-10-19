@@ -1,9 +1,8 @@
-/* Peepl design foundation (Figma "Peepl foundations"): warm cream ground, aubergine ink, glass cards,
-   context-colored auras. People carry the color; the chrome stays cream, ink and glass. */
+/* Peepl design foundation (Figma "Peepl foundations"): off-white ground, aubergine ink, glass cards,
+   context-colored auras. People carry the color; the chrome stays off-white, ink and glass. */
 :root {
   /* Neutrals */
-  --bg: #f4efe7; /* ground-100 */
-  --ground-200: #e9e1d5;
+  --bg: #f4f4f4; /* Figma ground-100: the plain off-white behind every screen */
   --night: #1c1522;
   --ink: #16121c;
   --ink-muted: #5b5361;
@@ -12,6 +11,7 @@
   --muted: var(--ink-muted);
   --line: rgba(22, 18, 28, 0.12); /* hairline */
   --hover: rgba(22, 18, 28, 0.04);
+  --pressed: rgba(22, 18, 28, 0.08); /* light gray for pressed and selected controls */
   --live: #c6f04a; /* recording only */
   /* The Figma ground: a fine dot grid */
   --dots: radial-gradient(circle, rgba(22, 18, 28, 0.16) 1px, transparent 1.3px) 0 0 / 14px 14px;
@@ -95,7 +95,7 @@ body,
 }
 
 body {
-  background: var(--ground-200);
+  background: var(--bg);
 }
 
 button {
@@ -226,79 +226,6 @@ button {
   }
 }
 
-/* Soft pastel light drifting behind every screen */
-.aura {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-.aura-orb {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(48px);
-  opacity: 0.75;
-  animation: drift 20s ease-in-out infinite alternate;
-}
-
-.aura-orb:nth-child(1) {
-  top: -70px;
-  right: -90px;
-  width: 290px;
-  height: 290px;
-  background: radial-gradient(circle at 35% 35%, var(--social-wash), var(--family-wash) 55%, transparent 72%);
-}
-
-.aura-orb:nth-child(2) {
-  top: 36%;
-  left: -150px;
-  width: 310px;
-  height: 310px;
-  background: radial-gradient(circle, var(--work-wash), var(--unsorted-wash) 55%, transparent 72%);
-  animation-duration: 24s;
-  animation-delay: -8s;
-}
-
-.aura-orb:nth-child(3) {
-  right: -70px;
-  bottom: -70px;
-  width: 260px;
-  height: 260px;
-  background: radial-gradient(circle, var(--community-wash), var(--social-wash) 55%, transparent 72%);
-  animation-duration: 28s;
-  animation-delay: -14s;
-}
-
-.aura-orb:nth-child(4) {
-  top: 16%;
-  left: 34%;
-  width: 170px;
-  height: 170px;
-  background: radial-gradient(circle, var(--family-wash), transparent 70%);
-  opacity: 0.5;
-  animation-duration: 18s;
-  animation-delay: -4s;
-}
-
-@keyframes drift {
-  0% {
-    transform: translate(0, 0) scale(1);
-  }
-  50% {
-    transform: translate(22px, 30px) scale(1.08);
-  }
-  100% {
-    transform: translate(-16px, 12px) scale(0.95);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .aura-orb {
-    animation: none;
-  }
-}
-
 .screen {
   position: absolute;
   inset: 0;
@@ -309,7 +236,7 @@ button {
   inset: 0 0 var(--bar-mid);
   overflow-y: auto;
   padding: calc(var(--safe-top) + 92px) var(--gutter) 56px;
-  /* Fade rows out as they scroll under the top controls, letting the gradient show through */
+  /* Fade rows out as they scroll under the top controls */
   mask-image: linear-gradient(
     to bottom,
     transparent calc(var(--safe-top) + 78px),
@@ -447,7 +374,7 @@ button {
 }
 
 .mm-turf.is-focus .mm-turf-name {
-  background: var(--ink);
+  background: var(--night);
   color: #fff;
 }
 
@@ -456,23 +383,56 @@ button {
   opacity: 0.2;
 }
 
-/* Each person is a flat dot in their relationship color; the initials only show when zoomed in */
+/* Each person is an aura in their relationship color (Figma "Aura/Work" etc.): deep at the heart,
+   the core color through the middle, fading to the wash at the edge, with grain. The initials only
+   show when zoomed in. */
 .mm-node {
   position: absolute;
   left: 0;
   top: 0;
   display: grid;
   place-items: center;
+  overflow: hidden;
   border-radius: 50%;
-  /* pure color in the middle, darker toward the edge */
-  background: radial-gradient(circle closest-side, var(--orb) 55%, color-mix(in srgb, var(--orb) 78%, #000) 100%);
+  color: #fff;
+  background: radial-gradient(
+    circle closest-side,
+    var(--orb-deep, color-mix(in srgb, var(--orb) 58%, #000)) 0%,
+    var(--orb-deep, color-mix(in srgb, var(--orb) 58%, #000)) 22%,
+    var(--orb) 55%,
+    var(--orb-wash, color-mix(in srgb, var(--orb) 18%, #fff)) 100%
+  );
   cursor: pointer;
   /* no will-change: it rasterizes the dot once and scales the bitmap, which blurs it when zoomed in */
   transition: opacity 0.25s;
 }
 
+/* Two ways you know someone (Figma "Aura/Blend social–family" etc.): their deep and core color at the
+   heart, the second context's core at 80%, fading to its wash */
+.mm-node.is-blend {
+  background: radial-gradient(
+    circle closest-side,
+    var(--orb-deep) 0%,
+    var(--orb) 45%,
+    var(--orb-core-2) 80%,
+    var(--orb-wash-2) 100%
+  );
+}
+
+.mm-node::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--grain);
+  background-size: 80px;
+  opacity: 0.35;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
 .mm-node b {
   position: relative;
+  z-index: 1;
   font-weight: 600;
   opacity: clamp(0, calc((var(--k, 1) - 0.9) * 2.5), 1);
 }
@@ -533,7 +493,7 @@ button {
   height: 36px;
   padding: 0 16px;
   border-radius: 999px;
-  background: var(--ink);
+  background: var(--night);
   color: #fff;
   font-size: 13px;
   font-weight: 600;
@@ -624,6 +584,8 @@ button {
    system swap there restyles these too. */
 :root {
   --grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.9 0'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>");
+  /* Figma "Texture/Grain": fine fractal noise thresholded to a speckle, about half the pixels white at 80% */
+  --noise: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n' x='0' y='0' width='100%' height='100%' color-interpolation-filters='sRGB'><feTurbulence type='fractalNoise' baseFrequency='1.25' numOctaves='3' seed='1132' stitchTiles='stitch'/><feColorMatrix type='luminanceToAlpha'/><feComponentTransfer result='speck'><feFuncA type='discrete' tableValues='1 0'/></feComponentTransfer><feFlood flood-color='white' flood-opacity='0.8'/><feComposite operator='in' in2='speck'/></filter><rect width='200' height='200' filter='url(%23n)'/></svg>");
   --shadow-float: 0 10px 24px rgba(22, 18, 28, 0.25);
   --on-dark-glass: rgba(255, 255, 255, 0.14);
   --on-dark-edge: rgba(255, 255, 255, 0.3);
@@ -704,11 +666,11 @@ button {
 }
 
 .round-button.soft {
-  background: var(--ground-200);
+  background: var(--pressed);
 }
 
 .round-button.ink {
-  background: var(--ink);
+  background: var(--night);
   color: var(--on-ink);
 }
 
@@ -744,7 +706,7 @@ button {
 }
 
 .pill-button.ink {
-  background: var(--ink);
+  background: var(--night);
   color: var(--on-ink);
 }
 
@@ -754,7 +716,7 @@ button {
 }
 
 .pill-button.soft {
-  background: var(--ground-200);
+  background: var(--pressed);
 }
 
 .pill-button.grow {
@@ -916,7 +878,7 @@ button {
   height: 34px;
   padding: 0 14px 0 10px;
   border-radius: var(--radius-pill);
-  background: var(--ink);
+  background: var(--night);
   color: var(--on-ink);
   font-size: 13px;
   font-weight: 500;
@@ -1629,7 +1591,7 @@ button {
 }
 
 .view-button.is-active {
-  background: var(--ground-200);
+  background: var(--pressed);
 }
 
 .filters {
@@ -1687,7 +1649,7 @@ button {
 }
 
 .filters-item.is-on {
-  background: var(--ground-200);
+  background: var(--pressed);
 }
 
 .filters-item > span {
@@ -1850,24 +1812,26 @@ button {
 }
 
 .flow-aura {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
+  --flow-orbs:
     radial-gradient(70% 38% at 0% 8%, #dfe3ff 0, transparent 72%),
     radial-gradient(60% 36% at 100% 38%, #fff2c2 0, transparent 72%),
     radial-gradient(90% 44% at 18% 84%, #fddfec 0, transparent 72%),
     radial-gradient(60% 28% at 100% 100%, #fde1d3 0, transparent 72%);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--flow-orbs);
 }
 
+/* Figma grain on the aura: only over the pastel orbs, as in the Figma (the noise is clipped to their shape) */
 .flow-aura::after {
   content: '';
   position: absolute;
   inset: 0;
-  background-image: var(--grain);
-  background-size: 140px;
-  opacity: 0.1;
-  mix-blend-mode: overlay;
+  background-image: var(--noise);
+  background-size: 200px;
+  -webkit-mask-image: var(--flow-orbs);
+  mask-image: var(--flow-orbs);
 }
 
 .flow-close {
@@ -2028,7 +1992,7 @@ button {
   height: 48px;
   margin-top: 6px;
   border-radius: var(--radius-pill);
-  background: var(--ink);
+  background: var(--night);
   color: var(--on-ink);
   font-size: 15px;
   font-weight: 500;
@@ -2105,7 +2069,7 @@ button {
   height: 38px;
   padding: 0 18px;
   border-radius: var(--radius-pill);
-  background: var(--ink);
+  background: var(--night);
   color: var(--on-ink);
   font-size: 14px;
   font-weight: 500;
@@ -2134,7 +2098,11 @@ button {
     background 0.2s var(--ios-press);
 }
 
-:is(.ask-pill-text, .filters-item, .profile-item, .result-head, .moment-head):active:not(:disabled) {
+:is(.view-button, .filters-button, .filters-item):active:not(:disabled) {
+  background: var(--pressed);
+}
+
+:is(.ask-pill-text, .profile-item, .result-head, .moment-head):active:not(:disabled) {
   transform: scale(0.97);
   opacity: 0.75;
   transition-duration: 0.1s;
@@ -2156,30 +2124,34 @@ button {
   }
 }
 
-/* Ask / Add open by growing out of the bar button they were tapped from, then settle full-screen */
-.layer.is-grow-pill {
-  animation: grow-pill 0.55s var(--ios-spring);
-}
-
+/* Ask / Add open like Google Maps voice search: a circle grows out of the button they were tapped
+   from (--ox / --oy, set from the tap) until it fills the screen. On close it shrinks into the X
+   button (--cx / --cy). Without those points they use the bottom bar. */
+.layer.is-grow-pill,
 .layer.is-grow-add {
-  animation: grow-add 0.55s var(--ios-spring);
+  animation: grow-circle 0.7s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@keyframes grow-pill {
+.layer.is-grow-pill.is-closing,
+.layer.is-grow-add.is-closing {
+  animation: shrink-circle 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes grow-circle {
   from {
-    clip-path: inset(calc(100% - var(--gutter) - 62px) calc(var(--gutter) + 74px) var(--gutter) var(--gutter) round var(--radius-bar));
+    clip-path: circle(24px at var(--ox, 50%) var(--oy, 92%));
   }
   to {
-    clip-path: inset(0 0 0 0 round 0);
+    clip-path: circle(135% at var(--ox, 50%) var(--oy, 92%));
   }
 }
 
-@keyframes grow-add {
+@keyframes shrink-circle {
   from {
-    clip-path: inset(calc(100% - var(--gutter) - 62px) var(--gutter) var(--gutter) calc(100% - var(--gutter) - 62px) round var(--radius-bar));
+    clip-path: circle(135% at var(--cx, var(--ox, 50%)) var(--cy, var(--oy, 92%)));
   }
   to {
-    clip-path: inset(0 0 0 0 round 0);
+    clip-path: circle(22px at var(--cx, var(--ox, 50%)) var(--cy, var(--oy, 92%)));
   }
 }
 

@@ -109,7 +109,7 @@ export function CaptureScreen({ people, onClose, onCreate, onMoment, onOpenProfi
 
       {stage.kind === 'input' && (
         <div className="flow-bottom">
-          <Composer placeholder="Who did you meet?" script={voiceScript} start="type" onSend={submit} />
+          <Composer placeholder="Who did you meet?" script={voiceScript} start="type" waitForOpen onSend={submit} />
         </div>
       )}
     </section>

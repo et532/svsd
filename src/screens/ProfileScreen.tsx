@@ -17,7 +17,7 @@ type Props = {
   onOpen: (id: string) => void
   onViewConnections: () => void
   onAddMoment: (sent: Sent) => void
-  onAddMutual: () => void
+  onAddMutual: (e: React.MouseEvent<HTMLElement>) => void
   onSoon: (what: string) => void
 }
 

@@ -13,6 +13,8 @@ export type Person = {
   id: string
   name: string
   context: Context
+  // A second way you know them, for a two-color blend aura (Figma "Aura/Blend work–social" etc.)
+  alsoContext?: Context
   profession: string
   story: string
   tags: string[]
@@ -52,7 +54,8 @@ const basePeople: Person[] = [
   {
     id: 'maya-chen',
     name: 'Maya Chen',
-    context: 'work',
+    context: 'social',
+    alsoContext: 'family',
     profession: 'Climate tech founder',
     story: 'Building a startup that turns food waste into fertilizer.',
     tags: ['climate', 'founder'],
@@ -92,6 +95,7 @@ const basePeople: Person[] = [
     id: 'liam-oconnor',
     name: "Liam O'Connor",
     context: 'community',
+    alsoContext: 'work',
     profession: 'Software engineer',
     story: 'Moved to Berlin for a robotics job. Plays in a jazz trio.',
     tags: ['engineering', 'music'],
@@ -105,6 +109,7 @@ const basePeople: Person[] = [
     id: 'aisha-khan',
     name: 'Aisha Khan',
     context: 'work',
+    alsoContext: 'social',
     profession: 'VC associate',
     story: 'Invests in health and hardware startups. Just adopted a corgi named Toast.',
     tags: ['investing', 'health'],

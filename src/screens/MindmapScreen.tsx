@@ -410,15 +410,23 @@ export function MindmapScreen({ people, focusId = null, onView, colorBy = 'relat
                 if (el) nodeEls.current.set(p.id, el)
                 else nodeEls.current.delete(p.id)
               }}
-              className={`mm-node${state(p.id)}`}
+              className={`mm-node${colorBy === 'relationship' && p.alsoContext ? ' is-blend' : ''}${state(p.id)}`}
               style={{
                 width: r * 2,
                 height: r * 2,
                 margin: -r,
                 fontSize: r * 0.62,
-                // Flat design-system colors: how you know them (work / social / ...)
-                color: colorBy === 'relationship' && (p.context === 'community' || p.context === 'unsorted') ? 'var(--ink)' : '#fff',
-                ['--orb' as string]: colorBy === 'relationship' ? `var(--${p.context}-core)` : colors.of.get(colorKey[colorBy](p)),
+                // Figma aura fill in the design-system colors for how you know them (work / social / ...)
+                ...(colorBy === 'relationship'
+                  ? {
+                      ['--orb' as string]: `var(--${p.context}-core)`,
+                      ['--orb-deep' as string]: `var(--${p.context}-deep)`,
+                      ['--orb-wash' as string]: `var(--${p.context}-wash)`,
+                      // Blend: the second context takes over toward the edge
+                      ['--orb-core-2' as string]: `var(--${p.alsoContext ?? p.context}-core)`,
+                      ['--orb-wash-2' as string]: `var(--${p.alsoContext ?? p.context}-wash)`,
+                    }
+                  : { ['--orb' as string]: colors.of.get(colorKey[colorBy](p)) }),
               }}
             >
               <b>{initials(p.name)}</b>

@@ -1,9 +1,10 @@
 import { AddPersonIcon, MicIcon } from './Icons'
 
+// Each handler gets the tap, so the screen it opens can grow out of that button
 type Props = {
-  onType: () => void
-  onVoice: () => void
-  onAdd: () => void
+  onType: (e: React.MouseEvent<HTMLElement>) => void
+  onVoice: (e: React.MouseEvent<HTMLElement>) => void
+  onAdd: (e: React.MouseEvent<HTMLElement>) => void
 }
 
 // Bottom of the app: ask about people (type or speak), or add someone / a moment.
