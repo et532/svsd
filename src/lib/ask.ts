@@ -31,16 +31,13 @@ export const storyAsks = [
   'I’m traveling to SF next month. Who can I grab a coffee with?',
   'I just met a founder looking for a hardware engineer. Who can I introduce?',
 ]
-let storyStep = 0
 
-// What the mic "says" next: follows the demo story while it makes sense, then the other examples.
+// What the mic "says" next. For now (the user's call) only the Figma's first flow, the climbing buddy question;
+// Jordan is built into the sample people so the answer matches. The full story (add Jordan, log a moment, then
+// cycle through storyAsks) is in git history if it comes back.
 export function storyRequest(people: Person[]): string {
-  const jordan = people.find((p) => p.id.startsWith('jordan-lee'))
-  if (!jordan) return 'Add someone new I just met'
-  if ((jordan.moments ?? []).length < 2) return 'Log a moment with Jordan'
-  const next = storyAsks[storyStep % storyAsks.length]
-  storyStep += 1
-  return next
+  void people
+  return storyAsks[0]
 }
 
 // Example requests, played when the user taps the mic (the voice is a scripted demo, like capture).
@@ -241,7 +238,7 @@ function buddy(text: string, people: Person[]): AskResult | null {
   const matches = people
     .filter((p) => said(p) && (!inCity || near(p)))
     // People who said they want a buddy first, then whoever you talked to most recently
-    .sort((a, b) => Number(wants(b, term)) - Number(wants(a, term)) || b.lastContacted.localeCompare(a.lastContacted))
+    .sort((a, b) => Number(!!wants(b, term)) - Number(!!wants(a, term)) || b.lastContacted.localeCompare(a.lastContacted))
     .map((person): Match => {
       const first = firstName(person.name)
       const why = wants(person, term) ?? sentence(person.story, term) ?? `Into ${activity}`

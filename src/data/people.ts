@@ -110,7 +110,7 @@ const basePeople: Person[] = [
     met: { city: 'New York', lat: 40.752, lng: -73.977, context: 'Demo Day' },
     livesNow: { city: 'Manhattan, NY', lat: 40.776, lng: -73.971 },
     lastContacted: '2026-10-12',
-    knows: ['hannah-cohen', 'noah-patel'],
+    knows: ['hannah-cohen', 'noah-patel', 'jordan-lee'],
   },
   {
     id: 'kenji-watanabe',
@@ -241,6 +241,46 @@ const basePeople: Person[] = [
     livesNow: { city: 'Manhattan, NY', lat: 40.758, lng: -73.985 },
     lastContacted: '2026-07-15',
     knows: ['hannah-cohen'],
+  },
+  {
+    // Jordan is normally added in the demo with the + / Ask capture flow. For now he's built in so Ask's
+    // "climbing buddy" answer matches the Figma "Ask flow" (Jordan + Zara) without adding anyone first.
+    id: 'jordan-lee',
+    name: 'Jordan Lee',
+    context: 'work',
+    profession: 'Founder @ [Startup]',
+    story: 'Building battery recycling for e-bikes. Grew up in Seattle, just moved to Brooklyn. Climbs Tuesdays and wants a climbing buddy.',
+    tags: ['climate tech', 'founder', 'climbing', 'e-bikes'],
+    from: { city: 'Seattle', lat: 47.606, lng: -122.332 },
+    met: { city: 'New York', lat: 40.741, lng: -73.99, context: 'Climate Demo Day' },
+    livesNow: { city: 'Brooklyn', lat: 40.678, lng: -73.944 },
+    lastContacted: '2026-10-13',
+    knows: ['aisha-khan'],
+    closeness: 2,
+    todos: [
+      { id: 'jordan-priya', text: 'Intro to Priya for battery data', done: false },
+      { id: 'jordan-hardware', text: 'Intro to someone in hardware', done: false },
+      { id: 'jordan-climb', text: 'Climbs Tuesdays, wants a climbing buddy', done: false },
+    ],
+    moments: [
+      {
+        id: 'jordan-coffee',
+        date: '2026-10-13',
+        title: 'Coffee near Union Square',
+        text: 'Coffee near Union Square. Closed their pre-seed round.',
+        transcript: 'Grabbed coffee with Jordan near Union Square. They just closed their pre-seed round. I should intro them to Priya for battery data.',
+        seconds: 14,
+      },
+      {
+        id: 'jordan-first',
+        date: '2026-10-11',
+        firstMeeting: true,
+        title: 'Voice note · 0:19',
+        transcript:
+          'Just met Jordan Lee at Climate Demo Day. Founder, they do battery recycling for e-bikes. Aisha Khan introduced us. Grew up in Seattle, just moved to Brooklyn. Climbs on Tuesdays and wants a climbing buddy. Asked me for an intro to someone in hardware.',
+        seconds: 19,
+      },
+    ],
   },
   {
     id: 'zara-ahmed',

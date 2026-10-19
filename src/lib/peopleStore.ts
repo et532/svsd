@@ -26,7 +26,9 @@ let people = build()
 const listeners = new Set<() => void>()
 
 function build(): Person[] {
-  const all = [...samplePeople, ...saved.added]
+  // Skip saved additions that are now sample people too (Jordan Lee, added in the demo, is now built in)
+  const sampleIds = new Set(samplePeople.map((p) => p.id))
+  const all = [...samplePeople, ...saved.added.filter((p) => !sampleIds.has(p.id))]
   return all.map((p) => (saved.changed[p.id] ? { ...p, ...saved.changed[p.id] } : p))
 }
 
