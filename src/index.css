@@ -115,6 +115,9 @@ button {
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  /* clip, not just hidden: the shrunk phone frame is taller than short windows, and a hidden overflow can still be
+     scrolled by the browser (e.g. when the Ask chat scrolls to its newest message), shifting the phone up */
+  overflow: clip;
 }
 
 .device {
@@ -2302,45 +2305,6 @@ button {
   font-size: 25px;
 }
 
-.ask-hint {
-  margin: 0;
-  font-size: 14px;
-  line-height: 1.4;
-  color: var(--ink-muted);
-  text-wrap: balance;
-}
-
-.ask-actions {
-  list-style: none;
-  margin: 4px 0 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  text-align: left;
-}
-
-.ask-actions li {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 11px 14px;
-  border-radius: 16px;
-  background: rgba(22, 18, 28, 0.04);
-}
-
-.ask-actions b {
-  font-size: 14.5px;
-  font-weight: 600;
-  color: var(--ink);
-}
-
-.ask-actions span {
-  font-size: 13px;
-  line-height: 1.35;
-  color: var(--ink-muted);
-}
-
 .ask-heard {
   min-height: 64px;
   margin: 0;
@@ -2349,73 +2313,6 @@ button {
   font-size: 23px;
   line-height: 1.1;
   text-wrap: balance;
-}
-
-.ask-you {
-  margin: 0;
-  font-size: 13px;
-  color: var(--ink-muted);
-}
-
-.ask-results {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  text-align: left;
-}
-
-.ask-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  border-radius: 14px;
-  background: rgba(22, 18, 28, 0.035);
-  text-align: left;
-  color: var(--ink);
-}
-
-.ask-row:hover {
-  background: rgba(22, 18, 28, 0.07);
-}
-
-.ask-row svg {
-  flex: none;
-  color: var(--ink-faint);
-}
-
-.ask-row-text {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.ask-row-text b {
-  font-size: 15px;
-  font-weight: 500;
-}
-
-.ask-row-text span {
-  font-size: 12.5px;
-  color: var(--ink-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.ask-show {
-  height: 44px;
-  margin-top: 2px;
-  border-radius: var(--radius-pill);
-  background: rgba(22, 18, 28, 0.06);
-  color: var(--ink);
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.ask-show:hover {
-  background: rgba(22, 18, 28, 0.1);
 }
 
 .ask-link {
@@ -2648,41 +2545,6 @@ button {
   font-weight: 600;
 }
 
-/* Ask: richer results (why, what to say, a drafted next step) and the draft panel */
-.ask-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  text-align: left;
-}
-
-.ask-group + .ask-group {
-  margin-top: 8px;
-}
-
-.ask-group-label {
-  padding-left: 4px;
-}
-
-.ask-card {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 6px 6px 12px;
-  border-radius: 18px;
-  background: rgba(22, 18, 28, 0.035);
-}
-
-.ask-card .ask-row {
-  width: 100%;
-  background: none;
-}
-
-.ask-card .ask-row-text span {
-  white-space: normal;
-}
-
 .ask-via,
 .ask-say,
 .ask-action {
@@ -2777,4 +2639,300 @@ button {
 .layer:has(.ask) ~ .toast {
   top: calc(var(--safe-top) + 10px);
   bottom: auto;
+}
+
+/* Opening sheet: two short lines on what Ask can do */
+.ask-can {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 4px 0 0;
+  padding: 0 6px;
+  list-style: none;
+  text-align: left;
+}
+
+.ask-can li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14.5px;
+  line-height: 1.4;
+  color: var(--ink-muted);
+}
+
+.ask-can svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--ink);
+}
+
+/* ===== Ask as a chat (after the first request) ===== */
+.ask-chat {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  animation: fade-in 0.3s ease;
+}
+
+.ask-chat-head {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: calc(var(--safe-top) + 6px) var(--gutter) 6px;
+}
+
+.ask-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  color: var(--ink-muted);
+}
+
+.ask-chat-head h1 {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 30px;
+  font-weight: 500;
+  letter-spacing: var(--heading-tracking);
+}
+
+.ask-thread {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 4px var(--gutter) 20px;
+}
+
+.ask-turn {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Your request */
+.ask-bubble {
+  align-self: flex-end;
+  max-width: 80%;
+  margin: 0;
+  padding: 11px 15px;
+  border-radius: 20px 20px 6px 20px;
+  background: var(--ink);
+  color: var(--on-ink);
+  font-size: 15px;
+  line-height: 1.4;
+  animation: pop-in 0.35s var(--ios-spring);
+}
+
+.ask-bubble.is-live {
+  opacity: 0.7;
+}
+
+/* Peepl thinking: three pulsing dots */
+.ask-thinking {
+  display: flex;
+  gap: 5px;
+  margin: 0;
+  padding: 4px 2px;
+}
+
+.ask-thinking i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ink-faint);
+  animation: ask-dot 1.2s ease-in-out infinite;
+}
+
+.ask-thinking i:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.ask-thinking i:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes ask-dot {
+  0%,
+  80%,
+  100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
+/* Peepl's short replies */
+.ask-reply {
+  align-self: flex-start;
+  max-width: 88%;
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.45;
+  animation: pop-in 0.35s var(--ios-spring);
+}
+
+.ask-answer {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation: pop-in 0.4s var(--ios-spring);
+}
+
+.ask-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ask-group .label {
+  padding-left: 2px;
+}
+
+/* A person card: tap to open their profile */
+.ask-person {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 22px;
+  background: var(--glass-vivid-strong);
+  border: 1px solid var(--glass-vivid-edge);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  text-align: left;
+  transition: scale 0.15s;
+}
+
+.ask-person:active {
+  scale: 0.98;
+}
+
+.ask-person-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ask-person-head b {
+  display: block;
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+/* A soft blurred orb in the color of how you know them */
+.ask-person-orb {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  filter: blur(4px);
+  opacity: 0.85;
+}
+
+.ask-person-meta {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.ask-person-why {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.ask-person .ask-via,
+.ask-person .ask-say,
+.ask-person .ask-action {
+  margin: 0;
+}
+
+.ask-person .ask-say {
+  align-self: stretch;
+}
+
+.ask-more {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+.ask-answer .ask-link {
+  align-self: flex-start;
+  color: var(--ink-muted);
+}
+
+/* Type or talk at the bottom */
+.ask-composer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px var(--gutter) calc(var(--safe-bottom) + 12px);
+  background: var(--glass-strong);
+  border-top: 1px solid var(--line);
+}
+
+.ask-composer .ask-input {
+  height: 48px;
+}
+
+.ask-composer-live {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  border-radius: var(--radius-pill);
+  background: var(--ink);
+}
+
+.ask-composer-mic {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--on-ink);
+}
+
+.ask-composer-mic.is-live {
+  background: var(--glass-strong);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.ask-stop {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  background: var(--ink);
+}
+
+/* The draft panel covers the whole chat */
+.ask-chat .ask-draft {
+  padding: calc(var(--safe-top) + 10px) var(--gutter) calc(var(--safe-bottom) + 16px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ask-thinking i {
+    animation: none;
+  }
 }
