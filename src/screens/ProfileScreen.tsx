@@ -48,7 +48,7 @@ export function ProfileScreen({ person: p, people, freshMomentId = null, onBack,
   const met = new Date(first + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
 
   useEffect(() => {
-    if (freshMomentId) setOpen((s) => new Set(s).add(freshMomentId))
+    if (freshMomentId) setOpen(new Set([freshMomentId]))
   }, [freshMomentId])
 
   const toggleTodo = (id: string) => updatePerson(p.id, { todos: todos.map((t) => (t.id === id ? { ...t, done: !t.done } : t)) })
@@ -67,13 +67,8 @@ export function ProfileScreen({ person: p, people, freshMomentId = null, onBack,
     for (const x of people) for (const t of x.tags) if (!p.tags.includes(t)) count.set(t, (count.get(t) ?? 0) + 1)
     return [...count].sort((a, b) => b[1] - a[1]).slice(0, 4).map(([t]) => t)
   })()
-  const toggleMoment =(id: string) =>
-    setOpen((s) => {
-      const next = new Set(s)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
+  // Only one moment is open at a time: opening one closes the rest.
+  const toggleMoment = (id: string) => setOpen((s) => new Set(s.has(id) ? [] : [id]))
 
   return (
     <section

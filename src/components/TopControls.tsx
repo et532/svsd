@@ -40,15 +40,46 @@ export function TopControls({ tab, onTab, groupBy, onGroupBy }: Props) {
     return () => document.removeEventListener('pointerdown', away)
   }, [open])
 
+  // Blob position in px (0 = mindmap, STEP = list); `drag` overrides it while holding and dragging.
+  const [drag, setDrag] = useState<number | null>(null)
+  const grab = useRef({ x: 0, from: 0, moved: false })
+  const STEP = 50
+  const base = tab === 'list' ? STEP : 0
+
+  const onDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault() // no focus ring on the pressed button; the blob is the only indicator
+    grab.current = { x: e.clientX, from: base, moved: false }
+  }
+  const onMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!(e.buttons & 1)) return
+    const g = grab.current
+    if (!g.moved && Math.abs(e.clientX - g.x) < 4) return
+    if (!g.moved) e.currentTarget.setPointerCapture(e.pointerId)
+    g.moved = true
+    setDrag(Math.max(0, Math.min(STEP, g.from + e.clientX - g.x)))
+  }
+  const onUp = () => {
+    if (drag === null) return
+    const next: Tab = drag > STEP / 2 ? 'list' : 'mindmap'
+    setDrag(null)
+    if (next !== tab) onTab(next)
+  }
+
   const view = (id: Tab, label: string, Icon: typeof ListIcon) => (
-    <button className={`view-button${tab === id ? ' is-active' : ''}`} onClick={() => onTab(id)} aria-label={label} aria-pressed={tab === id}>
+    <button
+      className={`view-button${tab === id ? ' is-active' : ''}`}
+      onClick={() => !grab.current.moved && onTab(id)}
+      aria-label={label}
+      aria-pressed={tab === id}
+    >
       <Icon size={20} />
     </button>
   )
 
   return (
     <header className="top-controls">
-      <div className="view-toggle" role="group" aria-label="View">
+      <div className="view-toggle" role="group" aria-label="View" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
+        <span className={`view-blob${drag !== null ? ' is-dragging' : ''}`} style={{ transform: `translateX(${drag ?? base}px)` }} />
         {view('mindmap', 'Mindmap', MindmapIcon)}
         {view('list', 'Connections list', ListIcon)}
       </div>
