@@ -248,7 +248,7 @@ function buddy(text: string, people: Person[]): AskResult | null {
       const hook = wants(person, term) ? `you said you were looking for a ${label}` : `you mentioned getting into ${activity}`
       return {
         person,
-        why,
+        why: `${why} · ${person.livesNow.city.split(',')[0]}`,
         say: wants(person, term) ? `“Still up for ${activity}? I’m in.”` : `Ask how the ${activity} is going, then invite them along.`,
         action: { kind: 'message', label: `Message ${first}`, to: person.name, draft: `Hey ${first}! Last time ${hook}. Want to go ${activity} this week?` },
       }
