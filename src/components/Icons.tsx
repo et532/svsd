@@ -148,3 +148,80 @@ export function ChevronDownIcon({ size = 16 }: IconProps) {
     </svg>
   )
 }
+
+export function SendIcon({ size = 20 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...base} strokeWidth={2.2} aria-hidden>
+      <path d="M12 19V5M5 12l7-7 7 7" />
+    </svg>
+  )
+}
+
+export function StopIcon({ size = 14 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden>
+      <rect x="5" y="5" width="14" height="14" rx="2.5" fill="none" stroke="currentColor" strokeWidth={2.6} />
+    </svg>
+  )
+}
+
+export function AddPersonIcon({ size = 22 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...base} aria-hidden>
+      <circle cx="10" cy="8" r="3.4" />
+      <path d="M3.5 19.5c.6-3.4 3.2-5.2 6.5-5.2s5.9 1.8 6.5 5.2M19 8v6M16 11h6" />
+    </svg>
+  )
+}
+
+export function MoreIcon({ size = 20 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <circle cx="5.5" cy="12" r="1.8" />
+      <circle cx="12" cy="12" r="1.8" />
+      <circle cx="18.5" cy="12" r="1.8" />
+    </svg>
+  )
+}
+
+export function ChevronUpIcon({ size = 16 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...base} aria-hidden>
+      <path d="m6 15 6-6 6 6" />
+    </svg>
+  )
+}
+
+export function BuildingIcon({ size = 20 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...base} strokeWidth={1.8} aria-hidden>
+      <path d="M5 21V9l7-5 7 5v12M3 21h18M9 11h.01M9 15h.01M15 11h.01M15 15h.01M12 21v-3" />
+    </svg>
+  )
+}
+
+export function BriefcaseIcon({ size = 20 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...base} strokeWidth={1.8} aria-hidden>
+      <rect x="3" y="7" width="18" height="13" rx="2.5" />
+      <path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7M3 13h18" />
+    </svg>
+  )
+}
+
+export function GamepadIcon({ size = 20 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...base} strokeWidth={1.8} aria-hidden>
+      <path d="M7 7h10a4 4 0 0 1 3.9 4.9l-.9 4.2a2.5 2.5 0 0 1-4.3 1.1L14 15h-4l-1.7 2.2A2.5 2.5 0 0 1 4 16.1l-.9-4.2A4 4 0 0 1 7 7z" />
+      <path d="M8 10v3M6.5 11.5h3M15.5 10.5h.01M17.5 12.5h.01" />
+    </svg>
+  )
+}
+
+export function PartyIcon({ size = 20 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...base} strokeWidth={1.8} aria-hidden>
+      <path d="m4 20 3.5-10 6.5 6.5L4 20zM13 5l.5 2M17 9l2-.5M16 4.5v.01M20 13v.01M10 3v.01" />
+    </svg>
+  )
+}

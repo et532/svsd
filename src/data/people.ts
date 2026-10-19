@@ -283,6 +283,20 @@ const basePeople: Person[] = [
     ],
   },
   {
+    // A second Jordan, so "Which Jordan did you catch up with?" has something to ask.
+    id: 'jordan-smith',
+    name: 'Jordan Smith',
+    context: 'social',
+    profession: 'Chef @ Eleven Madison Park',
+    story: 'Cooks tasting menus and hosts supper clubs on Sundays.',
+    tags: ['food', 'chef'],
+    from: { city: 'Chicago', lat: 41.878, lng: -87.63 },
+    met: { city: 'New York', lat: 40.742, lng: -73.987, context: 'Supper club' },
+    livesNow: { city: 'Manhattan', lat: 40.776, lng: -73.971 },
+    lastContacted: '2023-01-15',
+    knows: [],
+  },
+  {
     id: 'zara-ahmed',
     name: 'Zara Ahmed',
     context: 'social',

@@ -1,7 +1,7 @@
 import type { Context, Moment, Person, Place } from '../data/people'
 
-// Voice capture is a scripted demo: tapping the mic "hears" these lines word by word, and each line
-// fills in a prompt when it finishes. Typing a note instead fills the same prompts by simple parsing.
+// Capture turns one typed or "spoken" note into a person or a moment by simple parsing. The voice is a scripted
+// demo: the mic "hears" voiceScript (and the profile's momentScript) word by word.
 
 export type PersonField = 'name' | 'met' | 'does' | 'knows' | 'remember' | 'follow'
 export type MomentField = 'what' | 'learned' | 'follow'
@@ -15,49 +15,26 @@ export type Draft = Partial<Record<Field, string>> & {
   knowsIds?: string[]
 }
 
-export type Line = { text: string; set: Draft }
-
-export const personPrompts: [PersonField, string][] = [
-  ['name', 'Their name'],
-  ['met', 'Where and how you met'],
-  ['does', 'What they do'],
-  ['knows', 'Anyone you both know'],
-  ['remember', 'One thing to remember'],
-  ['follow', 'Anything to follow up on'],
-]
-
-export const momentPrompts: [MomentField, string][] = [
-  ['what', 'What happened'],
-  ['learned', 'Something new about them'],
-  ['follow', 'Anything to follow up on'],
-]
-
-export const personScript: Line[] = [
-  { text: 'Just met Jordan Lee at Climate Demo Day.', set: { name: 'Jordan Lee', met: 'Climate Demo Day', context: 'work' } },
-  { text: 'Founder, they do battery recycling for e-bikes.', set: { does: 'Founder, e-bike batteries' } },
-  { text: 'Aisha Khan introduced us.', set: { knows: 'Aisha Khan', knowsIds: ['aisha-khan'] } },
-  { text: 'Grew up in Seattle, just moved to Brooklyn.', set: { from: 'Seattle', lives: 'Brooklyn' } },
-  { text: 'Climbs on Tuesdays and wants a climbing buddy.', set: { remember: 'Climbs Tuesdays, wants a climbing buddy' } },
-  { text: 'Asked me for an intro to someone in hardware.', set: { follow: 'Intro to someone in hardware' } },
-]
-
-export function momentScript(first: string): Line[] {
-  return [
-    { text: `Grabbed coffee with ${first} near Union Square.`, set: { what: 'Coffee near Union Square' } },
-    { text: 'They just closed their pre-seed round.', set: { learned: 'Closed their pre-seed round' } },
-    { text: 'I should intro them to Priya for battery data.', set: { follow: 'Intro to Priya for battery data' } },
-  ]
-}
-
 // The demo person's story and tags, as if summarized from the voice note.
 const scriptedStory =
   'Building battery recycling for e-bikes. Grew up in Seattle, just moved to Brooklyn. Climbs Tuesdays and wants a climbing buddy.'
 const scriptedTags = ['climate tech', 'founder', 'climbing', 'e-bikes']
 
-export const typedExample =
-  'Jordan Lee, met at Demo Day. Founder at [Startup], battery recycling for e-bikes. Knows Aisha. From Seattle, lives in Brooklyn now. Climbs Tuesdays. Owe them a hardware intro.'
+export const voiceScript =
+  'Jordan Lee, met at Demo Day. Founder at [Startup], battery recycling for e-bikes. From Seattle, lives in Brooklyn now. Climbs Tuesdays. Owe them a hardware intro.'
 
-export const typedMomentExample = 'Grabbed coffee near Union Square. They closed their round. Intro them to Priya.'
+export const momentScript = (first: string) =>
+  `Came across ${first} on my way home and he said how much he hates his job search and that the job market is cooked. He hates his current job and wants out`
+
+// A note about someone you already know (rather than someone new): "caught up with Jordan over coffee".
+const momentWords = /\b(caught up|catch up|grabbed|hung out|hang out|talked|chatted|ran into|bumped into|saw|had (?:coffee|lunch|dinner)|over coffee)\b/i
+
+// Who a note is about, when it reads like a moment: everyone whose first (or full) name appears in it.
+// [] means it reads as someone new. Several (two Jordans) means the user has to pick.
+export function momentCandidates(text: string, people: Person[]): Person[] {
+  if (!momentWords.test(text)) return []
+  return people.filter((p) => text.includes(p.name) || new RegExp(`\\b${p.name.split(' ')[0]}\\b`).test(text))
+}
 
 const cut = (v: string) => (v.length <= 44 ? v : v.slice(0, 44).replace(/\s+\S*$/, '') + '…')
 
@@ -220,7 +197,6 @@ export function draftToMoment(draft: Draft, how: { voice: boolean; text: string;
     id: uid(),
     date: today(),
     title: draft.what ?? 'New moment',
-    text: draft.learned ? `${draft.what}. ${draft.learned}.` : undefined,
     transcript: how.text.trim(),
     seconds: how.voice ? how.seconds : undefined,
   }

@@ -3,12 +3,10 @@ import type { Person } from '../data/people'
 import { createGraph, type Graph } from '../lib/forceGraph'
 import { initials, linksOf, orbBackground, orbTextColor } from '../lib/people'
 import { colorKey, colorScale, type ColorBy } from '../lib/mindmapColors'
+import type { GroupBy } from '../components/TopControls'
 
 
-// Grouping (territory clouds by city / met at / job). Its control on the right was removed for now at the
-// user's request, so the graph is never grouped; the group logic stays for when it comes back.
-type GroupBy = 'none' | 'city' | 'met' | 'job'
-
+// Grouping (territory clouds by city / met at / job), chosen in the Filters menu at the top right.
 const groupValue: Record<GroupBy, (p: Person) => string> = {
   none: () => '',
   city: (p) => p.livesNow.city,
@@ -28,12 +26,11 @@ type Props = {
   people: Person[]
   focusId?: string | null
   onView?: (id: string) => void
-  // What the dot colors mean, chosen with the filter in the search bar
+  groupBy?: GroupBy
   colorBy?: ColorBy
 }
 
-export function MindmapScreen({ people, focusId = null, onView, colorBy = 'relationship' }: Props) {
-  const groupBy: GroupBy = 'none'
+export function MindmapScreen({ people, focusId = null, onView, colorBy = 'relationship', groupBy = 'none' }: Props) {
   const [selected, setSelected] = useState<string | null>(null)
   const [focus, setFocus] = useState<string | null>(null) // a group isolated by tapping its name
 

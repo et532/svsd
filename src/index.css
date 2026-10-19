@@ -299,148 +299,20 @@ button {
   inset: 0;
 }
 
-/* Search bar */
-.top-bar {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  padding: calc(var(--safe-top) + 15px) var(--gutter) 11px;
-  pointer-events: none;
-  z-index: 4;
-}
-
-.search {
-  position: relative;
-  pointer-events: auto;
-}
-
-.search-bar {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  height: 50px;
-  padding: 0 13px 0 17px;
-  background: var(--glass-strong);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-edge);
-  border-radius: 25px;
-  box-shadow: var(--shadow);
-  color: var(--muted);
-}
-
-/* The magnifying glass is black; the clear button and filter chip set their own colors */
-.search-bar > svg {
-  flex: none;
-  color: var(--ink);
-}
-
-.search-bar input {
-  flex: 1;
-  min-width: 0;
-  border: 0;
-  outline: 0;
-  background: none;
-  font: inherit;
-  /* 16px stops iPhones from zooming in when the search bar is tapped */
-  font-size: 16px;
-  letter-spacing: -0.1px;
-  color: var(--ink);
-}
-
-.search-bar input::placeholder {
-  color: var(--muted);
-}
-
-.search-bar input::-webkit-search-cancel-button {
-  display: none;
-}
-
-.search-clear {
-  display: grid;
-  place-items: center;
-  width: 27px;
-  height: 27px;
-  border-radius: 50%;
-  color: var(--muted);
-}
-
-.search-clear:hover {
-  background: var(--hover);
-}
-
-/* Bottom nav: a wide rounded glass pill floating above the bottom edge (after the Luma / Trainline references).
-   Labeled tabs share the space either side of the raised Ask mic, so everything mirrors around it. */
-.bottom-bar {
-  position: absolute;
-  left: 50%;
-  bottom: calc(var(--safe-bottom) + 19px);
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  width: min(330px, calc(100% - 56px));
-  padding: 6px;
-  transform: translateX(-50%);
-  background: var(--glass-strong);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-edge);
-  border-radius: var(--radius-pill);
-  box-shadow: var(--shadow);
-}
-
-.nav-button {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  height: 58px;
-  /* Fully round, so the selection sits the same 6px inside the pill all the way around */
-  border-radius: var(--radius-pill);
-  color: var(--ink-faint);
-  transition:
-    background 0.2s,
-    color 0.2s;
-}
-
-.nav-button:hover,
-.nav-button.is-active {
-  color: var(--ink);
-}
-
-.nav-button.is-active {
-  background: rgba(22, 18, 28, 0.07);
-}
-
-.nav-label {
-  font-size: 11.5px;
-  font-weight: 500;
-  line-height: 1;
-}
-
-:is(button, a, select, .dropdown-option):focus-visible {
-  outline: 2px solid var(--ink);
-  outline-offset: 2px;
-}
-
 /* List screen */
 .list-screen {
   overflow-y: auto;
-  padding: calc(var(--safe-top) + 80px) var(--gutter) calc(var(--safe-bottom) + 106px);
-  /* Fade rows out as they scroll under the search bar, letting the gradient show through */
+  padding: calc(var(--safe-top) + 92px) var(--gutter) calc(var(--safe-bottom) + 120px);
+  /* Fade rows out as they scroll under the top controls, letting the gradient show through */
   mask-image: linear-gradient(
     to bottom,
-    transparent calc(var(--safe-top) + 40px),
-    #000 calc(var(--safe-top) + 80px)
+    transparent calc(var(--safe-top) + 78px),
+    #000 calc(var(--safe-top) + 100px)
   );
   -webkit-mask-image: linear-gradient(
     to bottom,
-    transparent calc(var(--safe-top) + 40px),
-    #000 calc(var(--safe-top) + 80px)
+    transparent calc(var(--safe-top) + 78px),
+    #000 calc(var(--safe-top) + 100px)
   );
 }
 
@@ -657,147 +529,6 @@ button {
 
 .dropdown-title {
   font-family: var(--font-heading);
-}
-
-/* Search dropdown */
-.search-scrim {
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  background: rgba(255, 255, 255, 0.35);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  animation: fade-in 0.15s ease-out;
-}
-
-.search-dropdown {
-  position: absolute;
-  top: 57px;
-  left: 0;
-  right: 0;
-  max-height: 420px;
-  overflow-y: auto;
-  padding: 6px 0;
-  background: var(--glass-vivid-strong);
-  backdrop-filter: var(--glass-vivid-blur);
-  -webkit-backdrop-filter: var(--glass-vivid-blur);
-  border: 1px solid var(--glass-vivid-edge);
-  border-radius: 22px;
-  box-shadow: var(--shadow);
-  animation: fade-in 0.12s ease-out;
-}
-
-.dropdown-section {
-  padding: 4px 0;
-}
-
-.dropdown-section + .dropdown-section {
-  border-top: 1px solid var(--line);
-}
-
-.dropdown-title {
-  padding: 10px 15px 4px;
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: -0.1px;
-  color: var(--ink);
-}
-
-.dropdown-option {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  margin: 0 6px;
-  padding: 7px 9px;
-  border-radius: 14px;
-  cursor: pointer;
-}
-
-.dropdown-option.is-active {
-  background: var(--hover);
-}
-
-.avatar.avatar-sm {
-  width: 32px;
-  height: 32px;
-  font-size: 11px;
-}
-
-.option-icon {
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: rgba(17, 17, 19, 0.04);
-  color: var(--muted);
-}
-
-.option-text {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.option-label {
-  font-size: 14.5px;
-  color: var(--ink);
-}
-
-.option-sub {
-  font-size: 12.5px;
-  color: var(--muted);
-}
-
-.dropdown-title {
-  display: flex;
-  justify-content: space-between;
-}
-
-.dropdown-clear {
-  padding: 0;
-  border: 0;
-  background: none;
-  font: inherit;
-  font-size: 12.5px;
-  color: var(--muted);
-  cursor: pointer;
-}
-
-@keyframes option-in {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-}
-
-.dropdown-option {
-  animation: option-in 160ms ease-out backwards;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .dropdown-option {
-    animation: none;
-  }
-}
-
-.option-label mark {
-  background: none;
-  color: inherit;
-  font-weight: 600;
-}
-
-.dropdown-empty {
-  padding: 13px 15px;
-  font-size: 15px;
-  color: var(--muted);
-}
-
-@keyframes slide-up {
-  from {
-    transform: translateY(100%);
-  }
 }
 
 /* ---- iOS feel: no scrollbars, spring motion, press feedback ---- */
@@ -1077,36 +808,43 @@ button {
 }
 
 /* A bottom action bar on capture, saved and profile */
-.sheet-bar,
-.capture-bar {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  padding: 12px var(--gutter) calc(var(--safe-bottom) + 14px);
-  border-top: 1px solid var(--line);
-  background: var(--glass-strong);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
+.sheet-bar {
+  padding: 24px var(--gutter) calc(var(--safe-bottom) + 18px);
+  background: linear-gradient(to top, var(--bg) 60%, transparent);
 }
 
 .toast {
   position: absolute;
   left: var(--gutter);
   right: var(--gutter);
-  bottom: calc(var(--safe-bottom) + 96px);
+  bottom: calc(var(--safe-bottom) + 100px);
   z-index: 12;
-  padding: 12px 16px;
-  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  border-radius: var(--radius-lg);
   background: var(--ink);
   color: var(--on-ink);
-  font-size: 14px;
+  font-size: 15px;
   animation: layer-up 0.3s var(--ios-spring);
 }
 
-/* "← Jordan" under the search bar after View map / View connections */
+.toast-check {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--live);
+  color: var(--ink);
+}
+
+/* "← Jordan" under the top controls after View map / View connections */
 .back-to {
   position: absolute;
-  top: calc(var(--safe-top) + 78px);
+  top: calc(var(--safe-top) + 88px);
   left: var(--gutter);
   z-index: 3;
   display: inline-flex;
@@ -1125,7 +863,7 @@ button {
 
 .mindmap-screen ~ .back-to {
   top: auto;
-  bottom: calc(var(--safe-bottom) + 96px);
+  bottom: calc(var(--safe-bottom) + 104px);
 }
 
 .popup-body {
@@ -1138,511 +876,6 @@ button {
   height: 30px;
   padding: 0 12px;
   font-size: 12px;
-}
-
-/* Capture: "Tell me about them" */
-.capture {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  background: var(--bg);
-}
-
-.capture-top {
-  position: absolute;
-  top: calc(var(--safe-top) + 6px);
-  left: var(--gutter);
-  right: var(--gutter);
-  z-index: 3;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.capture-timer {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: var(--radius-pill);
-  background: var(--glass);
-  box-shadow: var(--shadow);
-  font-family: var(--font-mono);
-  font-size: 13px;
-}
-
-.capture-timer i {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--live);
-  box-shadow: 0 0 0 1.5px var(--ink);
-}
-
-.capture-scroll {
-  flex: 1;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  padding: calc(var(--safe-top) + 58px) var(--gutter) 24px;
-}
-
-.capture-scroll > * {
-  flex-shrink: 0;
-}
-
-.capture-orb {
-  align-self: center;
-  display: grid;
-  place-items: center;
-  width: 128px;
-  height: 128px;
-  border-radius: 50%;
-  border: 1.5px dashed var(--line);
-  view-transition-name: cap-orb;
-  transition:
-    width 0.4s var(--ios-spring),
-    height 0.4s var(--ios-spring);
-}
-
-.capture-orb span {
-  position: relative;
-  width: 88px;
-  height: 88px;
-  border-radius: 50%;
-  filter: blur(4px);
-  transition:
-    transform 0.12s ease,
-    background 0.8s ease;
-}
-
-.capture-orb span::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background-image: var(--grain);
-  background-size: 120px;
-  opacity: 0.3;
-  mix-blend-mode: overlay;
-}
-
-.capture-title {
-  margin: 0;
-  font-family: var(--font-heading);
-  letter-spacing: var(--heading-tracking);
-  font-size: 34px;
-  font-weight: 400;
-  line-height: 1.02;
-  text-align: center;
-  text-wrap: balance;
-  view-transition-name: cap-title;
-}
-
-.capture.is-typed .capture-orb {
-  width: 84px;
-  height: 84px;
-}
-
-.capture.is-typed .capture-orb span {
-  width: 60px;
-  height: 60px;
-}
-
-.capture.is-typed .capture-title {
-  font-size: 34px;
-}
-
-.capture-prompts {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  view-transition-name: cap-prompts;
-}
-
-.capture-prompt {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-height: 52px;
-  padding: 12px 14px;
-  border-radius: var(--radius-md);
-  border: 1.5px dashed var(--line);
-  transition:
-    background 0.3s,
-    border-color 0.3s;
-}
-
-.capture-check {
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  border: 1.5px dashed var(--ink-faint);
-  color: var(--on-ink);
-  transition: all 0.3s;
-}
-
-.capture-check svg {
-  opacity: 0;
-}
-
-.capture-prompt-text {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.capture-q {
-  font-size: 15px;
-  font-weight: 500;
-}
-
-.capture-a {
-  font-size: 15px;
-  font-weight: 500;
-  animation: pop-in 0.45s var(--ios-spring);
-}
-
-.capture-prompt.is-done {
-  border: 1.5px solid var(--glass-edge);
-  background: var(--glass-strong);
-  box-shadow: var(--shadow);
-}
-
-.capture-prompt.is-done .capture-check {
-  border: 0;
-  background: var(--ink);
-}
-
-.capture-prompt.is-done .capture-check svg {
-  opacity: 1;
-}
-
-.capture-prompt.is-done .capture-q {
-  font-size: 13px;
-  font-weight: 400;
-  color: var(--ink-muted);
-}
-
-@keyframes pop-in {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-}
-
-.capture-transcript {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  view-transition-name: cap-text;
-}
-
-.capture-transcript p {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 300;
-  line-height: 1.5;
-}
-
-.capture-transcript .is-old {
-  color: var(--ink-faint);
-}
-
-.capture-bar {
-  view-transition-name: cap-bar;
-}
-
-.capture-bar.is-idle {
-  position: relative;
-  flex-direction: column;
-  gap: 8px;
-  padding-top: 18px;
-}
-
-.capture-type {
-  position: absolute;
-  left: var(--gutter);
-  top: 30px;
-}
-
-.capture-talk {
-  display: grid;
-  place-items: center;
-  width: 76px;
-  height: 76px;
-  border-radius: 50%;
-  background: var(--ink);
-  color: var(--on-ink);
-  box-shadow: var(--shadow-float);
-}
-
-.capture-hint {
-  font-size: 13px;
-  color: var(--ink-muted);
-}
-
-.capture-pill {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 56px;
-  padding: 0 6px 0 16px;
-  border-radius: 28px;
-  background: var(--glass-strong);
-  box-shadow: inset 0 0 0 1px var(--line);
-}
-
-.capture-wave {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  height: 28px;
-  overflow: hidden;
-}
-
-.capture-wave i {
-  flex: none;
-  width: 2px;
-  border-radius: 1px;
-  background: var(--work-core);
-  transition: height 0.12s ease;
-}
-
-.capture-composer {
-  display: block;
-}
-
-.capture-box {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 14px 14px 10px 16px;
-  border-radius: 22px;
-  background: #fff;
-  box-shadow: inset 0 0 0 1px var(--line);
-  view-transition-name: cap-text;
-}
-
-.capture-box textarea {
-  min-height: 96px;
-  max-height: 180px;
-  border: 0;
-  resize: none;
-  background: transparent;
-  color: var(--ink);
-  font: inherit;
-  font-size: 16px;
-  line-height: 1.5;
-}
-
-.capture-box textarea:focus-visible {
-  outline: none;
-}
-
-.capture-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
-::view-transition-group(*) {
-  animation-duration: 0.5s;
-  animation-timing-function: var(--ios-spring);
-}
-
-::view-transition-old(cap-bar),
-::view-transition-new(cap-bar),
-::view-transition-old(cap-text),
-::view-transition-new(cap-text) {
-  width: 100%;
-  height: 100%;
-  object-fit: none;
-  object-position: 50% 100%;
-}
-
-/* Saved: the new person joins the network */
-.saved {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  background: var(--bg);
-}
-
-.saved-scroll {
-  flex: 1;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: calc(var(--safe-top) + 6px) var(--gutter) 24px;
-}
-
-.saved-scroll > * {
-  flex-shrink: 0;
-}
-
-.saved-toast {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
-  border-radius: var(--radius-md);
-  background: var(--ink);
-  color: var(--on-ink);
-  font-size: 14px;
-  animation: layer-up 0.5s 0.9s both var(--ios-spring);
-}
-
-.saved-ok {
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: var(--live);
-  color: var(--ink);
-}
-
-.saved-net {
-  position: relative;
-  height: 340px;
-  margin: 0 calc(-1 * var(--gutter));
-}
-
-.saved-net svg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-}
-
-.saved-ring {
-  fill: none;
-  stroke: var(--line);
-  stroke-dasharray: 3 6;
-}
-
-.saved-edge {
-  stroke-width: 1.5;
-  stroke-linecap: round;
-  stroke-dasharray: 160;
-  stroke-dashoffset: 160;
-  animation: draw-line 0.7s 0.45s forwards ease-out;
-}
-
-.saved-sugg {
-  stroke: var(--ink-faint);
-  stroke-width: 1.2;
-  stroke-dasharray: 4 5;
-  opacity: 0;
-  animation: show-line 0.4s 1.3s forwards;
-}
-
-@keyframes draw-line {
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-
-@keyframes show-line {
-  to {
-    opacity: 0.8;
-  }
-}
-
-.saved-node {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-}
-
-.saved-node.is-sugg {
-  opacity: 0.6;
-}
-
-.saved-node.is-new {
-  animation: land 0.9s cubic-bezier(0.3, 1.4, 0.4, 1) both;
-}
-
-.saved-node.is-new .saved-tag {
-  font-weight: 600;
-}
-
-@keyframes land {
-  0% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0);
-  }
-  60% {
-    opacity: 1;
-  }
-}
-
-.saved-tag {
-  padding: 2px 8px;
-  border-radius: var(--radius-pill);
-  background: var(--glass-strong);
-  font-size: 12px;
-  white-space: nowrap;
-}
-
-.saved-copy {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  text-align: center;
-  animation: fade-in 0.5s 1.1s both;
-}
-
-.saved-copy .label {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.saved-copy .label i {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-}
-
-.saved-copy h2 {
-  margin: 0;
-  font-family: var(--font-heading);
-  letter-spacing: var(--heading-tracking);
-  font-size: 25px;
-  font-weight: 400;
-  line-height: 1.05;
-  text-wrap: balance;
-}
-
-.saved-copy p {
-  max-width: 300px;
-  margin: 0;
-  color: var(--ink-muted);
-  font-size: 14px;
-  line-height: 1.5;
 }
 
 /* Profile */
@@ -1667,7 +900,7 @@ button {
   display: flex;
   flex-direction: column;
   gap: 18px;
-  padding: calc(var(--safe-top) + 4px) var(--gutter) 26px;
+  padding: calc(var(--safe-top) + 70px) var(--gutter) 22px;
   border-radius: 0 0 var(--radius-xl) var(--radius-xl);
   background: var(--night);
   color: var(--on-ink);
@@ -1692,9 +925,57 @@ button {
   filter: blur(46px);
 }
 
-.profile-top {
+.profile-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
   display: flex;
+  align-items: center;
   justify-content: space-between;
+  padding: calc(var(--safe-top) + 4px) var(--gutter) 10px;
+  color: var(--on-ink);
+}
+
+.layer.is-sheet .profile:not(.is-full) .profile-bar {
+  padding-top: 14px;
+}
+
+/* Scrolled past the hero: the bar fills with their color and shows their name */
+.profile-bar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: 0 0 24px 24px;
+  background: var(--ctx, var(--night));
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.profile.is-scrolled .profile-bar::before {
+  opacity: 1;
+}
+
+.profile-bar h2 {
+  margin: 0;
+  font-family: var(--font-heading);
+  letter-spacing: var(--heading-tracking);
+  font-size: 20px;
+  font-weight: 400;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.profile.is-scrolled .profile-bar h2 {
+  opacity: 1;
+}
+
+.profile-met {
+  margin-top: 6px;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 13px;
 }
 
 .profile-who {
@@ -1719,10 +1000,6 @@ button {
 .profile-sub {
   color: rgba(255, 255, 255, 0.8);
   font-size: 14px;
-}
-
-.profile-who .chips {
-  margin-top: 10px;
 }
 
 .profile-body {
@@ -1790,30 +1067,15 @@ button {
   border-bottom: 0;
 }
 
-.profile-item.is-done span {
+.profile-item.is-done {
   color: var(--ink-faint);
   text-decoration: line-through;
 }
 
 .profile-item.is-add {
+  gap: 8px;
   color: var(--ink-muted);
-  font-size: 13px;
-}
-
-.profile-cb {
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 6px;
-  border: 1.5px solid var(--ink-faint);
-}
-
-.profile-item.is-done .profile-cb {
-  border-color: var(--ink);
-  background: var(--ink);
-  color: var(--on-ink);
+  font-size: 14px;
 }
 
 .profile-places {
@@ -1868,6 +1130,10 @@ button {
 .moment {
   overflow: hidden;
   border-radius: var(--radius-md);
+}
+
+.moment.is-open {
+  border-color: var(--focus);
 }
 
 .moment.is-fresh {
@@ -1954,17 +1220,15 @@ button {
 .voice-note {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 10px 12px;
-  border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.5);
-  box-shadow: inset 0 0 0 1px var(--line);
+  gap: 10px;
 }
 
 .voice-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
 }
 
 .voice-wave {
@@ -1981,27 +1245,33 @@ button {
   flex: none;
   width: 2px;
   border-radius: 1px;
-  background: var(--ink-faint);
+  background: color-mix(in srgb, var(--work-core) 45%, transparent);
 }
 
 .voice-wave i.is-played {
   background: var(--work-core);
 }
 
+/* The transcript fills in as the audio plays */
 .voice-note q {
-  color: var(--ink-muted);
-  font-size: 14px;
+  quotes: none;
+  color: var(--ink-faint);
+  font-size: 16px;
   line-height: 1.45;
 }
 
-:is(.round-button, .pill-button, .capture-talk, .back-to, .profile-mutual, .moment-head, .profile-cb) {
+.voice-note q .is-said {
+  color: var(--ink);
+}
+
+:is(.round-button, .pill-button, .back-to, .profile-mutual, .moment-head, .view-button, .filters-button, .add-button, .ask-pill-mic, .person-card, .result-action, .flow-neither) {
   transition:
     transform 0.4s var(--ios-spring),
     opacity 0.2s var(--ios-press),
     background 0.2s var(--ios-press);
 }
 
-:is(.round-button, .pill-button, .capture-talk, .back-to, .profile-mutual):active:not(:disabled) {
+:is(.round-button, .pill-button, .back-to, .profile-mutual, .view-button, .filters-button, .add-button, .ask-pill-mic, .person-card, .result-action, .flow-neither):active:not(:disabled) {
   transform: scale(0.92);
   transition-duration: 0.1s;
 }
@@ -2009,22 +1279,9 @@ button {
 @media (prefers-reduced-motion: reduce) {
   .layer,
   .toast,
-  .saved-toast,
-  .saved-node.is-new,
-  .saved-copy,
-  .capture-a,
+  .filters-menu,
   .moment.is-fresh {
     animation: none;
-  }
-
-  .saved-edge {
-    animation: none;
-    stroke-dashoffset: 0;
-  }
-
-  .saved-sugg {
-    animation: none;
-    opacity: 0.8;
   }
 }
 
@@ -2052,7 +1309,7 @@ button {
 }
 
 .layer.is-sheet .profile:not(.is-full) .profile-hero {
-  padding-top: 14px;
+  padding-top: 76px;
 }
 
 @keyframes sheet-up {
@@ -2101,61 +1358,11 @@ button {
     #ece6ff;
 }
 
-/* The Ask mic in the middle of the nav: a soft gradient orb */
-/* Centered, and raised so it overlaps the top edge of the pill */
-.ask-button {
-  position: relative;
-  flex: none;
-  align-self: flex-start;
-  display: grid;
-  place-items: center;
-  width: 72px;
-  height: 72px;
-  margin: -30px 8px 0;
-  border-radius: 50%;
-  color: var(--ink);
-  box-shadow:
-    0 12px 28px -10px rgba(141, 120, 255, 0.55),
-    0 4px 12px -4px rgba(255, 140, 170, 0.4);
-  transition: scale 0.15s;
-}
-
-.ask-button:active {
-  scale: 0.94;
-}
-
-.ask-button svg {
-  position: relative;
-}
-
-.ask-button-orb {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: var(--ai-orb);
-  /* A ring the color of the pill */
-  border: 4px solid #fff;
-  animation: ai-orb-drift 9s ease-in-out infinite;
-}
-
-@keyframes ai-orb-drift {
-  50% {
-    transform: rotate(160deg) scale(1.04);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .ask-button-orb,
-  .ask-orb span {
-    animation: none;
-  }
-}
-
 /* "baseball · 3" above the nav after "Show all" in Ask; × shows everyone again */
 .ask-filter {
   position: absolute;
   left: 50%;
-  bottom: calc(var(--safe-bottom) + 98px);
+  bottom: calc(var(--safe-bottom) + 104px);
   z-index: 3;
   display: flex;
   align-items: center;
@@ -2199,226 +1406,6 @@ button {
   background: var(--hover);
 }
 
-/* The Ask sheet */
-.ask {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-}
-
-.ask-scrim {
-  position: absolute;
-  inset: 0;
-  background: rgba(22, 18, 28, 0.26);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  animation: fade-in 0.3s ease;
-}
-
-.ask-sheet {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  max-height: calc(100% - var(--safe-top) - 40px);
-  margin: 0 8px calc(var(--safe-bottom) + 8px);
-  padding: 14px 16px 16px;
-  border-radius: 34px;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(30px) saturate(160%);
-  -webkit-backdrop-filter: blur(30px) saturate(160%);
-  border: 1px solid var(--glass-edge);
-  box-shadow: var(--shadow-float);
-  animation: layer-up 0.45s var(--ios-spring);
-}
-
-.ask-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-left: 6px;
-}
-
-/* On the welcome there's no label, so keep the close button on the right */
-.ask-head > .round-button {
-  margin-left: auto;
-}
-
-.ask-orb {
-  align-self: center;
-  display: grid;
-  place-items: center;
-  width: 96px;
-  height: 96px;
-  flex: none;
-}
-
-.ask-orb span {
-  width: 74px;
-  height: 74px;
-  border-radius: 50%;
-  background: var(--ai-orb);
-  filter: blur(2.5px);
-  box-shadow:
-    0 0 40px 4px rgba(160, 140, 255, 0.35),
-    0 0 70px 14px rgba(255, 170, 200, 0.22);
-  animation: ai-orb-drift 9s ease-in-out infinite;
-}
-
-.ask-sheet.is-listening .ask-orb span {
-  animation: ask-listen 1.2s ease-in-out infinite;
-}
-
-.ask-sheet.is-thinking .ask-orb span {
-  animation: ask-think 1.4s linear infinite;
-}
-
-@keyframes ask-listen {
-  50% {
-    transform: scale(1.14) rotate(20deg);
-  }
-}
-
-@keyframes ask-think {
-  to {
-    transform: rotate(360deg) scale(0.94);
-  }
-}
-
-.ask-body {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  min-height: 0;
-  overflow-y: auto;
-  text-align: center;
-}
-
-.ask-title {
-  margin: 0;
-  font-family: var(--font-heading);
-  letter-spacing: var(--heading-tracking);
-  font-size: 26px;
-  font-weight: 400;
-  line-height: 1.05;
-  text-wrap: balance;
-}
-
-/* The welcome on the opening sheet: the one serif moment in Ask */
-.ask-title.is-welcome {
-  font-family: 'Instrument Serif', 'Iowan Old Style', Georgia, serif;
-  font-size: 40px;
-  letter-spacing: -0.01em;
-}
-
-.ask-title.is-small {
-  font-size: 25px;
-}
-
-.ask-hint {
-  margin: 0;
-  font-size: 14px;
-  line-height: 1.4;
-  color: var(--ink-muted);
-  text-wrap: balance;
-}
-
-.ask-actions {
-  list-style: none;
-  margin: 4px 0 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  text-align: left;
-}
-
-.ask-actions li {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 11px 14px;
-  border-radius: 16px;
-  background: rgba(22, 18, 28, 0.04);
-}
-
-.ask-actions b {
-  font-size: 14.5px;
-  font-weight: 600;
-  color: var(--ink);
-}
-
-.ask-actions span {
-  font-size: 13px;
-  line-height: 1.35;
-  color: var(--ink-muted);
-}
-
-.ask-heard {
-  min-height: 64px;
-  margin: 0;
-  font-family: var(--font-heading);
-  letter-spacing: var(--heading-tracking);
-  font-size: 23px;
-  line-height: 1.1;
-  text-wrap: balance;
-}
-
-.ask-you {
-  margin: 0;
-  font-size: 13px;
-  color: var(--ink-muted);
-}
-
-.ask-results {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  text-align: left;
-}
-
-.ask-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  border-radius: 14px;
-  background: rgba(22, 18, 28, 0.035);
-  text-align: left;
-  color: var(--ink);
-}
-
-.ask-row:hover {
-  background: rgba(22, 18, 28, 0.07);
-}
-
-.ask-row svg {
-  flex: none;
-  color: var(--ink-faint);
-}
-
-.ask-row-text {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.ask-row-text b {
-  font-size: 15px;
-  font-weight: 500;
-}
-
-.ask-row-text span {
-  font-size: 12.5px;
-  color: var(--ink-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .ask-show {
   height: 44px;
   margin-top: 2px;
@@ -2431,236 +1418,6 @@ button {
 
 .ask-show:hover {
   background: rgba(22, 18, 28, 0.1);
-}
-
-.ask-link {
-  align-self: center;
-  font-size: 13px;
-  font-weight: 500;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-.ask-bar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.ask-mic {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  height: 52px;
-  border-radius: var(--radius-pill);
-  background: var(--ink);
-  color: var(--on-ink);
-  font-size: 15px;
-  font-weight: 500;
-}
-
-.ask-wave {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  height: 28px;
-}
-
-.ask-wave i {
-  width: 3px;
-  border-radius: 2px;
-  background: var(--live);
-  transition: height 0.11s ease;
-}
-
-.ask-input {
-  flex: 1;
-  min-width: 0;
-  height: 48px;
-  padding: 0 16px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-pill);
-  background: #fff;
-  font: inherit;
-  /* 16px stops iPhones from zooming in */
-  font-size: 16px;
-  color: var(--ink);
-  outline: none;
-}
-
-.ask-input:focus {
-  border-color: var(--ink);
-}
-
-/* ===== The mindmap's color filter, in the search bar (layouts in lib/filterLayouts.ts) ===== */
-.sf {
-  display: flex;
-  align-items: center;
-  margin-right: -6px;
-}
-
-/* Trigger: a round filter icon… */
-.sf-icon {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  color: var(--ink);
-}
-
-.sf-icon:hover,
-.sf-icon.is-open {
-  background: var(--hover);
-}
-
-/* …or a chip naming the current filter */
-.sf-chip {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  height: 36px;
-  padding: 0 10px 0 11px;
-  border-radius: var(--radius-pill);
-  background: rgba(22, 18, 28, 0.06);
-  color: var(--ink);
-  font-size: 13px;
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.sf-chip svg:last-child {
-  color: var(--ink-muted);
-  transition: transform 0.25s var(--ios-spring);
-}
-
-.sf-chip.is-open svg:last-child {
-  transform: rotate(180deg);
-}
-
-/* Panel contents (shared by the pop-up and the sheet) */
-.sf-label {
-  margin: 10px 0 6px;
-  padding-left: 2px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--ink-muted);
-}
-
-.sf-label:first-child {
-  margin-top: 0;
-}
-
-.sf-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.sf-chips button {
-  height: 34px;
-  padding: 0 14px;
-  border-radius: var(--radius-pill);
-  background: rgba(22, 18, 28, 0.06);
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--ink);
-}
-
-.sf-chips button.is-on {
-  background: var(--ink);
-  color: var(--on-ink);
-}
-
-.sf-key {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 16px;
-  padding: 0 2px;
-  font-size: 13px;
-  color: var(--ink);
-}
-
-.sf-key span {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
-
-.sf-key i {
-  flex: none;
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-}
-
-/* Slide-up sheet, rendered into the phone */
-.sf-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 10;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-}
-
-.sf-scrim {
-  position: absolute;
-  inset: 0;
-  background: rgba(22, 18, 28, 0.26);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  animation: fade-in 0.3s ease;
-}
-
-.sf-sheet {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  margin: 0 8px calc(var(--safe-bottom) + 8px);
-  padding: 10px 18px 18px;
-  border-radius: 34px;
-  background: rgba(255, 255, 255, 0.94);
-  backdrop-filter: blur(30px) saturate(160%);
-  -webkit-backdrop-filter: blur(30px) saturate(160%);
-  border: 1px solid var(--glass-edge);
-  box-shadow: var(--shadow-float);
-  animation: layer-up 0.45s var(--ios-spring);
-}
-
-.sf-handle {
-  width: 38px;
-  height: 5px;
-  margin: 0 auto 12px;
-  border-radius: 3px;
-  background: rgba(22, 18, 28, 0.14);
-}
-
-.sf-sheet h3 {
-  margin: 0 0 14px;
-  font-family: var(--font-heading);
-  letter-spacing: var(--heading-tracking);
-  font-size: 25px;
-  font-weight: 400;
-}
-
-.sf-sheet .sf-key {
-  font-size: 14px;
-}
-
-.sf-done {
-  height: 50px;
-  margin-top: 20px;
-  border-radius: var(--radius-pill);
-  background: var(--ink);
-  color: var(--on-ink);
-  font-size: 15px;
-  font-weight: 600;
 }
 
 /* Ask: richer results (why, what to say, a drafted next step) and the draft panel */
@@ -2677,58 +1434,6 @@ button {
 
 .ask-group-label {
   padding-left: 4px;
-}
-
-.ask-card {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 6px 6px 12px;
-  border-radius: 18px;
-  background: rgba(22, 18, 28, 0.035);
-}
-
-.ask-card .ask-row {
-  width: 100%;
-  background: none;
-}
-
-.ask-card .ask-row-text span {
-  white-space: normal;
-}
-
-.ask-via,
-.ask-say,
-.ask-action {
-  margin: 0 10px;
-}
-
-.ask-via {
-  padding: 3px 10px;
-  border-radius: var(--radius-pill);
-  background: var(--work-wash);
-  font-size: 12px;
-}
-
-.ask-say {
-  align-self: stretch;
-  padding: 8px 12px;
-  border-radius: 12px;
-  background: var(--ground-200);
-  color: var(--ink-muted);
-  font-size: 13px;
-  line-height: 1.4;
-}
-
-.ask-action {
-  height: 34px;
-  padding: 0 16px;
-  border-radius: var(--radius-pill);
-  background: var(--ink);
-  color: var(--on-ink);
-  font-size: 13px;
-  font-weight: 600;
 }
 
 .ask-draft {
@@ -2789,7 +1494,551 @@ button {
 }
 
 /* While Ask is open, toasts sit at the top so they don't cover its bar */
-.layer:has(.ask) ~ .toast {
+.layer:has(.flow) ~ .toast {
   top: calc(var(--safe-top) + 10px);
   bottom: auto;
+}
+
+/* ===== Figma v1: top controls, ask bar, composer, add / find flows ===== */
+:root {
+  --wave: #3652d9;
+}
+
+.top-controls {
+  position: absolute;
+  top: calc(var(--safe-top) + 14px);
+  left: var(--gutter);
+  right: var(--gutter);
+  z-index: 4;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.top-controls > * {
+  pointer-events: auto;
+}
+
+.view-toggle,
+.filters-button,
+.ask-pill,
+.add-button,
+.composer {
+  background: var(--glass-strong);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-edge);
+  box-shadow: var(--shadow);
+}
+
+.view-toggle {
+  display: flex;
+  gap: 2px;
+  padding: 6px;
+  border-radius: var(--radius-pill);
+}
+
+.view-button {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+}
+
+.view-button.is-active {
+  background: var(--ground-200);
+}
+
+.filters {
+  position: relative;
+}
+
+.filters-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 62px;
+  padding: 0 20px;
+  border-radius: var(--radius-pill);
+  font-size: 15px;
+}
+
+.filters-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  width: 252px;
+  padding: 8px;
+  border-radius: 26px;
+  background: var(--glass-strong);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-edge);
+  box-shadow: var(--shadow);
+  transform-origin: top right;
+  animation: menu-in 0.25s var(--ios-spring);
+}
+
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+}
+
+.filters-title {
+  display: block;
+  padding: 10px 12px 6px;
+  color: var(--ink-muted);
+  font-size: 12px;
+}
+
+.filters-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 16px;
+  text-align: left;
+}
+
+.filters-item.is-on {
+  background: var(--ground-200);
+}
+
+.filters-item > span {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.filters-item b {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.filters-item small {
+  color: var(--ink-muted);
+  font-size: 12px;
+}
+
+.list-title {
+  margin: 0 0 14px 4px;
+  font-family: var(--font-heading);
+  letter-spacing: var(--heading-tracking);
+  font-size: 32px;
+  font-weight: 300;
+  color: var(--ink-muted);
+}
+
+/* The ask bar: ask about people, or add someone */
+.ask-bar-dock {
+  position: absolute;
+  left: var(--gutter);
+  right: var(--gutter);
+  bottom: calc(var(--safe-bottom) + 28px);
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ask-pill {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  height: 62px;
+  padding: 0 16px 0 20px;
+  border-radius: var(--radius-pill);
+}
+
+.ask-pill-text {
+  flex: 1;
+  height: 100%;
+  text-align: left;
+  color: var(--ink-muted);
+  font-size: 16px;
+}
+
+.ask-pill-mic {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.add-button {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+}
+
+/* The shared input: a pill that grows into a text box, or "records" with a waveform */
+.composer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 62px;
+  padding: 10px 10px 10px 20px;
+  border-radius: 31px;
+}
+
+.composer.is-open {
+  align-items: flex-end;
+  border-radius: 28px;
+}
+
+.composer textarea {
+  flex: 1;
+  min-width: 0;
+  max-height: 144px;
+  padding: 8px 0;
+  border: 0;
+  outline: 0;
+  resize: none;
+  background: none;
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.4;
+  color: var(--ink);
+}
+
+.composer textarea::placeholder {
+  color: var(--ink-muted);
+}
+
+.composer.is-voice {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  padding: 16px 12px 12px 18px;
+}
+
+.composer.is-voice textarea {
+  flex: none;
+}
+
+.composer.is-voice textarea:placeholder-shown {
+  display: none;
+}
+
+.composer-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.composer .round-button {
+  width: 42px;
+  height: 42px;
+}
+
+.wave {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 28px;
+  overflow: hidden;
+}
+
+.wave i {
+  flex: none;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--wave);
+  transition: height 0.1s linear;
+}
+
+/* Add / find flows: a full-screen pastel aura, a close button, a heading, and the composer at the bottom */
+.flow {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.flow-aura {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(70% 38% at 0% 8%, #dfe3ff 0, transparent 72%),
+    radial-gradient(60% 36% at 100% 38%, #fff2c2 0, transparent 72%),
+    radial-gradient(90% 44% at 18% 84%, #fddfec 0, transparent 72%),
+    radial-gradient(60% 28% at 100% 100%, #fde1d3 0, transparent 72%);
+}
+
+.flow-aura::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--grain);
+  background-size: 140px;
+  opacity: 0.1;
+  mix-blend-mode: overlay;
+}
+
+.flow-close {
+  position: absolute;
+  top: calc(var(--safe-top) + 14px);
+  right: var(--gutter);
+  z-index: 2;
+  width: 58px;
+  height: 58px;
+}
+
+.flow-main {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 18px;
+  padding: calc(var(--safe-top) + 78px) var(--gutter) 14px;
+  overflow-y: auto;
+}
+
+.flow-main.is-top {
+  justify-content: flex-start;
+}
+
+.flow-title {
+  margin: 0;
+  font-family: var(--font-heading);
+  letter-spacing: var(--heading-tracking);
+  font-size: 30px;
+  font-weight: 300;
+  line-height: 1.12;
+  color: var(--ink-muted);
+}
+
+.flow-title.is-ink {
+  color: var(--ink);
+}
+
+.flow-note {
+  margin: 0;
+  color: var(--ink-faint);
+  font-size: 22px;
+  font-weight: 300;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+}
+
+.flow-bottom {
+  position: relative;
+  padding: 0 var(--gutter) calc(var(--safe-bottom) + 28px);
+}
+
+.flow-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.way {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-radius: 20px;
+  background: var(--glass-vivid);
+  backdrop-filter: var(--glass-vivid-blur);
+  -webkit-backdrop-filter: var(--glass-vivid-blur);
+  border: 1px solid var(--glass-vivid-edge);
+  box-shadow: var(--shadow);
+}
+
+.way > span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.way b {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.way small {
+  color: var(--ink-muted);
+  font-size: 14px;
+}
+
+/* A person as a dark gradient card: avatar, name, "job · city", small print */
+.person-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 16px 18px;
+  border-radius: 30px;
+  color: var(--on-ink);
+  text-align: left;
+  box-shadow: 0 10px 24px -10px rgba(22, 18, 28, 0.35);
+  animation: card-in 0.5s var(--ios-spring) both;
+}
+
+.person-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: var(--grain);
+  background-size: 140px;
+  opacity: 0.22;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+.person-card .avatar {
+  flex: none;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.9);
+}
+
+.person-card-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.person-card-text b {
+  font-size: 22px;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
+
+.person-card-text span {
+  font-size: 14px;
+}
+
+.person-card-text small {
+  font-size: 13px;
+  opacity: 0.65;
+}
+
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.97);
+  }
+}
+
+.flow-neither {
+  height: 48px;
+  margin-top: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--ink);
+  color: var(--on-ink);
+  font-size: 15px;
+  font-weight: 500;
+}
+
+/* Find results */
+.ask-answer {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.ask-results {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.result-card {
+  overflow: hidden;
+  border-radius: 26px;
+  background: var(--glass-vivid);
+  backdrop-filter: var(--glass-vivid-blur);
+  -webkit-backdrop-filter: var(--glass-vivid-blur);
+  border: 1px solid var(--glass-vivid-edge);
+  box-shadow: var(--shadow);
+  animation: card-in 0.45s var(--ios-spring) both;
+}
+
+.result-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: calc(100% - 28px);
+  margin: 0 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+
+.result-who {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.result-who b {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.result-who span {
+  color: var(--ink-muted);
+  font-size: 14px;
+}
+
+.result-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px 16px;
+}
+
+.result-body p {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.4;
+}
+
+.result-action {
+  height: 38px;
+  padding: 0 18px;
+  border-radius: var(--radius-pill);
+  background: var(--ink);
+  color: var(--on-ink);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.ask-via {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .person-card,
+  .result-card {
+    animation: none;
+  }
 }

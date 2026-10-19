@@ -4,23 +4,23 @@ import { initials, orbBackground, orbTextColor } from '../lib/people'
 
 type Props = {
   people: Person[]
-  query: string
   onOpen: (id: string) => void
 }
 
-export function ListScreen({ people, query, onOpen }: Props) {
+export function ListScreen({ people, onOpen }: Props) {
   const sorted = [...people].sort((a, b) => a.name.localeCompare(b.name))
 
   if (sorted.length === 0) {
     return (
       <div className="screen list-screen">
-        <p className="empty">No one matches “{query}”.</p>
+        <p className="empty">No one to show.</p>
       </div>
     )
   }
 
   return (
     <div className="screen list-screen">
+      <h1 className="list-title">Connections</h1>
       <ul className="people-list">
         {sorted.map((person) => (
           <li key={person.id}>

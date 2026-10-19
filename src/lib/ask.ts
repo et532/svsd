@@ -27,7 +27,7 @@ export type AskResult =
 
 // The pitch demo, in story order: add Jordan, log a coffee with him, then three questions (see storyRequest).
 export const storyAsks = [
-  'I want a climbing buddy. Who in the city can I reach out to?',
+  'I want to find someone to go climbing with me',
   'I’m traveling to SF next month. Who can I grab a coffee with?',
   'I just met a founder looking for a hardware engineer. Who can I introduce?',
 ]
@@ -245,9 +245,9 @@ function buddy(text: string, people: Person[]): AskResult | null {
       const hook = wants(person, term) ? `you said you were looking for a ${label}` : `you mentioned getting into ${activity}`
       return {
         person,
-        why: `${why} · ${person.livesNow.city.split(',')[0]}`,
+        why,
         say: wants(person, term) ? `“Still up for ${activity}? I’m in.”` : `Ask how the ${activity} is going, then invite them along.`,
-        action: { kind: 'message', label: `Message ${first}`, to: person.name, draft: `Hey ${first}! Last time ${hook}. Want to go ${activity} this week?` },
+        action: { kind: 'message', label: 'Draft a message', to: person.name, draft: `Hey ${first}! Last time ${hook}. Want to go ${activity} this week?` },
       }
     })
   const where = inCity ? ' in the city' : ''

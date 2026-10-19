@@ -1,53 +1,44 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { BottomBar, type Tab } from './components/BottomBar'
-import { BackIcon, CloseIcon } from './components/Icons'
-import { SearchBar } from './components/SearchBar'
-import { SearchFilter } from './components/SearchFilter'
-import { colorScale, type ColorBy } from './lib/mindmapColors'
+import { AskBar } from './components/AskBar'
+import type { Sent } from './components/Composer'
+import { BackIcon, CheckIcon, CloseIcon } from './components/Icons'
 import { HomeIndicator, StatusBar } from './components/StatusBar'
-import { draftToMoment, draftToPerson, newTodo } from './lib/capture'
-import { auraDepth, closenessLabel, firstName, matchesQuery, momentsOf, todosOf } from './lib/people'
+import { TopControls, type GroupBy, type Tab } from './components/TopControls'
+import type { Person } from './data/people'
+import { draftToMoment, draftToPerson, newTodo, parseMoment, parsePerson } from './lib/capture'
+import { auraDepth, firstName, momentsOf, todosOf } from './lib/people'
 import { addPerson, updatePerson, usePeople } from './lib/peopleStore'
-import { CaptureScreen, type CaptureResult } from './screens/CaptureScreen'
+import { AskScreen } from './screens/AskScreen'
+import { CaptureScreen } from './screens/CaptureScreen'
 import { ListScreen } from './screens/ListScreen'
 import { MindmapScreen } from './screens/MindmapScreen'
 import { ProfileScreen } from './screens/ProfileScreen'
-import { SavedScreen } from './screens/SavedScreen'
-import { AskScreen } from './screens/AskScreen'
 
 // Full-screen layers above the tabs, newest last. Back / close pops the top one.
 type Layer =
-  | { kind: 'capture'; personId?: string; talk?: boolean }
-  | { kind: 'saved'; id: string }
+  | { kind: 'capture' }
   | { kind: 'profile'; id: string; fresh?: string | null }
-  | { kind: 'ask' }
+  | { kind: 'ask'; start: 'type' | 'voice' }
 
 // The app's phone screen.
 export function Prototype() {
   const allPeople = usePeople()
-  const [tab, setTab] = useState<Tab>('list')
-  const [query, setQuery] = useState('')
-  const [searchOpen, setSearchOpen] = useState(false)
-  // What the mindmap's dot colors mean, set from the filter in the search bar
-  const [colorBy, setColorBy] = useState<ColorBy>('relationship')
+  const [tab, setTab] = useState<Tab>('mindmap')
+  // Mindmap grouping, from the Filters menu
+  const [groupBy, setGroupBy] = useState<GroupBy>('none')
   const [layers, setLayers] = useState<Layer[]>([])
   // Set by "View connections" on a profile: who to focus, and a way back to them.
   const [navFocus, setNavFocus] = useState<string | null>(null)
-  const [toast, setToast] = useState<{ text: string; key: number } | null>(null)
+  const [toast, setToast] = useState<{ text: string; ok: boolean; key: number } | null>(null)
 
-  // People picked out by Ask ("Show all 3 in your list"), shown until cleared with the pill above the nav
+  // People picked out by Ask ("Show all 3 in your list"), shown until cleared with the pill above the bar
   const [askFilter, setAskFilter] = useState<{ ids: string[]; label: string } | null>(null)
-  const people = useMemo(
-    () => allPeople.filter((p) => matchesQuery(p, query) && (!askFilter || askFilter.ids.includes(p.id))),
-    [allPeople, query, askFilter],
-  )
-  // One match on the mindmap: keep the whole graph and select that person instead of showing a lone dot.
-  const searchFocus = query.trim() && people.length === 1 ? people[0].id : null
-  const focusId = navFocus ?? searchFocus
+  const people = useMemo(() => allPeople.filter((p) => !askFilter || askFilter.ids.includes(p.id)), [allPeople, askFilter])
+  const focusId = navFocus
   const top = layers[layers.length - 1]
   const byId = (id: string) => allPeople.find((p) => p.id === id)
 
-  const say = useCallback((text: string) => setToast({ text, key: Date.now() }), [])
+  const say = useCallback((text: string, ok = false) => setToast({ text, ok, key: Date.now() }), [])
   useEffect(() => {
     if (!toast) return
     const t = setTimeout(() => setToast(null), 2400)
@@ -78,38 +69,36 @@ export function Prototype() {
     setTab(next)
   }
 
-  function changeQuery(q: string) {
-    setNavFocus(null)
-    setQuery(q)
-  }
-
   function goTo(next: Tab, id: string) {
     setLayers([])
-    setQuery('')
     setTab(next)
     setNavFocus(id)
   }
 
-  function savePerson(result: CaptureResult) {
-    const person = draftToPerson(result.draft, result, new Set(allPeople.map((p) => p.id)))
+  // A note about someone new. Someone you already have by that name isn't added twice.
+  function createPerson(sent: Sent): Person {
+    const draft = parsePerson(sent.text, allPeople)
+    const same = allPeople.find((p) => p.name.toLowerCase() === draft.name?.trim().toLowerCase())
+    if (same) return same
+    const person = draftToPerson(draft, sent, new Set(allPeople.map((p) => p.id)))
     addPerson(person)
-    replaceTop({ kind: 'saved', id: person.id })
+    return person
   }
 
-  function saveMoment(id: string, result: CaptureResult) {
+  // A note about someone you know: a new moment, their follow-up, and one step closer.
+  function addMoment(id: string, sent: Sent) {
     const person = byId(id)
-    if (!person) return pop()
-    const moment = draftToMoment(result.draft, result)
-    const before = auraDepth(id)
-    const closeness = Math.min(3, before + 1) as 1 | 2 | 3
+    if (!person) return null
+    const draft = parseMoment(sent.text)
+    const moment = draftToMoment(draft, sent)
     updatePerson(id, {
       moments: [moment, ...momentsOf(person)],
-      todos: result.draft.follow ? [newTodo(result.draft.follow), ...todosOf(person)] : todosOf(person),
+      todos: draft.follow ? [newTodo(draft.follow), ...todosOf(person)] : todosOf(person),
       lastContacted: new Date().toISOString().slice(0, 10),
-      closeness,
+      closeness: Math.min(3, auraDepth(id) + 1) as 1 | 2 | 3,
     })
-    setLayers((l) => [...l.slice(0, -2), { kind: 'profile', id, fresh: moment.id }])
-    say(closeness > before ? `Moment saved · ${firstName(person.name)} is now “${closenessLabel[closeness]}”` : 'Moment saved')
+    say('New moment saved', true)
+    return moment.id
   }
 
   const backTo = navFocus && layers.length === 0 ? byId(navFocus) : undefined
@@ -123,30 +112,10 @@ export function Prototype() {
         <span className="aura-orb" />
       </div>
       <StatusBar />
-      {tab === 'list' && <ListScreen people={people} query={query} onOpen={openProfile} />}
-      {tab === 'mindmap' && <MindmapScreen people={focusId ? allPeople : people} focusId={focusId} onView={openProfile} colorBy={colorBy} />}
+      {tab === 'list' && <ListScreen people={people} onOpen={openProfile} />}
+      {tab === 'mindmap' && <MindmapScreen people={focusId ? allPeople : people} focusId={focusId} onView={openProfile} groupBy={groupBy} />}
 
-      {searchOpen && <div className="search-scrim" aria-hidden />}
-
-      <header className="top-bar">
-        <SearchBar
-          value={query}
-          onChange={changeQuery}
-          people={allPeople}
-          onOpenChange={setSearchOpen}
-          // The color filter only means something on the mindmap
-          accessory={
-            tab === 'mindmap' && (
-              <SearchFilter
-                value={colorBy}
-                onChange={setColorBy}
-                entries={colorScale(focusId ? allPeople : people, colorBy).entries}
-              />
-            )
-          }
-          placeholder={tab === 'mindmap' ? 'Search people' : undefined}
-        />
-      </header>
+      <TopControls tab={tab} onTab={changeTab} groupBy={groupBy} onGroupBy={setGroupBy} />
 
       {backTo && (
         <button
@@ -173,18 +142,21 @@ export function Prototype() {
         </div>
       )}
 
-      <BottomBar
-        active={tab}
-        onChange={changeTab}
-        onAsk={() => {
+      <AskBar
+        onType={() => {
           setNavFocus(null)
-          push({ kind: 'ask' })
+          push({ kind: 'ask', start: 'type' })
         }}
+        onVoice={() => {
+          setNavFocus(null)
+          push({ kind: 'ask', start: 'voice' })
+        }}
+        onAdd={() => push({ kind: 'capture' })}
       />
 
       {layers.map((layer, i) => {
         const key = `${i}-${layer.kind}`
-        // Only the top two layers render, so a profile stays under the moment being logged.
+        // Only the top two layers render, so a profile stays under the flow opened over it.
         if (i < layers.length - 2) return null
         if (layer.kind === 'ask')
           return (
@@ -192,47 +164,32 @@ export function Prototype() {
               <AskScreen
                 people={allPeople}
                 tab={tab}
+                start={layer.start}
                 onClose={pop}
                 onOpenProfile={openProfile}
-                onAdd={() => replaceTop({ kind: 'capture', talk: true })}
-                onLogMoment={(id) => replaceTop({ kind: 'capture', personId: id, talk: true })}
+                onAdd={() => replaceTop({ kind: 'capture' })}
                 onToast={say}
                 onShow={(ids, label) => {
                   setLayers([])
-                  setQuery('')
                   setAskFilter({ ids, label })
                 }}
               />
             </div>
           )
-        if (layer.kind === 'capture') {
-          const person = layer.personId ? byId(layer.personId) : undefined
+        if (layer.kind === 'capture')
           return (
-            <div key={key + (layer.personId ?? '')} className="layer is-up">
+            <div key={key} className="layer is-up">
               <CaptureScreen
-                person={person}
                 people={allPeople}
-                autoTalk={layer.talk}
                 onClose={pop}
-                onDone={(r) => (person ? saveMoment(person.id, r) : savePerson(r))}
+                onCreate={createPerson}
+                onMoment={(id, sent) => replaceTop({ kind: 'profile', id, fresh: addMoment(id, sent) })}
+                onOpenProfile={(id) => replaceTop({ kind: 'profile', id })}
               />
             </div>
           )
-        }
         const person = byId(layer.id)
         if (!person) return null
-        if (layer.kind === 'saved')
-          return (
-            <div key={key} className="layer is-fade">
-              <SavedScreen
-                person={person}
-                people={allPeople}
-                onClose={() => setLayers([])}
-                onAddAnother={() => replaceTop({ kind: 'capture' })}
-                onViewProfile={() => replaceTop({ kind: 'profile', id: person.id })}
-              />
-            </div>
-          )
         return (
           <div key={key + layer.id} className={`layer is-sheet${closing && i === layers.length - 1 ? ' is-closing' : ''}`}>
             <div className="sheet-scrim" onClick={closeSheet} aria-hidden />
@@ -244,8 +201,11 @@ export function Prototype() {
               onBack={closeSheet}
               onOpen={openProfile}
               onViewConnections={() => goTo('mindmap', person.id)}
-              onLogMoment={(talk) => push({ kind: 'capture', personId: person.id, talk })}
-              onSoon={(what) => say(`${what} isn’t built yet`)}
+              onAddMoment={(sent) => {
+                const fresh = addMoment(person.id, sent)
+                setLayers((l) => l.map((x, j) => (j === i ? { ...x, fresh } : x)))
+              }}
+              onSoon={(what) => say(`${what} isn't built yet`)}
             />
           </div>
         )
@@ -253,6 +213,11 @@ export function Prototype() {
 
       {toast && (
         <div key={toast.key} className="toast" role="status">
+          {toast.ok && (
+            <span className="toast-check">
+              <CheckIcon size={14} />
+            </span>
+          )}
           {toast.text}
         </div>
       )}

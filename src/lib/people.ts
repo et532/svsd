@@ -118,6 +118,15 @@ export function orbBackground(id: string): string {
   ].join(', ')
 }
 
+// The dark gradient card behind someone's name (Add preview, "Which Jordan?"): their color, with a second color glowing in a corner.
+export function cardBackground(p: Person): string {
+  const other = p.context === 'work' ? 'social' : 'work'
+  return [
+    `radial-gradient(circle at 96% 110%, var(--${other}-core) 0, transparent 52%)`,
+    `linear-gradient(115deg, var(--${p.context}-deep) 8%, var(--${p.context}-core) 90%)`,
+  ].join(', ')
+}
+
 export function timeSince(isoDate: string, now = new Date()): string {
   const days = Math.floor((now.getTime() - new Date(isoDate).getTime()) / 86_400_000)
   if (days <= 0) return 'Today'
