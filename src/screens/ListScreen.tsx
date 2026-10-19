@@ -26,7 +26,10 @@ export function ListScreen({ people, onOpen }: Props) {
           <li key={person.id}>
             <button className="person-row" onClick={() => onOpen(person.id)}>
               <Avatar id={person.id} />
-              <span className="person-name">{person.name}</span>
+              <span className="person-text">
+                <span className="person-name">{person.name}</span>
+                <span className="person-sub">{[person.profession, person.livesNow.city].filter((x) => x && x !== 'Unknown').join(' · ')}</span>
+              </span>
               <span className="person-arrow" aria-hidden>
                 <ChevronRightIcon size={19} />
               </span>

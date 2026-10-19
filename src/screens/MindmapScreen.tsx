@@ -4,6 +4,8 @@ import { createGraph, type Graph } from '../lib/forceGraph'
 import { auraDepth, initials, linksOf, momentsOf } from '../lib/people'
 import { colorKey, colorScale, type ColorBy } from '../lib/mindmapColors'
 import type { GroupBy } from '../components/TopControls'
+import { Avatar } from '../components/Avatar'
+import { ChevronRightIcon } from '../components/Icons'
 
 
 // Grouping (territory clouds by city / met at / job), chosen in the Filters menu at the top right.
@@ -437,12 +439,13 @@ export function MindmapScreen({ people, focusId = null, onView, colorBy = 'relat
 
       {person && (
         <div ref={labelRef} className="mm-label" onPointerDown={(e) => e.stopPropagation()}>
-          <span>
-            <strong>{person.name}</strong>
-            <small>{person.profession}</small>
-          </span>
-          <button type="button" className="mm-view" onClick={() => onView?.(person.id)}>
-            View
+          <button type="button" className="mm-label-open" onClick={() => onView?.(person.id)} aria-label={`View ${person.name}`}>
+            <Avatar id={person.id} className="avatar-sm" />
+            <span>
+              <strong>{person.name}</strong>
+              <small>{[person.profession, person.livesNow.city].filter((x) => x && x !== 'Unknown').join(' · ')}</small>
+            </span>
+            <ChevronRightIcon size={19} />
           </button>
         </div>
       )}

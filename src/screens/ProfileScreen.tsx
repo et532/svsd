@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
-import { Avatar, avatarColors } from '../components/Avatar'
+import { Avatar } from '../components/Avatar'
 import { Composer, type Sent } from '../components/Composer'
 import { BackIcon, ChevronRightIcon, MoreIcon, PauseIcon, PlayIcon, PlusIcon } from '../components/Icons'
 import type { Moment, Person } from '../data/people'
 import { formatTime, momentScript, newTodo } from '../lib/capture'
+import { avatarColors, blobOf } from '../lib/blobs'
 import { updatePerson } from '../lib/peopleStore'
 import { firstName, momentsOf, todosOf } from '../lib/people'
 
@@ -45,7 +46,7 @@ export function ProfileScreen({ person: p, people, freshMomentId = null, startFu
   const moments = momentsOf(p)
   const todos = todosOf(p)
   const mutuals = p.knows.map((id) => people.find((x) => x.id === id)).filter((x): x is Person => !!x)
-  const other = p.context === 'work' ? 'social' : 'work'
+  const blob = blobOf(p.id)
   const first = momentsOf(p).find((m) => m.firstMeeting)?.date ?? p.lastContacted
   const met = new Date(first + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
 
@@ -75,7 +76,7 @@ export function ProfileScreen({ person: p, people, freshMomentId = null, startFu
   return (
     <section
       className={`profile${full ? ' is-full' : ''}${scrolled ? ' is-scrolled' : ''}${addingTag || addingTodo ? ' is-adding' : ''}`}
-      style={{ '--ctx': `var(--${p.context}-deep)`, '--aura-a': avatarColors(p.id)[0], '--aura-b': avatarColors(p.id)[1] } as React.CSSProperties}
+      style={{ '--ctx': blob.base, '--aura-a': avatarColors(p.id)[0], '--aura-b': avatarColors(p.id)[1] } as React.CSSProperties}
       aria-label={p.name}
     >
       <div className="profile-aura" aria-hidden />
@@ -124,9 +125,10 @@ export function ProfileScreen({ person: p, people, freshMomentId = null, startFu
         onWheel={(e) => e.deltaY > 0 && !full && grow()}
       >
         <div className="profile-hero">
-          <span className="profile-blob" style={{ width: 300, height: 260, right: -80, top: -90, background: `var(--${p.context}-core)` }} />
-          <span className="profile-blob" style={{ width: 240, height: 200, right: -20, bottom: -110, background: `var(--${other}-core)`, opacity: 0.85 }} />
-          <span className="profile-blob" style={{ width: 260, height: 240, left: -110, bottom: -80, background: `var(--${p.context}-deep)` }} />
+          {/* As in the Figma "Profile" / hero: the person's blob base with three blurred shapes in their colors */}
+          <span className="profile-blob" style={{ width: 280, height: 240, left: -72, top: -150, background: blob.mid }} />
+          <span className="profile-blob" style={{ width: 220, height: 220, right: -82, bottom: 10, background: blob.accent }} />
+          <span className="profile-blob" style={{ width: 260, height: 240, left: -96, bottom: -161, background: blob.deep }} />
           <div className="profile-who">
             <Avatar id={p.id} className="avatar-xl" />
             <div>

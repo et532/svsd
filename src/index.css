@@ -2656,19 +2656,277 @@ button {
   }
 }
 
-/* Blob club sticker avatars (components/Avatar.tsx): the sticker itself, no circle, ring or fill behind it */
-.avatar.is-blob {
-  background: none;
-  border-radius: 0;
+/* ---- Profile pictures and the places they sit, as in the Figma "Profile" component (node 190:13740):
+   list, results, map, create, hero. The avatar is a circle with a 2px white ring, filled with a close crop of the
+   person's Blob club photo (components/Avatar.tsx). ---- */
+.avatar {
+  position: relative;
+  overflow: hidden;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid var(--on-ink);
   box-shadow: none;
-  overflow: visible;
 }
 
-.avatar.is-blob img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
+.avatar img {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 258%;
+  height: 258%;
+  max-width: none;
+  transform: translate(-50%, -50%);
+  object-fit: cover;
   pointer-events: none;
   user-select: none;
   -webkit-user-drag: none;
+}
+
+.avatar.avatar-sm {
+  width: 36px;
+  height: 36px;
+}
+
+.avatar.avatar-lg,
+.avatar.avatar-xl {
+  width: 60px;
+  height: 60px;
+  box-shadow: none;
+}
+
+:is(.avatar-lg, .avatar-xl) img {
+  width: 230%;
+  height: 230%;
+}
+
+/* list */
+.person-row {
+  gap: 13px;
+  height: 70px;
+  padding: 0 15px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-edge);
+  border-radius: 20px;
+  box-shadow:
+    0 6px 20px -12px rgba(60, 50, 110, 0.18),
+    0 0 0 1px rgba(17, 17, 19, 0.03);
+}
+
+.person-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.person-text .person-name {
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.64px;
+  line-height: 1.3;
+  text-decoration: none;
+}
+
+.person-sub {
+  overflow: hidden;
+  color: var(--ink-muted);
+  font-size: 13px;
+  line-height: 18px;
+  letter-spacing: -0.52px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.person-arrow,
+.result-head > svg,
+.mm-label-open > svg {
+  color: var(--ink-muted);
+}
+
+/* results */
+.result-card {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  padding: 14px 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-edge);
+  box-shadow: 0 6px 20px 0 rgba(60, 50, 110, 0.18);
+}
+
+.result-head {
+  gap: 12px;
+  width: 100%;
+  margin: 0;
+  padding: 12px 0;
+}
+
+.result-who {
+  gap: 0;
+}
+
+.result-who b {
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.64px;
+  line-height: 1.3;
+}
+
+.result-who span {
+  font-size: 13px;
+  line-height: 18px;
+  letter-spacing: -0.52px;
+}
+
+.result-body {
+  align-items: stretch;
+  gap: 13px;
+  padding: 0 4px;
+}
+
+.result-body p {
+  font-size: 17px;
+  font-weight: 300;
+  line-height: 1.3;
+}
+
+.result-action {
+  height: 34px;
+  margin: 0 -4px;
+  background: var(--glass-strong);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.52px;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.04);
+}
+
+/* map: the pill under a tapped person; the whole pill opens their profile */
+.mm-label {
+  gap: 0;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-edge);
+  box-shadow:
+    0 6px 20px -12px rgba(60, 50, 110, 0.18),
+    0 0 0 1px rgba(17, 17, 19, 0.03);
+}
+
+.mm-label-open {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  color: var(--ink);
+  text-align: left;
+}
+
+.mm-label strong {
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.56px;
+  line-height: 1.3;
+}
+
+.mm-label small {
+  color: var(--ink-muted);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+/* create: the dark card for a new person (colors from lib/people.ts cardBackground) */
+.person-card {
+  gap: 14px;
+  padding: 23px 12px;
+  border-radius: 21px;
+}
+
+.person-card .avatar {
+  box-shadow: none;
+}
+
+.person-card-text {
+  gap: 4px;
+}
+
+.person-card-text b {
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: -0.8px;
+  line-height: 24px;
+}
+
+.person-card-text span {
+  font-size: 13px;
+  line-height: 18px;
+  letter-spacing: -0.52px;
+}
+
+.person-card-text small {
+  color: var(--ground-300, #ccc5ba);
+  font-size: 13px;
+  line-height: 18px;
+  letter-spacing: -0.52px;
+  opacity: 1;
+}
+
+.person-card-go {
+  width: auto;
+  height: auto;
+  background: none;
+}
+
+.person-card.is-skeleton {
+  min-height: 106px;
+}
+
+.person-card.is-skeleton .skel-avatar {
+  width: 60px;
+  height: 60px;
+}
+
+/* hero: the person's blob base with three blurred shapes in their colors (ProfileScreen) */
+.profile-hero {
+  background: var(--ctx);
+}
+
+.profile-blob {
+  filter: blur(23px);
+}
+
+.profile-who {
+  gap: 14px;
+}
+
+.profile-who h2 {
+  margin: 0 0 4px;
+  font-family: var(--font-body);
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: -0.8px;
+  line-height: 24px;
+}
+
+.profile-who .profile-sub {
+  color: var(--on-ink);
+  font-size: 13px;
+  line-height: 18px;
+  letter-spacing: -0.52px;
+}
+
+.profile-who .profile-met {
+  margin-top: 4px;
+  color: var(--ground-300, #ccc5ba);
+  font-size: 13px;
+  line-height: 18px;
+  letter-spacing: -0.52px;
 }

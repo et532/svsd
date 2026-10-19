@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Composer, type Sent } from '../components/Composer'
-import { ArrowRightIcon, CloseIcon } from '../components/Icons'
+import { ChevronRightIcon, CloseIcon } from '../components/Icons'
 import type { Person } from '../data/people'
 import { momentCandidates, parsePerson, voiceScript } from '../lib/capture'
 import { Avatar } from '../components/Avatar'
@@ -165,7 +165,7 @@ function PersonCard({ person: p, line, onClick, typed = false }: { person: Perso
         })}
       </span>
       <span className={`person-card-go${done ? ' is-on' : ''}`} aria-hidden>
-        <ArrowRightIcon size={16} />
+        <ChevronRightIcon size={19} />
       </span>
     </button>
   )

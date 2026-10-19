@@ -1,4 +1,5 @@
 import type { Context, Moment, Person, Todo } from '../data/people'
+import { blobOf } from './blobs'
 import { getPeople } from './peopleStore'
 
 export function initials(name: string): string {
@@ -119,11 +120,15 @@ export function orbBackground(id: string): string {
 }
 
 // The dark gradient card behind someone's name (Add preview, "Which Jordan?"): their color, with a second color glowing in a corner.
+// The dark card behind a new person (Figma "Profile" / create): the person's blob base color with three soft,
+// blurred shapes on it, in their blob's colors (mid top left, accent right, deep bottom left).
 export function cardBackground(p: Person): string {
-  const other = p.context === 'work' ? 'social' : 'work'
+  const b = blobOf(p.id)
   return [
-    `radial-gradient(circle at 96% 110%, var(--${other}-core) 0, transparent 52%)`,
-    `linear-gradient(115deg, var(--${p.context}-deep) 8%, var(--${p.context}-core) 90%)`,
+    `radial-gradient(ellipse 150px 135px at 68px -40px, ${b.mid}, ${b.mid}c0 45%, transparent 100%)`,
+    `radial-gradient(circle 130px at calc(100% - 28px) 70px, ${b.accent}, ${b.accent}c0 40%, transparent 100%)`,
+    `radial-gradient(ellipse 150px 135px at 34px 190px, ${b.deep}, ${b.deep}c0 45%, transparent 100%)`,
+    b.base,
   ].join(', ')
 }
 

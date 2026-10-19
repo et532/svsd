@@ -169,12 +169,12 @@ function ResultCard({ match, onOpenProfile, onSent }: { match: Match; onOpenProf
   return (
     <div className="result-card">
       <button className="result-head" onClick={() => onOpenProfile(p.id)}>
-        <Avatar id={p.id} className="avatar-lg" />
+        <Avatar id={p.id} />
         <span className="result-who">
           <b>{p.name}</b>
           <span>{[p.profession, p.livesNow.city].filter((x) => x && x !== 'Unknown').join(' · ')}</span>
         </span>
-        <ChevronRightIcon size={16} />
+        <ChevronRightIcon size={19} />
       </button>
       <div className="result-body">
         {via && <span className="ask-via">{via}</span>}
