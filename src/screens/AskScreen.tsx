@@ -114,15 +114,11 @@ export function AskScreen({ people, tab, onClose, onOpenProfile, onAdd, onLogMom
     setPhase('idle')
   }
 
-  const status =
-    phase === 'listening' ? 'Listening…' : phase === 'thinking' ? 'Looking through your people…' : phase === 'answer' ? 'Ask Peepl' : 'Ask Peepl'
-
   return (
     <div className="ask">
       <div className="ask-scrim" onClick={onClose} aria-hidden />
       <div className={`ask-sheet is-${phase}`} role="dialog" aria-modal="true" aria-label="Ask Peepl">
         <div className="ask-head">
-          {phase !== 'idle' && <span className="label">{status}</span>}
           <button className="round-button glass-button is-sm" onClick={onClose} aria-label="Close">
             <CloseIcon size={16} />
           </button>
