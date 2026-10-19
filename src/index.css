@@ -2863,7 +2863,7 @@ button {
 }
 
 /* The pastel auras (Add / Find flows, profile) drift: each of the four color orbs wanders slowly on its own
-   timing (34–61s, eased, back and forth), so the colors keep shifting without ever looking like a loop.
+   timing (14–25s, eased, back and forth; made faster and wider at the user's request so it reads), so the colors keep shifting without ever looking like a loop.
    The offsets are registered properties so they animate smoothly, and inherit so the grain (::after, masked
    to the orbs) moves with them. Off for reduced motion. */
 @property --drift-1x { syntax: '<percentage>'; inherits: true; initial-value: 0%; }
@@ -2878,38 +2878,38 @@ button {
 .flow-aura,
 .profile-aura {
   animation:
-    aura-drift-1 34s ease-in-out infinite alternate,
-    aura-drift-2 46s ease-in-out infinite alternate,
-    aura-drift-3 53s ease-in-out infinite alternate,
-    aura-drift-4 61s ease-in-out infinite alternate;
+    aura-drift-1 14s ease-in-out infinite alternate,
+    aura-drift-2 18s ease-in-out infinite alternate,
+    aura-drift-3 21s ease-in-out infinite alternate,
+    aura-drift-4 25s ease-in-out infinite alternate;
 }
 
 @keyframes aura-drift-1 {
   0% { --drift-1x: 0%; --drift-1y: 0%; }
-  35% { --drift-1x: 16%; --drift-1y: 7%; }
-  70% { --drift-1x: 8%; --drift-1y: 15%; }
-  100% { --drift-1x: -6%; --drift-1y: 5%; }
+  35% { --drift-1x: 35%; --drift-1y: 15%; }
+  70% { --drift-1x: 18%; --drift-1y: 33%; }
+  100% { --drift-1x: -13%; --drift-1y: 11%; }
 }
 
 @keyframes aura-drift-2 {
   0% { --drift-2x: 0%; --drift-2y: 0%; }
-  40% { --drift-2x: -15%; --drift-2y: 9%; }
-  75% { --drift-2x: -7%; --drift-2y: -8%; }
-  100% { --drift-2x: -18%; --drift-2y: 3%; }
+  40% { --drift-2x: -33%; --drift-2y: 20%; }
+  75% { --drift-2x: -15%; --drift-2y: -18%; }
+  100% { --drift-2x: -40%; --drift-2y: 7%; }
 }
 
 @keyframes aura-drift-3 {
   0% { --drift-3x: 0%; --drift-3y: 0%; }
-  30% { --drift-3x: 12%; --drift-3y: -9%; }
-  65% { --drift-3x: 20%; --drift-3y: -3%; }
-  100% { --drift-3x: 4%; --drift-3y: -12%; }
+  30% { --drift-3x: 26%; --drift-3y: -20%; }
+  65% { --drift-3x: 44%; --drift-3y: -7%; }
+  100% { --drift-3x: 9%; --drift-3y: -26%; }
 }
 
 @keyframes aura-drift-4 {
   0% { --drift-4x: 0%; --drift-4y: 0%; }
-  45% { --drift-4x: -14%; --drift-4y: -10%; }
-  80% { --drift-4x: -22%; --drift-4y: -4%; }
-  100% { --drift-4x: -8%; --drift-4y: -14%; }
+  45% { --drift-4x: -31%; --drift-4y: -22%; }
+  80% { --drift-4x: -48%; --drift-4y: -9%; }
+  100% { --drift-4x: -18%; --drift-4y: -31%; }
 }
 
 @media (prefers-reduced-motion: reduce) {
