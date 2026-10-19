@@ -1587,10 +1587,10 @@ button {
 
 .view-blob {
   position: absolute;
-  top: 6px;
-  left: 6px;
-  width: 48px;
-  height: 48px;
+  top: 5px;
+  left: 5px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
   background: var(--pressed);
   /* slight overshoot = a subtle bounce */

@@ -43,7 +43,7 @@ export function TopControls({ tab, onTab, groupBy, onGroupBy }: Props) {
   // Blob position in px (0 = mindmap, STEP = list); `drag` overrides it while holding and dragging.
   const [drag, setDrag] = useState<number | null>(null)
   const grab = useRef({ x: 0, from: 0, moved: false })
-  const STEP = 50
+  const STEP = 44 // a 42px view button + the 2px gap
   const base = tab === 'list' ? STEP : 0
 
   const onDown = (e: React.PointerEvent<HTMLDivElement>) => {
