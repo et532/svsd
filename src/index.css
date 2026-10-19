@@ -2241,6 +2241,11 @@ button {
   padding-left: 6px;
 }
 
+/* On the welcome there's no label, so keep the close button on the right */
+.ask-head > .round-button {
+  margin-left: auto;
+}
+
 .ask-orb {
   align-self: center;
   display: grid;
@@ -2299,6 +2304,13 @@ button {
   font-weight: 400;
   line-height: 1.05;
   text-wrap: balance;
+}
+
+/* The welcome on the opening sheet: the one serif moment in Ask */
+.ask-title.is-welcome {
+  font-family: 'Instrument Serif', 'Iowan Old Style', Georgia, serif;
+  font-size: 40px;
+  letter-spacing: -0.01em;
 }
 
 .ask-title.is-small {
