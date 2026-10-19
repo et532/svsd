@@ -909,10 +909,35 @@ button {
   inset: 0;
   display: flex;
   flex-direction: column;
-  background: var(--dots), var(--bg);
+  background: var(--bg);
+}
+
+/* Behind the profile: a soft pastel aura in the person's own avatar colors (like the Ask / add flows' aura).
+   It stays put while the page scrolls. */
+.profile-aura {
+  --profile-orbs:
+    radial-gradient(80% 36% at 0% 30%, color-mix(in srgb, var(--aura-a) 75%, transparent) 0, transparent 72%),
+    radial-gradient(70% 34% at 100% 52%, color-mix(in srgb, var(--aura-b) 38%, transparent) 0, transparent 72%),
+    radial-gradient(90% 40% at 20% 92%, color-mix(in srgb, var(--aura-a) 65%, transparent) 0, transparent 72%),
+    radial-gradient(60% 26% at 100% 100%, color-mix(in srgb, var(--aura-b) 30%, transparent) 0, transparent 72%);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--profile-orbs);
+}
+
+.profile-aura::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--noise);
+  background-size: 200px;
+  -webkit-mask-image: var(--profile-orbs);
+  mask-image: var(--profile-orbs);
 }
 
 .profile-scroll {
+  position: relative;
   flex: 1;
   overflow-y: auto;
   padding-bottom: 24px;

@@ -45,9 +45,14 @@ const mouths = [
   <path key="grin" d="M34 56h32q-2 15-16 15T34 56z" fill={ink} />,
 ]
 
+// The two colors of someone's avatar (light, then deeper); the profile's aura is tinted with them too.
+export function avatarColors(id: string) {
+  return palettes[hash(id) % palettes.length]
+}
+
 export function Avatar({ id, className = '' }: { id: string; className?: string }) {
   const h = hash(id)
-  const [a, b] = palettes[h % palettes.length]
+  const [a, b] = avatarColors(id)
   return (
     <span className={`avatar ${className}`} style={{ background: `radial-gradient(circle at 30% 25%, ${a}, ${b})` }} aria-hidden>
       <svg viewBox="0 0 100 100" width="100%" height="100%">

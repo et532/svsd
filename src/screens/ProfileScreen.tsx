@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Avatar } from '../components/Avatar'
+import { Avatar, avatarColors } from '../components/Avatar'
 import { Composer, type Sent } from '../components/Composer'
 import { BackIcon, ChevronRightIcon, MoreIcon, PauseIcon, PlayIcon, PlusIcon } from '../components/Icons'
 import type { Moment, Person } from '../data/people'
@@ -12,6 +12,8 @@ type Props = {
   people: Person[]
   // A moment that was just logged opens expanded and glows once.
   freshMomentId?: string | null
+  // Opens straight at full screen (from another profile) instead of as the 80% sheet
+  startFull?: boolean
   onBack: () => void
   onExpand?: (full: boolean) => void
   onOpen: (id: string) => void
@@ -26,12 +28,12 @@ function dateLabel(iso: string) {
   return d.toDateString() === new Date().toDateString() ? 'Today' : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
-export function ProfileScreen({ person: p, people, freshMomentId = null, onBack, onExpand, onOpen, onViewConnections, onAddMoment, onAddMutual, onSoon }: Props) {
+export function ProfileScreen({ person: p, people, freshMomentId = null, startFull = false, onBack, onExpand, onOpen, onViewConnections, onAddMoment, onAddMutual, onSoon }: Props) {
   const [addingTag, setAddingTag] = useState(false)
   const [addingTodo, setAddingTodo] = useState(false)
   const [open, setOpen] = useState<Set<string>>(() => new Set(freshMomentId ? [freshMomentId] : []))
   // Opens as an 80% sheet; the first scroll grows it to full screen.
-  const [full, setFull] = useState(false)
+  const [full, setFull] = useState(startFull)
   // Scrolled past the hero: the bar behind the back button fills in with their name.
   const [scrolled, setScrolled] = useState(false)
   // Bumped after each send so the composer starts empty again
@@ -73,9 +75,10 @@ export function ProfileScreen({ person: p, people, freshMomentId = null, onBack,
   return (
     <section
       className={`profile${full ? ' is-full' : ''}${scrolled ? ' is-scrolled' : ''}${addingTag || addingTodo ? ' is-adding' : ''}`}
-      style={{ '--ctx': `var(--${p.context}-deep)` } as React.CSSProperties}
+      style={{ '--ctx': `var(--${p.context}-deep)`, '--aura-a': avatarColors(p.id)[0], '--aura-b': avatarColors(p.id)[1] } as React.CSSProperties}
       aria-label={p.name}
     >
+      <div className="profile-aura" aria-hidden />
       {!full && (
         <button
           className="profile-handle"
@@ -136,7 +139,6 @@ export function ProfileScreen({ person: p, people, freshMomentId = null, onBack,
 
         <div className="profile-body">
           <div className="profile-card">
-            <span className="label">Summary</span>
             <p>{p.story}</p>
             <div className="chips">
               {p.tags.map((t) => (

@@ -21,7 +21,7 @@ type Origin = { x: number; y: number }
 
 type Layer =
   | { kind: 'capture'; mutualOf?: string; origin?: Origin }
-  | { kind: 'profile'; id: string; fresh?: string | null }
+  | { kind: 'profile'; id: string; fresh?: string | null; full?: boolean }
   | { kind: 'ask'; start: 'type' | 'voice'; origin?: Origin }
 
 function originOf(el: HTMLElement): Origin | undefined {
@@ -64,8 +64,8 @@ export function Prototype() {
     return () => clearTimeout(t)
   }, [toast])
 
-  const [profileFull, setProfileFull] = useState(false)
-  useEffect(() => setProfileFull(false), [top])
+  // A profile sheet grown to full screen (it remembers, so going back to it keeps the dark status bar)
+  const profileFull = top?.kind === 'profile' && !!top.full
 
   const [closing, setClosing] = useState(false)
   // Play the top layer's closing animation first, then drop it.
@@ -224,12 +224,14 @@ export function Prototype() {
           <div key={key + layer.id} className={`layer is-sheet${shut}`}>
             <div className="sheet-scrim" onClick={closeSheet} aria-hidden />
             <ProfileScreen
-              onExpand={setProfileFull}
+              onExpand={(full) => setLayers((l) => l.map((x, j) => (j === i ? { ...x, full } : x)))}
+              startFull={layer.full}
               person={person}
               people={allPeople}
               freshMomentId={layer.fresh}
               onBack={closeSheet}
-              onOpen={openProfile}
+              // From one profile to another: straight to full screen, no half sheet
+              onOpen={(id) => push({ kind: 'profile', id, full: true })}
               onViewConnections={() => goTo('mindmap', person.id)}
               onAddMoment={(sent) => {
                 const fresh = addMoment(person.id, sent)
