@@ -13,8 +13,6 @@
   --hover: rgba(22, 18, 28, 0.04);
   --pressed: rgba(22, 18, 28, 0.08); /* light gray for pressed and selected controls */
   --live: #c6f04a; /* recording only */
-  /* The Figma ground: a fine dot grid */
-  --dots: radial-gradient(circle, rgba(22, 18, 28, 0.11) 1px, transparent 1.3px) 0 0 / 14px 14px;
   --focus: #2f4fd0;
 
   /* Profile color coding: hue = how you know someone. wash / core / deep per context. */
@@ -135,7 +133,7 @@ button {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: var(--dots), var(--bg);
+  background: var(--bg);
   /* Makes the phone the containing block for position: fixed overlays (sheets, pop-ups) */
   transform: translateZ(0);
   /* Space the system uses at the top and bottom of the screen */
@@ -2917,4 +2915,28 @@ button {
   .profile-aura {
     animation: none;
   }
+}
+
+/* Behind the mindmap and list: the Figma mesh gradient "Pastel mesh · Rose and cobalt" (components/MeshBackground,
+   a WebGPU shader; without WebGPU the plain --bg shows), with the same grain as the Add / Find auras. Replaces the
+   dot grid. The Add / Find flows and profiles cover it with their own backgrounds. */
+.main-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.main-bg-mesh {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.main-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--noise);
+  background-size: 200px;
 }

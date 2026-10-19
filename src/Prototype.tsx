@@ -1,3 +1,4 @@
+import { MeshBackground } from './components/MeshBackground'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AskBar } from './components/AskBar'
 import type { Sent } from './components/Composer'
@@ -136,6 +137,7 @@ export function Prototype() {
 
   return (
     <div className={`phone${top?.kind === 'profile' ? ' is-dark-top' : ''}${kbTarget ? ' has-kb' : ''}`}>
+      <MeshBackground />
       <StatusBar />
       {tab === 'list' && <ListScreen people={people} onOpen={openProfile} />}
       {tab === 'mindmap' && <MindmapScreen people={focusId ? allPeople : people} focusId={focusId} onView={openProfile} groupBy={groupBy} />}
