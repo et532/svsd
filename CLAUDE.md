@@ -92,6 +92,7 @@ To go back to an earlier iteration, switch to (or copy code from) these branches
 
 ## Next steps / open items
 
+- **Current screens in Figma** (2026-10-19): section **"Prototype · current screens (Mindmap + Connections)"** on the "Ask flow" page (`252:2087`), built with auto layout from the running app so the user can refine it: mesh background (a copy of the Figma mesh with *Texture/Grain*), status bar, top controls (the glass Nav pill resized to the app's 54px, a glass Filters pill), the mindmap graph as absolutely placed orbs (Aura paint styles) and links at the app's positions, the Connections title and 18 *Profile / list* instances with the glass fill and each person's blob photo, and the ask bar. Frames `252:2088` (Mindmap) and `252:2155` (Connections).
 - **Figma V1 flow:** built (see above). Remaining Figma differences are listed under "Not carried over from the Figma yet".
 - **Real AI / speech:** the voice is scripted and `interpret()` is rule-based. Real speech-to-text and a real model are possible next steps.
 - **Person profile stub** that only shows a toast: the ⋯ menu. (**+ tag** and **Add something to do** turn into an inline field in place, Return saves, Esc cancels, leaving saves if there's text; `+ tag` also offers up to 4 tags other people have. They use a textarea so the desktop keyboard types into them. **Add** under Mutuals opens the Add flow headed "Who does Jordan know?" and links the new person with them both ways: `mutualOf` on the capture layer in `Prototype.tsx`.)
