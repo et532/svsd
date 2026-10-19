@@ -916,10 +916,10 @@ button {
    It stays put while the page scrolls. */
 .profile-aura {
   --profile-orbs:
-    radial-gradient(80% 36% at 0% 30%, color-mix(in srgb, var(--aura-a) 75%, transparent) 0, transparent 72%),
-    radial-gradient(70% 34% at 100% 52%, color-mix(in srgb, var(--aura-b) 38%, transparent) 0, transparent 72%),
-    radial-gradient(90% 40% at 20% 92%, color-mix(in srgb, var(--aura-a) 65%, transparent) 0, transparent 72%),
-    radial-gradient(60% 26% at 100% 100%, color-mix(in srgb, var(--aura-b) 30%, transparent) 0, transparent 72%);
+    radial-gradient(80% 36% at calc(0% + var(--drift-1x)) calc(30% + var(--drift-1y)), color-mix(in srgb, var(--aura-a) 75%, transparent) 0, transparent 72%),
+    radial-gradient(70% 34% at calc(100% + var(--drift-2x)) calc(52% + var(--drift-2y)), color-mix(in srgb, var(--aura-b) 38%, transparent) 0, transparent 72%),
+    radial-gradient(90% 40% at calc(20% + var(--drift-3x)) calc(92% + var(--drift-3y)), color-mix(in srgb, var(--aura-a) 65%, transparent) 0, transparent 72%),
+    radial-gradient(60% 26% at calc(100% + var(--drift-4x)) calc(100% + var(--drift-4y)), color-mix(in srgb, var(--aura-b) 30%, transparent) 0, transparent 72%);
   position: absolute;
   inset: 0;
   pointer-events: none;
@@ -1785,10 +1785,10 @@ button {
 
 .flow-aura {
   --flow-orbs:
-    radial-gradient(70% 38% at 0% 8%, #dfe3ff 0, transparent 72%),
-    radial-gradient(60% 36% at 100% 38%, #fff2c2 0, transparent 72%),
-    radial-gradient(90% 44% at 18% 84%, #fddfec 0, transparent 72%),
-    radial-gradient(60% 28% at 100% 100%, #fde1d3 0, transparent 72%);
+    radial-gradient(70% 38% at calc(0% + var(--drift-1x)) calc(8% + var(--drift-1y)), #dfe3ff 0, transparent 72%),
+    radial-gradient(60% 36% at calc(100% + var(--drift-2x)) calc(38% + var(--drift-2y)), #fff2c2 0, transparent 72%),
+    radial-gradient(90% 44% at calc(18% + var(--drift-3x)) calc(84% + var(--drift-3y)), #fddfec 0, transparent 72%),
+    radial-gradient(60% 28% at calc(100% + var(--drift-4x)) calc(100% + var(--drift-4y)), #fde1d3 0, transparent 72%);
   position: absolute;
   inset: 0;
   pointer-events: none;
@@ -2860,4 +2860,61 @@ button {
   font-size: 13px;
   line-height: 18px;
   letter-spacing: -0.52px;
+}
+
+/* The pastel auras (Add / Find flows, profile) drift: each of the four color orbs wanders slowly on its own
+   timing (34–61s, eased, back and forth), so the colors keep shifting without ever looking like a loop.
+   The offsets are registered properties so they animate smoothly, and inherit so the grain (::after, masked
+   to the orbs) moves with them. Off for reduced motion. */
+@property --drift-1x { syntax: '<percentage>'; inherits: true; initial-value: 0%; }
+@property --drift-1y { syntax: '<percentage>'; inherits: true; initial-value: 0%; }
+@property --drift-2x { syntax: '<percentage>'; inherits: true; initial-value: 0%; }
+@property --drift-2y { syntax: '<percentage>'; inherits: true; initial-value: 0%; }
+@property --drift-3x { syntax: '<percentage>'; inherits: true; initial-value: 0%; }
+@property --drift-3y { syntax: '<percentage>'; inherits: true; initial-value: 0%; }
+@property --drift-4x { syntax: '<percentage>'; inherits: true; initial-value: 0%; }
+@property --drift-4y { syntax: '<percentage>'; inherits: true; initial-value: 0%; }
+
+.flow-aura,
+.profile-aura {
+  animation:
+    aura-drift-1 34s ease-in-out infinite alternate,
+    aura-drift-2 46s ease-in-out infinite alternate,
+    aura-drift-3 53s ease-in-out infinite alternate,
+    aura-drift-4 61s ease-in-out infinite alternate;
+}
+
+@keyframes aura-drift-1 {
+  0% { --drift-1x: 0%; --drift-1y: 0%; }
+  35% { --drift-1x: 16%; --drift-1y: 7%; }
+  70% { --drift-1x: 8%; --drift-1y: 15%; }
+  100% { --drift-1x: -6%; --drift-1y: 5%; }
+}
+
+@keyframes aura-drift-2 {
+  0% { --drift-2x: 0%; --drift-2y: 0%; }
+  40% { --drift-2x: -15%; --drift-2y: 9%; }
+  75% { --drift-2x: -7%; --drift-2y: -8%; }
+  100% { --drift-2x: -18%; --drift-2y: 3%; }
+}
+
+@keyframes aura-drift-3 {
+  0% { --drift-3x: 0%; --drift-3y: 0%; }
+  30% { --drift-3x: 12%; --drift-3y: -9%; }
+  65% { --drift-3x: 20%; --drift-3y: -3%; }
+  100% { --drift-3x: 4%; --drift-3y: -12%; }
+}
+
+@keyframes aura-drift-4 {
+  0% { --drift-4x: 0%; --drift-4y: 0%; }
+  45% { --drift-4x: -14%; --drift-4y: -10%; }
+  80% { --drift-4x: -22%; --drift-4y: -4%; }
+  100% { --drift-4x: -8%; --drift-4y: -14%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flow-aura,
+  .profile-aura {
+    animation: none;
+  }
 }
