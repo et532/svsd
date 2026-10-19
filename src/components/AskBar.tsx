@@ -16,7 +16,7 @@ export function AskBar({ onType, onVoice, onAdd }: Props) {
           Ask me about people
         </button>
         <button className="ask-pill-mic" onClick={onVoice} aria-label="Ask by voice">
-          <MicIcon size={20} />
+          <MicIcon />
         </button>
       </div>
       <button className="add-button" onClick={onAdd} aria-label="Add a person or moment">

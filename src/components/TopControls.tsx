@@ -72,7 +72,7 @@ export function TopControls({ tab, onTab, groupBy, onGroupBy }: Props) {
       aria-label={label}
       aria-pressed={tab === id}
     >
-      <Icon size={20} />
+      <Icon />
     </button>
   )
 
@@ -86,7 +86,7 @@ export function TopControls({ tab, onTab, groupBy, onGroupBy }: Props) {
       {tab === 'mindmap' && (
         <div ref={ref} className="filters">
           <button className="filters-button" onClick={() => setOpen(!open)} aria-expanded={open}>
-            <FilterIcon size={18} />
+            <FilterIcon />
             Filters
             {open ? <ChevronUpIcon /> : <ChevronDownIcon />}
           </button>
