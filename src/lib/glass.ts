@@ -120,6 +120,7 @@ export const GLASS_SELECTOR = [
   '.chip:not(.on-dark):not(.is-ghost):not(.is-editing)',
   '.round-button.glass-button',
   '.pill-button.ghost',
+  '.profile-bar .round-button',
 ].join(', ')
 
 function radiusOf(el: HTMLElement, w: number, h: number) {

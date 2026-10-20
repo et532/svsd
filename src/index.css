@@ -2968,7 +2968,8 @@ button {
   .moment,
   .chip:not(.on-dark, .is-ghost, .is-editing),
   .round-button.glass-button,
-  .pill-button.ghost
+  .pill-button.ghost,
+  .profile-bar .round-button
 ):not(:where(
   .view-toggle,
   .filters-button,
@@ -2989,7 +2990,8 @@ button {
   .moment,
   .chip:not(.on-dark, .is-ghost, .is-editing),
   .round-button.glass-button,
-  .pill-button.ghost
+  .pill-button.ghost,
+  .profile-bar .round-button
 ) *) {
   background: rgba(255, 255, 255, 0.6);
   -webkit-backdrop-filter: none;
@@ -3003,4 +3005,9 @@ button {
 /* The ask bar and add-person button are a little more solid than the other glass: 80% white instead of 60% */
 .phone :is(.ask-pill, .add-button) {
   background: rgba(255, 255, 255, 0.8);
+}
+
+/* The profile's back and ⋯ buttons are glass too, but keep their light 14% white fill (--on-dark-glass) */
+.phone .profile-bar .round-button {
+  background: var(--on-dark-glass);
 }
