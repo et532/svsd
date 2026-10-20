@@ -7,6 +7,7 @@ import type { GroupBy } from '../components/TopControls'
 import { Avatar } from '../components/Avatar'
 import { ChevronRightIcon } from '../components/Icons'
 import { AURA, AURA_BLUR, AURA_H, AURA_W } from '../lib/aura'
+import { getInitialsAt, initialsOpacity, onInitialsAt, setFitZoom } from '../lib/initialsAt'
 
 
 // Grouping (by city / met at / job), chosen in the Filters menu at the top right. The background orbs wrap the groups.
@@ -259,7 +260,11 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
       const { x, y, k } = view.current
       if (worldRef.current) {
         worldRef.current.style.transform = `translate(${x}px, ${y}px) scale(${k})`
-        worldRef.current.style.setProperty('--k', String(k)) // initials fade in as you zoom in
+        worldRef.current.style.setProperty('--k', String(k))
+        // Initials fade in (and the dots out) as you zoom in, from where the side panel says (lib/initialsAt)
+        const fitK = fit().k
+        setFitZoom(fitK)
+        worldRef.current.style.setProperty('--ini', initialsOpacity(k, getInitialsAt().t, fitK).toFixed(3))
         worldRef.current.style.setProperty('--inv', String(Math.min(3, 1 / k))) // keeps group names readable when zoomed out
       }
       for (const n of graph.nodes) {
@@ -388,6 +393,15 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
   }, [people, links, groupOf])
 
   useEffect(() => drawRef.current(), [selected, ink, focus])
+  // Redraw when the side panel's "initials appear" slider moves
+  useEffect(() => {
+    let t = getInitialsAt().t
+    return onInitialsAt(() => {
+      if (getInitialsAt().t === t) return
+      t = getInitialsAt().t
+      drawRef.current()
+    })
+  }, [])
 
   // Pointer: drag a node, drag the background to pan, wheel or two-finger pinch to zoom.
   const pointers = useRef(new Map<number, { x: number; y: number }>())

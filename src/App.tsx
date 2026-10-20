@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Prototype } from './Prototype'
+import { InitialsPanel } from './components/InitialsPanel'
 
 // Full size of the device frame on a computer (see .device in index.css), plus some breathing room.
 const DEVICE_HEIGHT = 874 + 48
@@ -24,6 +25,7 @@ export default function App() {
       <div className="device" style={{ '--device-scale': scale } as React.CSSProperties}>
         <Prototype />
       </div>
+      <InitialsPanel />
     </div>
   )
 }
