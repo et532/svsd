@@ -24,10 +24,11 @@ const groupValue: Record<GroupBy, (p: Person) => string> = {
 const ORB = 400
 const GROUP_BLUR = 130 // at the base size, about a third of the orb
 // The oval's sides: GROUP_SPREAD × the group's spread (standard deviation of its people), plus GROUP_PAD so the color
-// reaches past their discs, at least GROUP_MIN (so small, tight groups still get a generous aura). World px.
+// reaches past their discs, at least the group's minimum (minOf: bigger for more people, so tight groups like City's
+// still get a generous aura that varies with the group). World px.
 const GROUP_SPREAD = 3
 const GROUP_PAD = 170
-const GROUP_MIN = 280
+const minOf = (members: number) => 200 + 100 * Math.sqrt(members) // 341 for 2 people, 400 for 4, 500 for 9
 // Every member's disc must sit inside this share of the oval, where the blurred color is still clearly there
 const GROUP_COVER = 0.85
 // People who'd be alone in their group share this one (placed last, on the outside)
@@ -334,8 +335,11 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
       for (const [g, [sx, sy, sxx, syy, c]] of sums) {
         const cx = sx / c
         const cy = sy / c
-        const w = Math.max(GROUP_MIN, Math.sqrt(Math.max(0, sxx / c - cx * cx)) * GROUP_SPREAD + GROUP_PAD)
-        const h = Math.max(GROUP_MIN, Math.sqrt(Math.max(0, syy / c - cy * cy)) * GROUP_SPREAD + GROUP_PAD)
+        // A tight group whose oval would just be the round minimum gets its own fixed stretch (0.75-1.25 wide, from its
+        // name), so City's auras vary in shape like Met at / Job ones do naturally. Looser groups keep their own shape.
+        const stretch = 1 + bendOf(g) * 1.25
+        const w = Math.max(minOf(c) * stretch, Math.sqrt(Math.max(0, sxx / c - cx * cx)) * GROUP_SPREAD + GROUP_PAD)
+        const h = Math.max(minOf(c) / stretch, Math.sqrt(Math.max(0, syy / c - cy * cy)) * GROUP_SPREAD + GROUP_PAD)
         spread.set(g, { cx, cy, w, h })
       }
       const grow = new Map<string, number>()
