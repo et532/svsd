@@ -234,18 +234,20 @@ button {
   inset: 0 0 var(--bar-mid);
   overflow-y: auto;
   padding: calc(var(--safe-top) + 92px) var(--gutter) 56px;
-  /* Fade rows out as they scroll under the top controls */
+  /* Rows fade out as they scroll under the top controls the same way they do under the ask bar: a 56px fade that
+     ends at the middle of the bar (top controls: 14px below the safe area, 54px tall, so their middle is at +41px),
+     so the rows still show through the bottom half of the glass. */
   mask-image: linear-gradient(
     to bottom,
-    transparent calc(var(--safe-top) + 78px),
-    #000 calc(var(--safe-top) + 100px),
+    transparent calc(var(--safe-top) + 41px),
+    #000 calc(var(--safe-top) + 97px),
     #000 calc(100% - 56px),
     transparent
   );
   -webkit-mask-image: linear-gradient(
     to bottom,
-    transparent calc(var(--safe-top) + 78px),
-    #000 calc(var(--safe-top) + 100px),
+    transparent calc(var(--safe-top) + 41px),
+    #000 calc(var(--safe-top) + 97px),
     #000 calc(100% - 56px),
     transparent
   );

@@ -51,7 +51,7 @@ A private, personal "people log": remember everyone you meet, where you met them
 - Inputs stay 16px so iPhones don't zoom in on tap.
 
 **Connections list**
-- Title "Connections", then one row per person, as the Figma "Profile" / list: 70px, the Figma liquid glass (see Visual style), 20px corners, avatar, **name (16 medium) and job · city (13, muted)**, gray chevron. Sorted A–Z. Tapping a row opens the profile.
+- Title "Connections", then one row per person, as the Figma "Profile" / list: 70px, the Figma liquid glass (see Visual style), 20px corners, avatar, **name (16 medium) and job · city (13, muted)**, gray chevron. Sorted A–Z. Tapping a row opens the profile. Rows fade out at both ends the same way (user's call): a 56px fade that ends at the middle of the bar, under the ask bar at the bottom and under the top controls at the top (`.list-screen` mask), so the glass shows rows passing beneath.
 
 **Mindmap** (look C "glass", chosen by the user)
 - Obsidian-style graph of everyone; no central "you" node. Links are the explicit `knows` lists on people (`linksOf` in `src/lib/people.ts`). Densely linked groups clump tighter (link strength grows with mutual neighbors).
