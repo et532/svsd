@@ -14,6 +14,8 @@ import {
 export type Tab = 'mindmap' | 'list'
 export type GroupBy = 'none' | 'city' | 'met' | 'job'
 
+export type Look = 'aura' | 'ink'
+
 const options: { id: GroupBy; label: string; hint: string; Icon: typeof PinIcon }[] = [
   { id: 'none', label: 'None', hint: 'A free-form web', Icon: MindmapIcon },
   { id: 'city', label: 'City', hint: 'Where they currently live', Icon: BuildingIcon },
@@ -26,10 +28,12 @@ type Props = {
   onTab: (tab: Tab) => void
   groupBy: GroupBy
   onGroupBy: (g: GroupBy) => void
+  look: Look
+  onLook: (l: Look) => void
 }
 
 // Top left: switch between the mindmap and the list. Top right (mindmap only): Filters, which groups the graph.
-export function TopControls({ tab, onTab, groupBy, onGroupBy }: Props) {
+export function TopControls({ tab, onTab, groupBy, onGroupBy, look, onLook }: Props) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -92,6 +96,14 @@ export function TopControls({ tab, onTab, groupBy, onGroupBy }: Props) {
           </button>
           {open && (
             <div className="filters-menu" role="menu">
+              <span className="filters-title">Style</span>
+              <div className="look-row" role="radiogroup" aria-label="Style">
+                {(['aura', 'ink'] as const).map((id) => (
+                  <button key={id} role="radio" aria-checked={look === id} className={`look-chip${look === id ? ' is-on' : ''}`} onClick={() => onLook(id)}>
+                    {id === 'aura' ? 'Aura' : 'Ink'}
+                  </button>
+                ))}
+              </div>
               <span className="filters-title">Group by</span>
               {options.map(({ id, label, hint, Icon }) => (
                 <button

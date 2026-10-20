@@ -341,9 +341,9 @@ button {
 }
 
 .mm-line {
-  stroke: rgba(58, 42, 120, 0.7);
-  stroke-width: 1.6;
-  stroke-linecap: round;
+  stroke: #fff;
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
   transition: opacity 0.25s;
 }
 
@@ -360,12 +360,13 @@ button {
 }
 
 .mm-turf-name {
-  padding: 4px 11px;
+  padding: 4px 6px;
   border-radius: 999px;
-  background: var(--glass-vivid);
-  border: 1px solid var(--glass-vivid-edge);
-  font-size: 12px;
-  font-weight: 600;
+  background: none;
+  border: 0;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.04em;
   color: var(--ink);
   white-space: nowrap;
   pointer-events: auto;
@@ -383,50 +384,33 @@ button {
   opacity: 0.2;
 }
 
-/* Each person is an aura in their relationship color (Figma "Aura/Work" etc.): deep at the heart,
-   the core color through the middle, fading to the wash at the edge, with grain. The initials only
-   show when zoomed in. */
+/* Figma "Disc study": each person is a small white dot inside a frosted translucent disc (disc size follows
+   interaction). Initials fade in over the dot as you zoom in. */
 .mm-node {
   position: absolute;
   left: 0;
   top: 0;
   display: grid;
   place-items: center;
-  overflow: hidden;
   border-radius: 50%;
-  color: #fff;
-  background: radial-gradient(
-    circle closest-side,
-    var(--orb-deep, color-mix(in srgb, var(--orb) 58%, #000)) 0%,
-    var(--orb-deep, color-mix(in srgb, var(--orb) 58%, #000)) 22%,
-    var(--orb) 55%,
-    var(--orb-wash, color-mix(in srgb, var(--orb) 18%, #fff)) 100%
-  );
+  color: var(--ink);
+  background: radial-gradient(circle closest-side, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.28) 70%, rgba(255, 255, 255, 0.36));
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-sizing: border-box;
   cursor: pointer;
   /* no will-change: it rasterizes the dot once and scales the bitmap, which blurs it when zoomed in */
   transition: opacity 0.25s;
 }
 
-/* Two ways you know someone (Figma "Aura/Blend social–family" etc.): their deep and core color at the
-   heart, the second context's core at 80%, fading to its wash */
-.mm-node.is-blend {
-  background: radial-gradient(
-    circle closest-side,
-    var(--orb-deep) 0%,
-    var(--orb) 45%,
-    var(--orb-core-2) 80%,
-    var(--orb-wash-2) 100%
-  );
-}
-
 .mm-node::after {
   content: '';
   position: absolute;
-  inset: 0;
-  background-image: var(--grain);
-  background-size: 80px;
-  opacity: 0.35;
-  mix-blend-mode: overlay;
+  width: var(--dot);
+  height: var(--dot);
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(22, 18, 28, 0.12);
+  opacity: clamp(0, calc(1 - (var(--k, 1) - 0.9) * 2.5), 1);
   pointer-events: none;
 }
 
@@ -439,7 +423,7 @@ button {
 
 .mm-node.is-lit {
   z-index: 2;
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--orb) 28%, transparent);
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.5);
 }
 
 .mm-node.is-near {
@@ -451,8 +435,96 @@ button {
   opacity: 0.08;
 }
 
+.mm-line.in-group {
+  stroke-dasharray: none; /* links inside a group are solid, across groups dashed */
+}
+
 .mm-line.is-near {
-  stroke: rgba(40, 28, 96, 0.95);
+  stroke-width: 1.6;
+}
+
+/* Ink style (Filters → Style): black branches and bulbs on white, a ragged grey halo behind each person,
+   one lime accent for whoever is selected. The SVG gooey filter fuses the branches into the bulbs. */
+.look-ink {
+  background: #fff;
+}
+
+.mm-branch,
+.mm-blob {
+  fill: var(--ink);
+  transition: opacity 0.25s;
+}
+
+.mm-blob.is-lit {
+  fill: #d6f23c;
+}
+
+.mm-branch.is-far,
+.mm-blob.is-far {
+  opacity: 0.08;
+}
+
+.look-ink .mm-turf {
+  background: none !important;
+}
+
+.look-ink .mm-node {
+  overflow: visible;
+  background: none;
+  box-shadow: none;
+}
+
+.look-ink .mm-node::after {
+  display: none;
+}
+
+.look-ink .mm-node::before {
+  content: '';
+  position: absolute;
+  width: 170%;
+  height: 170%;
+  left: -5%;
+  top: -35%;
+  border-radius: 50%;
+  background: rgba(17, 17, 19, 0.1);
+  filter: url(#mm-rough);
+  z-index: -1;
+}
+
+.look-ink .mm-node.is-lit {
+  color: var(--ink);
+}
+
+.look-ink .mm-node.is-lit::before {
+  background: rgba(214, 242, 60, 0.7);
+}
+
+.look-ink .mm-node.is-near {
+  opacity: 1;
+}
+
+.look-row {
+  display: flex;
+  gap: 6px;
+  padding: 0 8px 8px;
+}
+
+.look-chip {
+  flex: 1;
+  height: 34px;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--glass-vivid-edge);
+  cursor: pointer;
+}
+
+.look-chip.is-on {
+  background: var(--night);
+  color: #fff;
 }
 
 .mm-label {

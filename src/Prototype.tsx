@@ -6,7 +6,7 @@ import type { Sent } from './components/Composer'
 import { Keyboard, useKeyboardTarget } from './components/Keyboard'
 import { BackIcon, CheckIcon, CloseIcon } from './components/Icons'
 import { HomeIndicator, StatusBar } from './components/StatusBar'
-import { TopControls, type GroupBy, type Tab } from './components/TopControls'
+import { TopControls, type GroupBy, type Look, type Tab } from './components/TopControls'
 import type { Person } from './data/people'
 import { draftToMoment, draftToPerson, newTodo, parseMoment, parsePerson } from './lib/capture'
 import { auraDepth, firstName, momentsOf, todosOf } from './lib/people'
@@ -47,6 +47,7 @@ export function Prototype() {
   const [tab, setTab] = useState<Tab>('mindmap')
   // Mindmap grouping, from the Filters menu
   const [groupBy, setGroupBy] = useState<GroupBy>('none')
+  const [look, setLook] = useState<Look>('aura')
   const [layers, setLayers] = useState<Layer[]>([])
   // Set by "View connections" on a profile: who to focus, and a way back to them.
   const [navFocus, setNavFocus] = useState<string | null>(null)
@@ -144,9 +145,9 @@ export function Prototype() {
       <MeshBackground />
       <StatusBar />
       {tab === 'list' && <ListScreen people={people} onOpen={openProfile} />}
-      {tab === 'mindmap' && <MindmapScreen people={focusId ? allPeople : people} focusId={focusId} onView={openProfile} groupBy={groupBy} />}
+      {tab === 'mindmap' && <MindmapScreen people={focusId ? allPeople : people} focusId={focusId} onView={openProfile} groupBy={groupBy} ink={look === 'ink'} />}
 
-      <TopControls tab={tab} onTab={changeTab} groupBy={groupBy} onGroupBy={setGroupBy} />
+      <TopControls tab={tab} onTab={changeTab} groupBy={groupBy} onGroupBy={setGroupBy} look={look} onLook={setLook} />
 
       {backTo && (
         <button

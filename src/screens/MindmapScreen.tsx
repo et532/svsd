@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Person } from '../data/people'
 import { createGraph, type Graph } from '../lib/forceGraph'
 import { auraDepth, initials, linksOf, momentsOf } from '../lib/people'
-import { colorKey, colorScale, type ColorBy } from '../lib/mindmapColors'
+import type { ColorBy } from '../lib/mindmapColors'
 import type { GroupBy } from '../components/TopControls'
 import { Avatar } from '../components/Avatar'
 import { ChevronRightIcon } from '../components/Icons'
@@ -16,14 +16,47 @@ const groupValue: Record<GroupBy, (p: Person) => string> = {
   job: (p) => p.profession,
 }
 
-// Territory clouds: one soft pastel per group.
-const territoryColors = ['#ffd6c2', '#d9f2e6', '#e3d9ff', '#ffd9ea', '#fbf0c4', '#d6e6ff']
+// Territory clouds: one soft color per group (yellow, orange, pink, blue like the Figma disc study).
+const territoryColors = ['#f5dc6a', '#f2724c', '#e0508f', '#6f7fe6', '#7fd1b0', '#b48ae6']
 
 // The more you've interacted with someone (moments logged + how close you are), the bigger their dot.
 const radiusOf = (p: Person) => 8 + Math.min(momentsOf(p).length + auraDepth(p.id), 10) * 2.4
 // Zoomed out past this, dragging anywhere pans the map instead of moving a person.
 const GRAB_ZOOM = 0.6
+// Disc (halo) radius for a person, from their interaction size r: 24px for the least up to ~54px.
+const discOf = (r: number) => 14 + r * 1.25
 const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+// Ink style: a link is a filled, tapered branch (w0 wide at the parent, w1 thin at the child) along a gentle curve.
+// Each link bends its own fixed way (from its ids), so the shape doesn't change between frames.
+const bendOf = (key: string) => {
+  let h = 0
+  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) | 0
+  return ((Math.abs(h) % 100) / 100 - 0.5) * 0.4
+}
+function branch(ax: number, ay: number, bx: number, by: number, w0: number, w1: number, bend: number) {
+  const len = Math.hypot(bx - ax, by - ay) || 1
+  const cx = (ax + bx) / 2 - ((by - ay) / len) * bend * len
+  const cy = (ay + by) / 2 + ((bx - ax) / len) * bend * len
+  const left: string[] = []
+  const right: string[] = []
+  const N = 10
+  for (let i = 0; i <= N; i++) {
+    const t = i / N
+    const m = 1 - t
+    const x = m * m * ax + 2 * m * t * cx + t * t * bx
+    const y = m * m * ay + 2 * m * t * cy + t * t * by
+    let tx = 2 * m * (cx - ax) + 2 * t * (bx - cx)
+    let ty = 2 * m * (cy - ay) + 2 * t * (by - cy)
+    const tl = Math.hypot(tx, ty) || 1
+    tx /= tl
+    ty /= tl
+    const w = (w0 + (w1 - w0) * t) / 2
+    left.push(`${(x - ty * w).toFixed(1)} ${(y + tx * w).toFixed(1)}`)
+    right.push(`${(x + ty * w).toFixed(1)} ${(y - tx * w).toFixed(1)}`)
+  }
+  return `M${left.join('L')}L${right.reverse().join('L')}Z`
+}
 
 type Props = {
   people: Person[]
@@ -31,9 +64,10 @@ type Props = {
   onView?: (id: string) => void
   groupBy?: GroupBy
   colorBy?: ColorBy
+  ink?: boolean
 }
 
-export function MindmapScreen({ people, focusId = null, onView, colorBy = 'relationship', groupBy = 'none' }: Props) {
+export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none', ink = false }: Props) {
   const [selected, setSelected] = useState<string | null>(null)
   const [focus, setFocus] = useState<string | null>(null) // a group isolated by tapping its name
 
@@ -43,6 +77,10 @@ export function MindmapScreen({ people, focusId = null, onView, colorBy = 'relat
   const nodeEls = useRef(new Map<string, HTMLElement>())
   const lineEls = useRef(new Map<string, SVGLineElement>())
   const turfEls = useRef(new Map<string, HTMLElement>())
+  const pathEls = useRef(new Map<string, SVGPathElement>()) // ink style: the branches
+  const blobEls = useRef(new Map<string, SVGCircleElement>()) // ink style: the bulbs
+  const inkRef = useRef(ink)
+  const depthRef = useRef(new Map<string, number>())
   const graphRef = useRef<Graph | null>(null)
   const view = useRef({ x: 0, y: 0, k: 1 })
   const touched = useRef(false) // once the user pans or zooms, stop auto-fitting the view
@@ -89,10 +127,9 @@ export function MindmapScreen({ people, focusId = null, onView, colorBy = 'relat
     return { groupOf: of, groups: names }
   }, [people, groupBy])
 
-  // Color for each value (the key itself lives in the search bar's filter)
-  const colors = useMemo(() => colorScale(people, colorBy), [people, colorBy])
-
   selectedRef.current = selected
+  inkRef.current = ink
+  depthRef.current = depth
 
   // Build the simulation whenever the people or the grouping change; keep existing positions.
   useEffect(() => {
@@ -142,6 +179,29 @@ export function MindmapScreen({ people, focusId = null, onView, colorBy = 'relat
           el.setAttribute('y2', String(l.b.y))
         }
       }
+      if (inkRef.current) {
+        const d = depthRef.current
+        for (const n of graph.nodes) {
+          const el = blobEls.current.get(n.id)
+          if (!el) continue
+          el.setAttribute('cx', String(n.x))
+          el.setAttribute('cy', String(n.y))
+          el.setAttribute('r', String(radiiRef.current.get(n.id) ?? 12))
+        }
+        for (const l of graph.links) {
+          const el = pathEls.current.get(`${l.a.id}|${l.b.id}`)
+          if (!el) continue
+          const r = (id: string) => radiiRef.current.get(id) ?? 12
+          // With someone selected they are the root: their branches are thick, growing outward. Otherwise the more
+          // interacted-with person is the thicker end.
+          const aFirst = d.size ? (d.get(l.a.id) ?? 9) <= (d.get(l.b.id) ?? 9) : r(l.a.id) >= r(l.b.id)
+          const [p, c] = aFirst ? [l.a, l.b] : [l.b, l.a]
+          const root = d.has(l.a.id) && d.has(l.b.id)
+          // thin tips fade away under the gooey filter, so the tips stay at least ~3 wide
+          const w0 = root ? 13 : Math.min(10, Math.max(5, r(p.id) * 0.55))
+          el.setAttribute('d', branch(p.x, p.y, c.x, c.y, w0, root ? 4.5 : 3, bendOf(`${p.id}${c.id}`)))
+        }
+      }
       // Each group's cloud wraps its members.
       const box = new Map<string, number[]>()
       for (const n of graph.nodes) {
@@ -160,7 +220,7 @@ export function MindmapScreen({ people, focusId = null, onView, colorBy = 'relat
       const sel = graph.nodes.find((n) => n.id === selectedRef.current)
       const root = rootRef.current
       if (labelRef.current && root && sel) {
-        const r = (radiiRef.current.get(sel.id) ?? 12) * k
+        const r = discOf(radiiRef.current.get(sel.id) ?? 12) * k
         labelRef.current.style.transform = `translate(${root.clientWidth / 2 + x + sel.x * k}px, ${root.clientHeight / 2 + y + sel.y * k + r + 14}px) translateX(-50%)`
       }
     }
@@ -191,7 +251,7 @@ export function MindmapScreen({ people, focusId = null, onView, colorBy = 'relat
     return () => cancelAnimationFrame(raf)
   }, [people, links, groupOf])
 
-  useEffect(() => drawRef.current(), [selected])
+  useEffect(() => drawRef.current(), [selected, ink])
 
   // Pointer: drag a node, drag the background to pan, wheel or two-finger pinch to zoom.
   const pointers = useRef(new Map<number, { x: number; y: number }>())
@@ -368,7 +428,7 @@ export function MindmapScreen({ people, focusId = null, onView, colorBy = 'relat
   return (
     <div
       ref={rootRef}
-      className={`screen mindmap-screen${selected ? ' has-sel' : ''}${focus ? ' has-focus' : ''}`}
+      className={`screen mindmap-screen${ink ? ' look-ink' : ''}${selected ? ' has-sel' : ''}${focus ? ' has-focus' : ''}`}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
@@ -391,16 +451,55 @@ export function MindmapScreen({ people, focusId = null, onView, colorBy = 'relat
           </div>
         ))}
         <svg className="mm-lines" width="1" height="1" aria-hidden>
-          {links.map(([a, b]) => (
-            <line
-              key={`${a}|${b}`}
-              ref={(el) => {
-                if (el) lineEls.current.set(`${a}|${b}`, el)
-                else lineEls.current.delete(`${a}|${b}`)
-              }}
-              className={`mm-line${lineState(a, b)}`}
-            />
-          ))}
+          {ink ? (
+            <>
+              <defs>
+                {/* Gooey: blur, then harden the edge, so branches and bulbs melt into one ink shape */}
+                <filter id="mm-goo" x="-10%" y="-10%" width="120%" height="120%" colorInterpolationFilters="sRGB">
+                  <feGaussianBlur stdDeviation="2.6" />
+                  <feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -8" />
+                </filter>
+                {/* Ragged, spray-paint edge for the grey halos */}
+                <filter id="mm-rough" x="-20%" y="-20%" width="140%" height="140%">
+                  <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="4" result="n" />
+                  <feDisplacementMap in="SourceGraphic" in2="n" scale="7" />
+                </filter>
+              </defs>
+              <g filter="url(#mm-goo)">
+                {links.map(([a, b]) => (
+                  <path
+                    key={`${a}|${b}`}
+                    ref={(el) => {
+                      if (el) pathEls.current.set(`${a}|${b}`, el)
+                      else pathEls.current.delete(`${a}|${b}`)
+                    }}
+                    className={`mm-branch${lineState(a, b)}`}
+                  />
+                ))}
+                {people.map((p) => (
+                  <circle
+                    key={p.id}
+                    ref={(el) => {
+                      if (el) blobEls.current.set(p.id, el)
+                      else blobEls.current.delete(p.id)
+                    }}
+                    className={`mm-blob${state(p.id)}`}
+                  />
+                ))}
+              </g>
+            </>
+          ) : (
+            links.map(([a, b]) => (
+              <line
+                key={`${a}|${b}`}
+                ref={(el) => {
+                  if (el) lineEls.current.set(`${a}|${b}`, el)
+                  else lineEls.current.delete(`${a}|${b}`)
+                }}
+                className={`mm-line${groupOf.get(a) && groupOf.get(a) === groupOf.get(b) ? ' in-group' : ''}${lineState(a, b)}`}
+              />
+            ))
+          )}
         </svg>
         {people.map((p) => {
           const r = radii.get(p.id) ?? 12
@@ -412,23 +511,13 @@ export function MindmapScreen({ people, focusId = null, onView, colorBy = 'relat
                 if (el) nodeEls.current.set(p.id, el)
                 else nodeEls.current.delete(p.id)
               }}
-              className={`mm-node${colorBy === 'relationship' && p.alsoContext ? ' is-blend' : ''}${state(p.id)}`}
+              className={`mm-node${state(p.id)}`}
               style={{
-                width: r * 2,
-                height: r * 2,
-                margin: -r,
+                width: discOf(r) * 2,
+                height: discOf(r) * 2,
+                margin: -discOf(r),
                 fontSize: r * 0.62,
-                // Figma aura fill in the design-system colors for how you know them (work / social / ...)
-                ...(colorBy === 'relationship'
-                  ? {
-                      ['--orb' as string]: `var(--${p.context}-core)`,
-                      ['--orb-deep' as string]: `var(--${p.context}-deep)`,
-                      ['--orb-wash' as string]: `var(--${p.context}-wash)`,
-                      // Blend: the second context takes over toward the edge
-                      ['--orb-core-2' as string]: `var(--${p.alsoContext ?? p.context}-core)`,
-                      ['--orb-wash-2' as string]: `var(--${p.alsoContext ?? p.context}-wash)`,
-                    }
-                  : { ['--orb' as string]: colors.of.get(colorKey[colorBy](p)) }),
+                ['--dot' as string]: `${(3 + r * 0.14) * 2}px`,
               }}
             >
               <b>{initials(p.name)}</b>
