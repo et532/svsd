@@ -78,16 +78,24 @@ const initialsOpacity = (k: number, fitK: number) => {
   const start = full / 1.25
   return Math.min(1, Math.max(0, (k - start) / (full - start)))
 }
-// Floating: each dot hangs on a soft spring at its spot. When the view moves (pan, zoom, a glide to someone), the dot is
-// left a little behind and eases back with a slight overshoot, like something bobbing on water. FLOAT_K is the spring's
-// stiffness and FLOAT_C its damping (about 0.45 of critical, so one small wobble); a dot never drifts past FLOAT_MAX
-// screen px. How much a dot lags (floatOf) depends on its size, smaller = lighter = lags more, plus its own fixed
-// variation, so dots don't move in lockstep.
-const FLOAT_K = 150
-const FLOAT_C = 11
-const FLOAT_MAX = 10
-type Float = { ux: number; uy: number; vx: number; vy: number; f: number }
-const floatOf = (id: string, r: number) => (0.1 + (0.1 * (32 - r)) / 24) * (1 + bendOf(id) * 1.25)
+// Floating: each dot hangs on a soft spring at its spot. When the view moves (pan, zoom, a glide), the dot is left a
+// little behind and eases back with a gentle overshoot, like something bobbing on water. FLOAT_K is the spring's
+// stiffness and FLOAT_C its damping (about 0.55 of critical): soft and slow, so it reads as smooth rather than snappy. The
+// drift eases into FLOAT_MAX screen px (tanh) instead of hitting a hard stop. How much a dot lags (floatOf) depends on
+// its size, smaller = lighter = lags more, plus its own fixed variation, so dots don't move in lockstep.
+const FLOAT_K = 55
+const FLOAT_C = 8.2
+const FLOAT_MAX = 14
+// Parallax: each dot sits at its own depth (depthOf, about -1 far to +1 near; bigger dots nearer, plus a fixed
+// variation). Near dots move a little faster across the screen than far ones as you pan or zoom, like a camera over a
+// 3D field: a dot is pushed out from the screen's center by PARALLAX × depth × its distance from it.
+const PARALLAX = 0.07
+type Float = { ux: number; uy: number; vx: number; vy: number; f: number; d: number }
+const floatOf = (id: string, r: number) => (0.05 + (0.05 * (32 - r)) / 24) * (1 + bendOf(id) * 1.25)
+const depthOf = (id: string, r: number) => ((r - 19.2) / 12.8) * 0.6 + bendOf(`${id}~depth`) * 2
+// Momentum: let go of a quick drag and the map keeps gliding, slowing like an iOS scroll (velocity × e^(-t / GLIDE_TAU),
+// so it travels about speed × GLIDE_TAU in all). A touch stops it.
+const GLIDE_TAU = 0.42
 const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
 // Ink style: a link is a filled, tapered branch (w0 wide at the parent, w1 thin at the child) along a gentle curve.
@@ -307,7 +315,10 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
       let restless = false
       for (const n of graph.nodes) {
         let s = fl.dots.get(n.id)
-        if (!s) fl.dots.set(n.id, (s = { ux: 0, uy: 0, vx: 0, vy: 0, f: floatOf(n.id, radiiRef.current.get(n.id) ?? 12) }))
+        if (!s) {
+          const r = radiiRef.current.get(n.id) ?? 12
+          fl.dots.set(n.id, (s = { ux: 0, uy: 0, vx: 0, vy: 0, f: floatOf(n.id, r), d: depthOf(n.id, r) }))
+        }
         if (carried) {
           s.ux -= (x - fl.x + n.x * (k - fl.k)) * s.f
           s.uy -= (y - fl.y + n.y * (k - fl.k)) * s.f
@@ -317,9 +328,9 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
         s.ux += s.vx * dt
         s.uy += s.vy * dt
         const u = Math.hypot(s.ux, s.uy)
-        if (u > FLOAT_MAX) {
-          s.ux *= FLOAT_MAX / u
-          s.uy *= FLOAT_MAX / u
+        if (u > FLOAT_MAX * 3) {
+          s.ux *= (FLOAT_MAX * 3) / u
+          s.uy *= (FLOAT_MAX * 3) / u
         }
         if (u > 0.05 || Math.abs(s.vx) + Math.abs(s.vy) > 0.5) restless = true
         else s.ux = s.uy = s.vx = s.vy = 0
@@ -331,9 +342,16 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
           fl.raf = 0
           drawRef.current()
         })
+      // Where a dot is drawn: its spot, pushed out from the screen's center by its depth (parallax), plus its float
+      // eased into FLOAT_MAX.
+      const px = reduceMotion() ? 0 : PARALLAX
       const at = (n: { id: string; x: number; y: number }) => {
         const s = fl.dots.get(n.id)
-        return s ? [n.x + s.ux / k, n.y + s.uy / k] : [n.x, n.y]
+        if (!s) return [n.x, n.y]
+        const u = Math.hypot(s.ux, s.uy)
+        const soft = u > 0.01 ? (FLOAT_MAX * Math.tanh(u / FLOAT_MAX)) / u : 1
+        const p = s.d * px
+        return [n.x + n.x * p + (x * p + s.ux * soft) / k, n.y + n.y * p + (y * p + s.uy * soft) / k]
       }
       for (const n of graph.nodes) {
         const el = nodeEls.current.get(n.id)
@@ -480,10 +498,11 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
       view.current = fit()
       draw()
     } else wake.current()
+    const fl = floatRef.current
     return () => {
       cancelAnimationFrame(raf)
-      cancelAnimationFrame(floatRef.current.raf)
-      floatRef.current.raf = 0
+      cancelAnimationFrame(fl.raf)
+      fl.raf = 0
     }
   }, [people, links, groupOf])
 
@@ -491,6 +510,8 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
   // Pointer: drag a node, drag the background to pan, wheel or two-finger pinch to zoom.
   const pointers = useRef(new Map<number, { x: number; y: number }>())
   const drag = useRef<{ id: string | null; grab: string | null; moved: boolean; pinch: number; travel: number }>({ id: null, grab: null, moved: false, pinch: 0, travel: 0 })
+  // The pan's recent speed (screen px per second, smoothed) and when it was last measured, for the glide on release
+  const panSpeed = useRef({ vx: 0, vy: 0, t: 0 })
 
   const toWorld = (cx: number, cy: number) => {
     const root = rootRef.current!.getBoundingClientRect()
@@ -504,6 +525,7 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
     cancelAnimationFrame(wheelZoom.current.raf)
     wheelZoom.current.raf = 0
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    panSpeed.current = { vx: 0, vy: 0, t: e.timeStamp }
     const nodeEl = (e.target as HTMLElement).closest<HTMLElement>('[data-id]')
     const id = pointers.current.size === 1 ? (nodeEl?.dataset.id ?? null) : null
     drag.current = { id, grab: view.current.k >= GRAB_ZOOM ? id : null, moved: false, pinch: 0, travel: 0 }
@@ -539,6 +561,16 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
       touched.current = true
       view.current.x += now.x - last.x
       view.current.y += now.y - last.y
+      const ps = panSpeed.current
+      const dt = (e.timeStamp - ps.t) / 1000
+      if (dt > 0.001) {
+        const vx = (now.x - last.x) / dt
+        const vy = (now.y - last.y) / dt
+        const keep = dt > 0.1 ? 0 : 0.6 // smooth out jittery samples, forget a pause
+        ps.vx = ps.vx * keep + vx * (1 - keep)
+        ps.vy = ps.vy * keep + vy * (1 - keep)
+        ps.t = e.timeStamp
+      }
     }
     drawRef.current()
   }
@@ -555,7 +587,7 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
         setSelected(d.id) // tap a node to select it, tap empty space to clear
         if (d.id) flyTo(d.id)
         if (!d.id) setFocus(null)
-      }
+      } else if (!d.grab && !d.pinch && e.timeStamp - panSpeed.current.t < 80) glide(panSpeed.current.vx, panSpeed.current.vy)
       d.id = d.grab = null
       d.pinch = 0
     }
@@ -563,6 +595,50 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
 
   // Zoom to a person and center them with their direct connections in view. The user can still pan afterwards.
   const flight = useRef(0)
+
+  // How far the view may go: the people must still cover at least a quarter of the screen each way
+  const panRange = () => {
+    const graph = graphRef.current
+    const root = rootRef.current
+    if (!graph?.nodes.length || !root) return null
+    const k = view.current.k
+    const xs = graph.nodes.map((n) => n.x)
+    const ys = graph.nodes.map((n) => n.y)
+    const w = root.clientWidth / 4
+    const h = root.clientHeight / 4
+    return { x0: -w - Math.max(...xs) * k, x1: w - Math.min(...xs) * k, y0: -h - Math.max(...ys) * k, y1: h - Math.min(...ys) * k }
+  }
+
+  // Keep a released pan moving and let it slow down by itself (GLIDE_TAU). A slow drag just stops. Gliding past the
+  // edge of the people brakes hard, then springs back.
+  const glide = (vx: number, vy: number) => {
+    const speed = Math.hypot(vx, vy)
+    if (speed < 120 || reduceMotion()) return
+    const cap = Math.min(1, 3000 / speed)
+    vx *= cap
+    vy *= cap
+    cancelAnimationFrame(flight.current)
+    let t = performance.now()
+    const step = (now: number) => {
+      const dt = Math.min(0.05, (now - t) / 1000)
+      t = now
+      const decay = Math.exp(-dt / GLIDE_TAU)
+      const v = view.current
+      v.x += vx * GLIDE_TAU * (1 - decay) // exactly how far the slowing speed carries it this frame
+      v.y += vy * GLIDE_TAU * (1 - decay)
+      vx *= decay
+      vy *= decay
+      const r = panRange()
+      const brake = Math.exp(-dt / 0.06)
+      if (r && (v.x < r.x0 || v.x > r.x1)) vx *= brake
+      if (r && (v.y < r.y0 || v.y > r.y1)) vy *= brake
+      drawRef.current()
+      if (Math.hypot(vx, vy) > 10) flight.current = requestAnimationFrame(step)
+      else if (r && (v.x < r.x0 || v.x > r.x1 || v.y < r.y0 || v.y > r.y1))
+        animateTo({ x: Math.min(r.x1, Math.max(r.x0, v.x)), y: Math.min(r.y1, Math.max(r.y0, v.y)), k: v.k }, 0.12)
+    }
+    flight.current = requestAnimationFrame(step)
+  }
   const flyTo = (id: string) => {
     const graph = graphRef.current
     const root = rootRef.current
