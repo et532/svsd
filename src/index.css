@@ -2999,3 +2999,8 @@ button {
     inset 1.5px 1.5px 1px -1px rgba(255, 255, 255, 0.8),
     inset -1.5px -1.5px 1px -1px rgba(255, 255, 255, 0.45);
 }
+
+/* The ask bar and add-person button are a little more solid than the other glass: 80% white instead of 60% */
+:is(.ask-pill, .add-button) {
+  background: rgba(255, 255, 255, 0.8);
+}
