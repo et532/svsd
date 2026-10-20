@@ -586,8 +586,9 @@ button {
   --grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.9 0'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>");
   /* Figma "Texture/Grain": fine fractal noise thresholded to a speckle, about half the pixels white at 80% */
   --noise: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n' x='0' y='0' width='100%' height='100%' color-interpolation-filters='sRGB'><feTurbulence type='fractalNoise' baseFrequency='1.25' numOctaves='3' seed='1132' stitchTiles='stitch'/><feColorMatrix type='luminanceToAlpha'/><feComponentTransfer result='speck'><feFuncA type='discrete' tableValues='1 0'/></feComponentTransfer><feFlood flood-color='white' flood-opacity='0.8'/><feComposite operator='in' in2='speck'/></filter><rect width='200' height='200' filter='url(%23n)'/></svg>");
-  /* Figma "Texture/Grain dark": the same speckle in ink at 22% (behind the mindmap and list) */
-  --noise-dark: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n' x='0' y='0' width='100%' height='100%' color-interpolation-filters='sRGB'><feTurbulence type='fractalNoise' baseFrequency='1.25' numOctaves='3' seed='1132' stitchTiles='stitch'/><feColorMatrix type='luminanceToAlpha'/><feComponentTransfer result='speck'><feFuncA type='discrete' tableValues='1 0'/></feComponentTransfer><feFlood flood-color='%2316121c' flood-opacity='0.22'/><feComposite operator='in' in2='speck'/></filter><rect width='200' height='200' filter='url(%23n)'/></svg>");
+  /* The grain behind the mindmap and list (user's Figma noise: mono, size 1, density 60%, #7B51E8 at 24%): violet
+     speckle on about 60% of the pixels (the lightest 21/40 of the noise) */
+  --noise-mesh: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n' x='0' y='0' width='100%' height='100%' color-interpolation-filters='sRGB'><feTurbulence type='fractalNoise' baseFrequency='1.25' numOctaves='3' seed='1132' stitchTiles='stitch'/><feColorMatrix type='luminanceToAlpha'/><feComponentTransfer result='speck'><feFuncA type='discrete' tableValues='1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0'/></feComponentTransfer><feFlood flood-color='%237b51e8' flood-opacity='0.24'/><feComposite operator='in' in2='speck'/></filter><rect width='200' height='200' filter='url(%23n)'/></svg>");
   --shadow-float: 0 10px 24px rgba(22, 18, 28, 0.25);
   --on-dark-glass: rgba(255, 255, 255, 0.14);
   --on-dark-edge: rgba(255, 255, 255, 0.3);
@@ -2942,16 +2943,14 @@ button {
   opacity: 0.8;
 }
 
-/* The Figma "Texture/Grain dark" speckle: ink at 22% on about half the pixels. Figma draws it one device pixel per
-   grain, so the tile is drawn at half size (one grain per pixel on a 2x screen) to stay as fine. */
+/* The noise (--noise-mesh: mono, size 1, density 60%, #7B51E8 at 24%). Figma draws it one device pixel per grain,
+   so the tile is drawn at half size (one grain per pixel on a 2x screen) to stay as fine. */
 .main-bg::after {
   content: '';
   position: absolute;
   inset: 0;
-  background-image: var(--noise-dark);
+  background-image: var(--noise-mesh);
   background-size: 100px;
-  /* softened a little from the Figma's full strength, at the user's request */
-  opacity: 0.65;
 }
 
 /* Liquid glass, as the Figma "Nav pill" (node 248:2181), on every white card and button (the list is GLASS_SELECTOR in
