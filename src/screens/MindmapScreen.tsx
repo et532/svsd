@@ -29,6 +29,10 @@ const GROUP_BLUR = 130 // at the base size, about a third of the orb
 const GROUP_SPREAD = 3
 const GROUP_PAD = 170
 const GROUP_MIN = 280
+// Every member's disc must sit inside this share of the oval, where the blurred color is still clearly there
+const GROUP_COVER = 0.85
+// People who'd be alone in their group share this one (placed last, on the outside)
+const OTHER = 'Other'
 const BLEND_MS = 1100 // orbs easing between the background and the groups
 type OrbState = { x: number; y: number; w: number; h: number; blur: number; op: number }
 const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2)
@@ -175,12 +179,15 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
     return d
   }, [links, selected])
 
-  // Who is in which group. A group of one person has nothing to clump with, so it stays ungrouped.
+  // Who is in which group. Everyone who'd be alone in theirs goes into one "Other" group, so every dot sits on an aura
+  // (a lone dot on the bare grey ground was hard to see).
   const { groupOf, groups } = useMemo(() => {
+    if (groupBy === 'none') return { groupOf: new Map<string, string>(), groups: [] as string[] }
     const count = new Map<string, number>()
     for (const p of people) count.set(groupValue[groupBy](p), (count.get(groupValue[groupBy](p)) ?? 0) + 1)
-    const of = new Map(people.map((p) => [p.id, count.get(groupValue[groupBy](p))! > 1 ? groupValue[groupBy](p) : '']))
+    const of = new Map(people.map((p) => [p.id, count.get(groupValue[groupBy](p))! > 1 ? groupValue[groupBy](p) : OTHER]))
     const names = [...count].filter(([g, n]) => g && n > 1).sort((a, b) => b[1] - a[1]).map(([g]) => g)
+    if ([...of.values()].includes(OTHER)) names.push(OTHER)
     return { groupOf: of, groups: names }
   }, [people, groupBy])
 
@@ -205,7 +212,7 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
       prev,
     )
     graphRef.current = graph
-    graph.setGroups((id) => groupOf.get(id) ?? '')
+    graph.setGroups((id) => groupOf.get(id) ?? '', OTHER)
     touched.current = false
 
     // Hand each group the nearest free orb (from where its people are now), then blend the orbs from where they are
@@ -307,19 +314,35 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
           el.setAttribute('d', branch(p.x, p.y, c.x, c.y, w0, root ? 4.5 : 3, bendOf(`${p.id}${c.id}`)))
         }
       }
-      // Each group's middle (mean of its members) and spread (standard deviation along x and y). The spread, not the
-      // outermost member, sizes the aura, so one person pulled away by a link doesn't stretch it.
+      // Each group's middle (mean of its members) and oval. The spread (standard deviation along x and y) sets the oval's
+      // usual size and shape; then it grows, keeping its shape, until every member's whole disc sits inside GROUP_COVER of
+      // it, so every dot is on its aura.
       const sums = new Map<string, number[]>()
       for (const n of graph.nodes) {
         if (!n.group) continue
         const c = sums.get(n.group) ?? [0, 0, 0, 0, 0]
         sums.set(n.group, [c[0] + n.x, c[1] + n.y, c[2] + n.x * n.x, c[3] + n.y * n.y, c[4] + 1])
       }
-      const spread = new Map<string, { cx: number; cy: number; sx: number; sy: number }>()
+      const spread = new Map<string, { cx: number; cy: number; w: number; h: number }>()
       for (const [g, [sx, sy, sxx, syy, c]] of sums) {
         const cx = sx / c
         const cy = sy / c
-        spread.set(g, { cx, cy, sx: Math.sqrt(Math.max(0, sxx / c - cx * cx)), sy: Math.sqrt(Math.max(0, syy / c - cy * cy)) })
+        const w = Math.max(GROUP_MIN, Math.sqrt(Math.max(0, sxx / c - cx * cx)) * GROUP_SPREAD + GROUP_PAD)
+        const h = Math.max(GROUP_MIN, Math.sqrt(Math.max(0, syy / c - cy * cy)) * GROUP_SPREAD + GROUP_PAD)
+        spread.set(g, { cx, cy, w, h })
+      }
+      const grow = new Map<string, number>()
+      for (const n of graph.nodes) {
+        const b = spread.get(n.group)
+        if (!b) continue
+        const disc = discOf(radiiRef.current.get(n.id) ?? 12)
+        const out = Math.hypot((Math.abs(n.x - b.cx) + disc) / (b.w / 2), (Math.abs(n.y - b.cy) + disc) / (b.h / 2)) / GROUP_COVER
+        grow.set(n.group, Math.max(grow.get(n.group) ?? 1, out))
+      }
+      for (const [g, f] of grow) {
+        const b = spread.get(g)!
+        b.w *= f
+        b.h *= f
       }
       // Each group's name sits in its middle.
       for (const [g, { cx, cy }] of spread) {
@@ -343,8 +366,8 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
           const b = g ? spread.get(g) : undefined
           let target: OrbState = groupByRef.current === 'none' ? home : { ...home, w: home.w * 0.6, h: home.h * 0.6, op: 0 }
           if (b) {
-            const ow = Math.max(GROUP_MIN, b.sx * GROUP_SPREAD + GROUP_PAD) * k
-            const oh = Math.max(GROUP_MIN, b.sy * GROUP_SPREAD + GROUP_PAD) * k
+            const ow = b.w * k
+            const oh = b.h * k
             const f = focusRef.current
             target = { x: w / 2 + x + b.cx * k, y: h / 2 + y + b.cy * k, w: ow, h: oh, blur: GROUP_BLUR, op: f && f !== g ? 0.3 : 1 }
           }
@@ -706,7 +729,7 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
                   if (el) lineEls.current.set(`${a}|${b}`, el)
                   else lineEls.current.delete(`${a}|${b}`)
                 }}
-                className={`mm-line${groupOf.get(a) && groupOf.get(a) === groupOf.get(b) ? ' in-group' : ''}${lineState(a, b)}`}
+                className={`mm-line${groupOf.get(a) && groupOf.get(a) !== OTHER && groupOf.get(a) === groupOf.get(b) ? ' in-group' : ''}${lineState(a, b)}`}
               />
             ))
           )}

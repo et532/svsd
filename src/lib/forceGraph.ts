@@ -20,7 +20,7 @@ export type Graph = {
   links: GLink[]
   alpha: number
   step: () => void
-  setGroups: (groupOf: (id: string) => string) => void
+  setGroups: (groupOf: (id: string) => string, last?: string) => void
 }
 
 const REPEL = 16000
@@ -58,12 +58,13 @@ export function createGraph(ids: string[], pairs: [string, string][], prev?: Map
     nodes,
     links,
     alpha: 1,
-    setGroups(groupOf) {
+    setGroups(groupOf, last) {
       for (const n of nodes) n.group = groupOf(n.id)
-      // Biggest groups sit near the middle; the rest spiral outward so territories don't overlap.
+      // Biggest groups sit near the middle; the rest spiral outward so territories don't overlap. `last` (the catch-all
+      // "Other" group) always goes on the outside.
       const size = new Map<string, number>()
       for (const n of nodes) if (n.group) size.set(n.group, (size.get(n.group) ?? 0) + 1)
-      const names = [...size.keys()].sort((a, b) => size.get(b)! - size.get(a)!)
+      const names = [...size.keys()].sort((a, b) => Number(a === last) - Number(b === last) || size.get(b)! - size.get(a)!)
       anchors = new Map(
         names.map((g, i) => {
           const r = GROUP_SPACING * Math.sqrt(i + 0.5)
