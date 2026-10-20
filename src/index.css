@@ -3004,10 +3004,14 @@ button {
     inset -1.5px -1.5px 1px -1px rgba(255, 255, 255, 0.45);
 }
 
-/* The ask bar, add-person button and every text box (the Composer in Add / Find / profiles) are a little more solid
-   than the other glass, 80% white instead of 60%, so what's behind doesn't bleed through the text */
-.phone :is(.ask-pill, .add-button, .composer) {
+/* The ask bar and add-person button are a little more solid than the other glass: 80% white instead of 60% */
+.phone :is(.ask-pill, .add-button) {
   background: rgba(255, 255, 255, 0.8);
+}
+
+/* Every text box (the Composer in Add / Find / profiles) is 90% white, so what's behind doesn't bleed through the text */
+.phone .composer {
+  background: rgba(255, 255, 255, 0.9);
 }
 
 /* The profile's back and ⋯ buttons are glass too, but keep their light 14% white fill (--on-dark-glass) */
