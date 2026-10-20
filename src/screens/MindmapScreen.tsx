@@ -103,9 +103,12 @@ type Props = {
   groupBy?: GroupBy
   colorBy?: ColorBy
   ink?: boolean
+  // Set by Prototype when the mindmap is serving as the Connections list's background: keep the grouped auras in place
+  // but dim them 30% and fade the discs / labels / links away.
+  asBackground?: boolean
 }
 
-export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none', ink = false }: Props) {
+export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none', ink = false, asBackground = false }: Props) {
   const [selected, setSelected] = useState<string | null>(null)
   const [focus, setFocus] = useState<string | null>(null) // a group isolated by tapping its name
 
@@ -136,6 +139,8 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
   const orbs = useRef({ cur: [] as OrbState[], from: [] as OrbState[], t0: 0, dur: 0, groupFor: [] as (string | null)[], raf: 0 })
   const focusRef = useRef<string | null>(null)
   const groupByRef = useRef(groupBy)
+  const asBgRef = useRef(asBackground)
+  asBgRef.current = asBackground
 
   const links = useMemo(() => linksOf(people), [people])
   const radii = useMemo(() => radiiOf(people), [people])
@@ -180,6 +185,11 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
   focusRef.current = focus
   groupByRef.current = groupBy
   const orbCount = Math.max(AURA.length, groups.length)
+
+  // Entering / leaving background mode: redraw so the orbs pick up (or drop) the 30% dim.
+  useEffect(() => {
+    drawRef.current()
+  }, [asBackground])
 
   // Build the simulation whenever the people or the grouping change; keep existing positions.
   useEffect(() => {
@@ -333,7 +343,8 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
           o.cur[i] = s
           el.style.transform = `translate(${s.x - ORB / 2}px, ${s.y - ORB / 2}px) scale(${s.w / ORB}, ${s.h / ORB})`
           el.style.filter = `blur(${s.blur.toFixed(1)}px)`
-          el.style.opacity = s.op.toFixed(3)
+          // As the list's background the colored auras carry over 30% dimmer than on the mindmap.
+          el.style.opacity = (s.op * (asBgRef.current ? 0.7 : 1)).toFixed(3)
         })
         if (t < 1 && !o.raf)
           o.raf = requestAnimationFrame(() => {
@@ -597,7 +608,7 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
   return (
     <div
       ref={rootRef}
-      className={`screen mindmap-screen${ink ? ' look-ink' : ''}${selected ? ' has-sel' : ''}${focus ? ' has-focus' : ''}`}
+      className={`screen mindmap-screen${ink ? ' look-ink' : ''}${selected ? ' has-sel' : ''}${focus ? ' has-focus' : ''}${asBackground ? ' as-bg' : ''}`}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}

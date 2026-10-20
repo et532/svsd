@@ -606,6 +606,31 @@ button {
   }
 }
 
+/* With a filter on, the mindmap stays mounted as the Connections list's background: the grouped colored auras carry
+   over in place (dimmed 30% in MindmapScreen's draw) behind the rows, while the discs, labels and links fade away. It
+   must not re-run the screen-in fade, and must not capture pointer events (the list rows sit on top). */
+.mindmap-screen.as-bg {
+  pointer-events: none;
+  animation: none;
+}
+.mm-world {
+  transition: opacity 0.4s ease;
+}
+.mindmap-screen.as-bg .mm-world {
+  opacity: 0;
+  pointer-events: none;
+}
+.mindmap-screen.as-bg .mm-label {
+  display: none;
+}
+/* Ease the 30% dim, and match the list's slightly lighter ground. */
+.mindmap-screen.as-bg .mm-aura-orb {
+  transition: opacity 0.4s ease;
+}
+.mindmap-screen.as-bg .mm-aura {
+  background: #f4f4f4;
+}
+
 /* Press feedback: quick shrink on touch, springy release */
 :is(.nav-button, .ask-button, .mm-view, .sf-icon, .sf-chip, .sf-chips button, .search-clear, .dropdown-clear, .person-row, .dropdown-option) {
   transition:

@@ -145,8 +145,13 @@ export function Prototype() {
           copy on top (so its orbs can move to groups) and fades in/out over this one instead of hard-cutting. */}
       <AuraBackground />
       <StatusBar />
-      {tab === 'list' && <ListScreen people={people} onOpen={openProfile} />}
-      {tab === 'mindmap' && <MindmapScreen people={focusId ? allPeople : people} focusId={focusId} onView={openProfile} groupBy={groupBy} />}
+      {/* With a filter on, the mindmap stays mounted (stable key, no remount) as the list's background so its grouped
+          colored auras carry over — dimmed, same positions — behind the Connections rows. Rendered before the list so
+          it paints behind it; `asBackground` fades the discs/labels/links out and leaves only the auras. */}
+      {(tab === 'mindmap' || (tab === 'list' && groupBy !== 'none')) && (
+        <MindmapScreen key="map" people={focusId ? allPeople : people} focusId={focusId} onView={openProfile} groupBy={groupBy} asBackground={tab !== 'mindmap'} />
+      )}
+      {tab === 'list' && <ListScreen key="list" people={people} onOpen={openProfile} />}
 
       <TopControls tab={tab} onTab={changeTab} groupBy={groupBy} onGroupBy={setGroupBy} />
 
