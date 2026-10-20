@@ -2174,8 +2174,15 @@ button {
     background 0.2s var(--ios-press);
 }
 
-:is(.filters-button, .filters-item):active:not(:disabled) {
+.filters-item:active:not(:disabled) {
   background: var(--pressed);
+}
+
+/* The Filters pill keeps its white glass when pressed, with just a faint tint and a small shrink (user's call
+   2026-10-20: the grey --pressed fill and the 0.92 shrink looked too dark and different) */
+.phone .filters-button:active:not(:disabled) {
+  background: linear-gradient(rgba(22, 18, 28, 0.04) 0 0), rgba(255, 255, 255, 0.6);
+  transform: scale(0.97);
 }
 
 :is(.ask-pill-text, .profile-item, .result-head, .moment-head):active:not(:disabled) {
