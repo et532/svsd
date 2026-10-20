@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useEffect, type RefObject } from 'react'
 
 // Figma's "Glass" effect, as on the Nav pill (node 248:2181): refraction 0.8, depth 20, dispersion 0.5, frost 0
 // (light -45° / 0.8 is the rim highlight in CSS, `.glass` in index.css). The browser has no such effect, so it's an
 // SVG filter used as a `backdrop-filter`: a displacement map shaped like the element bends what's behind it within
 // `DEPTH` px of the edge (stronger toward the edge, like the rim of a lens), and the red / green / blue channels are
 // bent by slightly different amounts for the dispersion. One filter per size + corner radius, shared.
+// Every white card and button gets it: whatever matches GLASS_SELECTOR inside the phone (keep it in step with the
+// matching rule at the end of index.css).
 // SVG backdrop filters only work in Chromium browsers (Chrome, Edge); elsewhere the element just shows its fill.
 
 const REFRACTION = 0.8
@@ -96,32 +98,72 @@ function filterFor(w: number, h: number, r: number) {
   return id
 }
 
-// Gives the elements it's attached to (ref={...}, any number) the glass backdrop. `radius` in px, or 'pill'.
-export function useGlass(radius: number | 'pill') {
-  const observer = useRef<ResizeObserver | null>(null)
+// The white cards and buttons that are glass (same list as the `.glass` rule at the end of index.css)
+export const GLASS_SELECTOR = [
+  '.view-toggle',
+  '.filters-button',
+  '.filters-menu',
+  '.person-row',
+  '.mm-label',
+  '.mm-turf-name',
+  '.ask-pill',
+  '.add-button',
+  '.ask-filter',
+  '.composer',
+  '.way',
+  '.result-card',
+  '.result-action',
+  '.profile-card',
+  '.profile-list',
+  '.profile-place',
+  '.moment',
+  '.chip:not(.on-dark):not(.is-ghost):not(.is-editing)',
+  '.round-button.glass-button',
+  '.pill-button.ghost',
+].join(', ')
 
-  const apply = useCallback(
-    (el: HTMLElement) => {
-      const w = el.offsetWidth
-      const h = el.offsetHeight
-      if (!w || !h) return
-      const r = Math.min(radius === 'pill' ? h / 2 : radius, h / 2, w / 2)
-      const id = filterFor(w, h, Math.round(r))
-      el.style.setProperty('backdrop-filter', `url(#${id})`)
-      el.style.setProperty('-webkit-backdrop-filter', `url(#${id})`)
-    },
-    [radius],
-  )
+function radiusOf(el: HTMLElement, w: number, h: number) {
+  const value = getComputedStyle(el).borderTopLeftRadius
+  const r = value.endsWith('%') ? (parseFloat(value) / 100) * Math.min(w, h) : parseFloat(value) || 0
+  return Math.min(r, w / 2, h / 2)
+}
 
-  useEffect(() => () => observer.current?.disconnect(), [])
+function glassify(el: HTMLElement) {
+  // Inside another glass card (tags on the summary card, a result's action) a second backdrop filter only sees blank,
+  // so those keep just the white fill and rim over their parent's glass.
+  if (el.parentElement?.closest(GLASS_SELECTOR)) return
+  const w = el.offsetWidth
+  const h = el.offsetHeight
+  if (!w || !h) return
+  const id = filterFor(w, h, Math.round(radiusOf(el, w, h)))
+  el.style.setProperty('backdrop-filter', `url(#${id})`)
+  el.style.setProperty('-webkit-backdrop-filter', `url(#${id})`)
+}
 
-  return useCallback(
-    (el: HTMLElement | null) => {
-      if (!el || !supported) return
-      observer.current ??= new ResizeObserver((entries) => entries.forEach((e) => apply(e.target as HTMLElement)))
-      observer.current.observe(el)
-      apply(el)
-    },
-    [apply],
-  )
+// Keeps every GLASS_SELECTOR element inside `root` glassy: the ones there now, ones added later, and on resize.
+export function useGlassEverywhere(root: RefObject<HTMLElement | null>) {
+  useEffect(() => {
+    const el = root.current
+    if (!el || !supported) return
+    const sizes = new ResizeObserver((entries) => entries.forEach((e) => glassify(e.target as HTMLElement)))
+    const seen = new WeakSet<Element>()
+    const scan = (node: ParentNode) => {
+      const found = [...(node instanceof Element && node.matches(GLASS_SELECTOR) ? [node] : []), ...node.querySelectorAll(GLASS_SELECTOR)]
+      for (const f of found) {
+        if (seen.has(f)) continue
+        seen.add(f)
+        sizes.observe(f)
+        glassify(f as HTMLElement)
+      }
+    }
+    scan(el)
+    const added = new MutationObserver((records) => {
+      for (const r of records) for (const n of r.addedNodes) if (n instanceof Element) scan(n)
+    })
+    added.observe(el, { childList: true, subtree: true })
+    return () => {
+      added.disconnect()
+      sizes.disconnect()
+    }
+  }, [root])
 }

@@ -2943,17 +2943,36 @@ button {
   opacity: 0.3;
 }
 
-/* Liquid glass, as the Figma "Nav pill" (node 248:2181): a 60% white fill over Figma's Glass effect (refraction 0.8,
-   depth 20, dispersion 0.5, no frost; the backdrop filter is set by useGlass in lib/glass.ts) and its light at -45°,
-   intensity 0.8, drawn as a bright rim on the top-left edges and a fainter one bottom-right. No border or shadow.
-   On the top controls and the Connections list rows. */
-.view-toggle,
-.filters-button,
-.person-row {
+/* Liquid glass, as the Figma "Nav pill" (node 248:2181), on every white card and button (the list is GLASS_SELECTOR in
+   lib/glass.ts, keep them in step): a 60% white fill over Figma's Glass effect (refraction 0.8, depth 20, dispersion
+   0.5, no frost; the backdrop filter is set by useGlassEverywhere) and its light at -45°, intensity 0.8, drawn as a
+   bright rim on the top-left edges and a fainter one bottom-right. No border color or shadow. */
+:is(
+  .view-toggle,
+  .filters-button,
+  .filters-menu,
+  .person-row,
+  .mm-label,
+  .mm-turf-name,
+  .ask-pill,
+  .add-button,
+  .ask-filter,
+  .composer,
+  .way,
+  .result-card,
+  .result-action,
+  .profile-card,
+  .profile-list,
+  .profile-place,
+  .moment,
+  .chip:not(.on-dark):not(.is-ghost):not(.is-editing),
+  .round-button.glass-button,
+  .pill-button.ghost
+) {
   background: rgba(255, 255, 255, 0.6);
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
-  border: 1px solid transparent;
+  border-color: transparent;
   box-shadow:
     inset 1.5px 1.5px 1px -1px rgba(255, 255, 255, 0.8),
     inset -1.5px -1.5px 1px -1px rgba(255, 255, 255, 0.45);

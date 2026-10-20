@@ -1,5 +1,6 @@
+import { useGlassEverywhere } from './lib/glass'
 import { MeshBackground } from './components/MeshBackground'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AskBar } from './components/AskBar'
 import type { Sent } from './components/Composer'
 import { Keyboard, useKeyboardTarget } from './components/Keyboard'
@@ -134,9 +135,12 @@ export function Prototype() {
 
   const kbTarget = useKeyboardTarget()
   const backTo = navFocus && layers.length === 0 ? byId(navFocus) : undefined
+  // Every white card and button gets the Figma liquid glass (lib/glass.ts)
+  const phoneRef = useRef<HTMLDivElement>(null)
+  useGlassEverywhere(phoneRef)
 
   return (
-    <div className={`phone${top?.kind === 'profile' ? ' is-dark-top' : ''}${kbTarget ? ' has-kb' : ''}`}>
+    <div ref={phoneRef} className={`phone${top?.kind === 'profile' ? ' is-dark-top' : ''}${kbTarget ? ' has-kb' : ''}`}>
       <MeshBackground />
       <StatusBar />
       {tab === 'list' && <ListScreen people={people} onOpen={openProfile} />}

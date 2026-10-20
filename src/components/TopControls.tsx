@@ -1,4 +1,3 @@
-import { useGlass } from '../lib/glass'
 import { useEffect, useRef, useState } from 'react'
 import {
   BriefcaseIcon,
@@ -32,7 +31,6 @@ type Props = {
 // Top left: switch between the mindmap and the list. Top right (mindmap only): Filters, which groups the graph.
 export function TopControls({ tab, onTab, groupBy, onGroupBy }: Props) {
   const [open, setOpen] = useState(false)
-  const glass = useGlass('pill')
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -80,14 +78,14 @@ export function TopControls({ tab, onTab, groupBy, onGroupBy }: Props) {
 
   return (
     <header className="top-controls">
-      <div ref={glass} className="view-toggle" role="group" aria-label="View" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
+      <div className="view-toggle" role="group" aria-label="View" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
         <span className={`view-blob${drag !== null ? ' is-dragging' : ''}`} style={{ transform: `translateX(${drag ?? base}px)` }} />
         {view('mindmap', 'Mindmap', MindmapIcon)}
         {view('list', 'Connections list', ListIcon)}
       </div>
       {tab === 'mindmap' && (
         <div ref={ref} className="filters">
-          <button ref={glass} className="filters-button" onClick={() => setOpen(!open)} aria-expanded={open}>
+          <button className="filters-button" onClick={() => setOpen(!open)} aria-expanded={open}>
             <FilterIcon />
             Filters
             {open ? <ChevronUpIcon /> : <ChevronDownIcon />}
