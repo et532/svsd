@@ -78,6 +78,16 @@ const initialsOpacity = (k: number, fitK: number) => {
   const start = full / 1.25
   return Math.min(1, Math.max(0, (k - start) / (full - start)))
 }
+// Floating: each dot hangs on a soft spring at its spot. When the view moves (pan, zoom, a glide to someone), the dot is
+// left a little behind and eases back with a slight overshoot, like something bobbing on water. FLOAT_K is the spring's
+// stiffness and FLOAT_C its damping (about 0.45 of critical, so one small wobble); a dot never drifts past FLOAT_MAX
+// screen px. How much a dot lags (floatOf) depends on its size, smaller = lighter = lags more, plus its own fixed
+// variation, so dots don't move in lockstep.
+const FLOAT_K = 150
+const FLOAT_C = 11
+const FLOAT_MAX = 10
+type Float = { ux: number; uy: number; vx: number; vy: number; f: number }
+const floatOf = (id: string, r: number) => (0.1 + (0.1 * (32 - r)) / 24) * (1 + bendOf(id) * 1.25)
 const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
 // Ink style: a link is a filled, tapered branch (w0 wide at the parent, w1 thin at the child) along a gentle curve.
@@ -145,6 +155,8 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
   const drawRef = useRef<() => void>(() => {})
   const fitRef = useRef<() => { x: number; y: number; k: number }>(() => ({ x: 0, y: 0, k: 1 }))
   const settleTimer = useRef(0)
+  // Each dot's float (screen px offset and velocity), and the view as of the last frame, to tell how far it moved
+  const floatRef = useRef({ dots: new Map<string, Float>(), x: 0, y: 0, k: 0, t: 0, raf: 0 })
   // Smooth wheel zoom: ticks accumulate a target scale (`k`) that the view eases toward each frame, around the world
   // point under the cursor (`wx`/`wy`) kept pinned at the cursor's screen point (`px`/`py`). `raf` = active glide.
   const wheelZoom = useRef({ k: 0, px: 0, py: 0, wx: 0, wy: 0, raf: 0 })
@@ -286,17 +298,57 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
         worldRef.current.style.setProperty('--ini', initialsOpacity(k, fit().k).toFixed(3))
         worldRef.current.style.setProperty('--inv', String(Math.min(3, 1 / k))) // keeps group names readable when zoomed out
       }
+      // Float the dots (see FLOAT_K): leave each one behind by its share of how far the view carried it on screen since
+      // the last frame, then let its spring pull it back. Not while the view auto-fits (on load, after a filter change).
+      const fl = floatRef.current
+      const now = performance.now()
+      const dt = fl.t ? Math.min(0.05, (now - fl.t) / 1000) : 0
+      const carried = fl.k > 0 && touched.current && !reduceMotion()
+      let restless = false
+      for (const n of graph.nodes) {
+        let s = fl.dots.get(n.id)
+        if (!s) fl.dots.set(n.id, (s = { ux: 0, uy: 0, vx: 0, vy: 0, f: floatOf(n.id, radiiRef.current.get(n.id) ?? 12) }))
+        if (carried) {
+          s.ux -= (x - fl.x + n.x * (k - fl.k)) * s.f
+          s.uy -= (y - fl.y + n.y * (k - fl.k)) * s.f
+        }
+        s.vx += (-FLOAT_K * s.ux - FLOAT_C * s.vx) * dt
+        s.vy += (-FLOAT_K * s.uy - FLOAT_C * s.vy) * dt
+        s.ux += s.vx * dt
+        s.uy += s.vy * dt
+        const u = Math.hypot(s.ux, s.uy)
+        if (u > FLOAT_MAX) {
+          s.ux *= FLOAT_MAX / u
+          s.uy *= FLOAT_MAX / u
+        }
+        if (u > 0.05 || Math.abs(s.vx) + Math.abs(s.vy) > 0.5) restless = true
+        else s.ux = s.uy = s.vx = s.vy = 0
+      }
+      Object.assign(fl, { x, y, k, t: now })
+      // keep drawing until every dot has settled
+      if (restless && !fl.raf)
+        fl.raf = requestAnimationFrame(() => {
+          fl.raf = 0
+          drawRef.current()
+        })
+      const at = (n: { id: string; x: number; y: number }) => {
+        const s = fl.dots.get(n.id)
+        return s ? [n.x + s.ux / k, n.y + s.uy / k] : [n.x, n.y]
+      }
       for (const n of graph.nodes) {
         const el = nodeEls.current.get(n.id)
-        if (el) el.style.transform = `translate(${n.x}px, ${n.y}px)`
+        const [nx, ny] = at(n)
+        if (el) el.style.transform = `translate(${nx}px, ${ny}px)`
       }
       for (const l of graph.links) {
         const el = lineEls.current.get(`${l.a.id}|${l.b.id}`)
         if (el) {
-          el.setAttribute('x1', String(l.a.x))
-          el.setAttribute('y1', String(l.a.y))
-          el.setAttribute('x2', String(l.b.x))
-          el.setAttribute('y2', String(l.b.y))
+          const [ax, ay] = at(l.a)
+          const [bx, by] = at(l.b)
+          el.setAttribute('x1', String(ax))
+          el.setAttribute('y1', String(ay))
+          el.setAttribute('x2', String(bx))
+          el.setAttribute('y2', String(by))
         }
       }
       if (inkRef.current) {
@@ -400,7 +452,8 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
       const root = rootRef.current
       if (labelRef.current && root && sel) {
         const r = discOf(radiiRef.current.get(sel.id) ?? 12) * k
-        labelRef.current.style.transform = `translate(${root.clientWidth / 2 + x + sel.x * k}px, ${root.clientHeight / 2 + y + sel.y * k + r + 14}px) translateX(-50%)`
+        const [sx, sy] = at(sel)
+        labelRef.current.style.transform = `translate(${root.clientWidth / 2 + x + sx * k}px, ${root.clientHeight / 2 + y + sy * k + r + 14}px) translateX(-50%)`
       }
     }
     drawRef.current = draw
@@ -427,7 +480,11 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
       view.current = fit()
       draw()
     } else wake.current()
-    return () => cancelAnimationFrame(raf)
+    return () => {
+      cancelAnimationFrame(raf)
+      cancelAnimationFrame(floatRef.current.raf)
+      floatRef.current.raf = 0
+    }
   }, [people, links, groupOf])
 
   useEffect(() => drawRef.current(), [selected, ink, focus])
