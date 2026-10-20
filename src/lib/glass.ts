@@ -61,8 +61,9 @@ function displacementMap(w: number, h: number, r: number) {
   return canvas.toDataURL()
 }
 
-function filterFor(w: number, h: number, r: number) {
-  const id = `glass-${w}x${h}r${r}`
+// `frost` is Figma's Glass frost (a blur of what's behind, before it's bent); 0 = none.
+function filterFor(w: number, h: number, r: number, frost = 0) {
+  const id = `glass-${w}x${h}r${r}${frost ? `f${frost}` : ''}`
   if (made.has(id)) return id
   if (!defs) {
     const svg = document.createElementNS(SVG, 'svg')
@@ -76,7 +77,7 @@ function filterFor(w: number, h: number, r: number) {
   const scale = REFRACTION * DEPTH
   const spread = DISPERSION * 0.25
   const channel = (scaleBy: number, keep: string, name: string) => `
-    <feDisplacementMap in="SourceGraphic" in2="map" scale="${scale * scaleBy}" xChannelSelector="R" yChannelSelector="G" result="${name}d" />
+    <feDisplacementMap in="source" in2="map" scale="${scale * scaleBy}" xChannelSelector="R" yChannelSelector="G" result="${name}d" />
     <feColorMatrix in="${name}d" type="matrix" values="${keep} 0 0 0 1 0" result="${name}" />`
   const filter = document.createElementNS(SVG, 'filter')
   filter.setAttribute('id', id)
@@ -87,6 +88,7 @@ function filterFor(w: number, h: number, r: number) {
   filter.setAttribute('filterUnits', 'userSpaceOnUse')
   filter.setAttribute('color-interpolation-filters', 'sRGB')
   filter.innerHTML = `
+    ${frost ? `<feGaussianBlur in="SourceGraphic" stdDeviation="${frost / 2}" edgeMode="duplicate" result="source" />` : '<feOffset in="SourceGraphic" result="source" />'}
     <feImage href="${displacementMap(w, h, r)}" x="0" y="0" width="${w}" height="${h}" preserveAspectRatio="none" result="map" />
     ${channel(1 + spread, '1 0 0 0 0  0 0 0 0 0  0 0 0 0 0 ', 'r')}
     ${channel(1, '0 0 0 0 0  0 1 0 0 0  0 0 0 0 0 ', 'g')}
@@ -136,7 +138,9 @@ function glassify(el: HTMLElement) {
   const w = el.offsetWidth
   const h = el.offsetHeight
   if (!w || !h) return
-  const id = filterFor(w, h, Math.round(radiusOf(el, w, h)))
+  // An element can ask for Figma's frost with --glass-frost (e.g. the Filters menu: 12)
+  const frost = parseFloat(getComputedStyle(el).getPropertyValue('--glass-frost')) || 0
+  const id = filterFor(w, h, Math.round(radiusOf(el, w, h)), frost)
   el.style.setProperty('backdrop-filter', `url(#${id})`)
   el.style.setProperty('-webkit-backdrop-filter', `url(#${id})`)
 }

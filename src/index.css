@@ -3018,9 +3018,15 @@ button {
   background: rgba(255, 255, 255, 0.8);
 }
 
-/* Every text box (the Composer in Add / Find / profiles) is 90% white, so what's behind doesn't bleed through the text */
+/* Every text box (the Composer in Add / Find / profiles, and the ask bar) is 80% white with Figma's frost at 12, so what's
+   behind is blurred and doesn't fight the text */
 .phone .composer {
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.composer,
+.ask-pill {
+  --glass-frost: 12;
 }
 
 /* The profile's back and ⋯ buttons are glass too, but keep their light 14% white fill (--on-dark-glass) */
@@ -3028,7 +3034,12 @@ button {
   background: var(--on-dark-glass);
 }
 
-/* The top controls and the Connections rows are lighter glass: 40% white instead of 60% */
-.phone :is(.view-toggle, .filters-button, .person-row) {
+/* The top controls, the Filters menu and the Connections rows are lighter glass: 40% white instead of 60% */
+.phone :is(.view-toggle, .filters-button, .filters-menu, .person-row) {
   background: rgba(255, 255, 255, 0.4);
+}
+
+/* The Filters menu also has Figma's Glass frost at 12: what's behind is blurred before it's bent (lib/glass.ts) */
+.filters-menu {
+  --glass-frost: 12;
 }
