@@ -596,9 +596,11 @@ button {
   }
 }
 
-/* Tab changes: the new screen fades in */
+/* Tab changes: the new screen fades in. The still aura (AuraBackground) stays mounted underneath, so the mindmap
+   (which draws its own opaque aura) crossfades over it rather than the backgrounds hard-cutting. A gentle, slightly
+   longer ease keeps the background shift from reading as abrupt. */
 .screen {
-  animation: screen-in 0.35s var(--ios-spring);
+  animation: screen-in 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @keyframes screen-in {
@@ -1702,14 +1704,14 @@ button {
 /* As the Figma "Connections" text (node 252:2166): Geist Light 32, auto line height, -1.28px tracking, ink at 80%
    opacity, 16px in from the edge and 137px from the top (9px higher than the list's padding; the rows stay put). */
 .list-title {
+  /* Figma "Connections" / Display/L (node 342:5841): Geist Regular 32 / 36, -1.28px, solid ink */
   margin: -9px 0 23px;
   font-family: var(--font-heading);
   letter-spacing: -1.28px;
   font-size: 32px;
-  font-weight: 300;
-  line-height: normal;
+  font-weight: 400;
+  line-height: 36px;
   color: var(--ink);
-  opacity: 0.8;
 }
 
 /* The ask bar: ask about people, or add someone */
@@ -3008,6 +3010,17 @@ button {
   position: absolute;
   border-radius: 50%;
   transform: translate(-50%, -50%);
+}
+
+/* The still background behind the list (and the persistent base under the mindmap): a touch lighter than the
+   mindmap's #ededed ground, with softer orbs, so switching screens reads as a gentle shift (user's call 2026-10-20,
+   from the Figma Connections frame 342:5841, ground-100 #f4f4f4). */
+.aura-bg--light {
+  background: #f4f4f4;
+}
+
+.aura-bg--light .aura-bg-orb {
+  opacity: 0.8;
 }
 
 /* The mindmap's orbs: a fixed 400px circle placed and sized with transform (MindmapScreen sets it every frame) */

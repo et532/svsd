@@ -141,8 +141,9 @@ export function Prototype() {
 
   return (
     <div ref={phoneRef} className={`phone${top?.kind === 'profile' ? ' is-dark-top' : ''}${kbTarget ? ' has-kb' : ''}`}>
-      {/* The mindmap draws its own copy of this background, so its orbs can move to the groups */}
-      {tab !== 'mindmap' && <AuraBackground />}
+      {/* The still aura is always mounted as the base, so switching tabs crossfades: the mindmap draws its own opaque
+          copy on top (so its orbs can move to groups) and fades in/out over this one instead of hard-cutting. */}
+      <AuraBackground />
       <StatusBar />
       {tab === 'list' && <ListScreen people={people} onOpen={openProfile} />}
       {tab === 'mindmap' && <MindmapScreen people={focusId ? allPeople : people} focusId={focusId} onView={openProfile} groupBy={groupBy} />}

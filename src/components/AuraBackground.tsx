@@ -4,7 +4,7 @@ import { AURA, AURA_BLUR, AURA_H, AURA_W } from '../lib/aura'
 // The mindmap draws its own copy so the orbs can move to the groups.
 export function AuraBackground() {
   return (
-    <div className="aura-bg" aria-hidden>
+    <div className="aura-bg aura-bg--light" aria-hidden>
       {AURA.map((o, i) => (
         <span
           key={i}
