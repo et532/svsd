@@ -364,13 +364,13 @@ button {
   border-radius: 999px;
   background: none;
   border: 0;
-  /* Figma "Disc study · Grouped by context" labels: Geist Medium 13 / 18, -0.52px, ink at 80% */
+  /* Figma "Disc study · Grouped by context" labels (node 294:34132): Geist Medium 13 / 18, -0.52px, ink-muted #5b5361 */
   font-size: 13px;
   font-weight: 500;
   line-height: 18px;
   letter-spacing: -0.04em;
-  color: var(--ink);
-  opacity: 0.8;
+  color: var(--ink-muted);
+  opacity: 1;
   white-space: nowrap;
   pointer-events: auto;
   cursor: pointer;
