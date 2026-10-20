@@ -7,7 +7,6 @@ import type { GroupBy } from '../components/TopControls'
 import { Avatar } from '../components/Avatar'
 import { ChevronRightIcon } from '../components/Icons'
 import { AURA, AURA_BLUR, AURA_H, AURA_W } from '../lib/aura'
-import { getInitialsAt, initialsOpacity, onInitialsAt, setFitZoom } from '../lib/initialsAt'
 
 
 // Grouping (by city / met at / job), chosen in the Filters menu at the top right. The background orbs wrap the groups.
@@ -68,6 +67,15 @@ const GRAB_ZOOM = 0.6
 const discOf = (r: number) => 14 + r * 1.25
 // The white dot's radius inside the disc: 4.4 / 6 / 8 for the three sizes.
 const dotOf = (r: number) => 3.2 + r * 0.15
+// When the initials appear: INITIALS_AT runs from 0 (fully shown at the fitted "everyone in frame" zoom) to 1 (only at
+// the closest zoom, 3×), on a zoom (log) scale, so it holds for any filter or number of people. 0.27 is where the user
+// set it with a side panel slider (since removed). They fade in over the 20% of zoom before that point.
+const INITIALS_AT = 0.27
+const initialsOpacity = (k: number, fitK: number) => {
+  const full = fitK * Math.pow(Math.max(1, 3 / fitK), INITIALS_AT)
+  const start = full / 1.25
+  return Math.min(1, Math.max(0, (k - start) / (full - start)))
+}
 const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
 // Ink style: a link is a filled, tapered branch (w0 wide at the parent, w1 thin at the child) along a gentle curve.
@@ -272,10 +280,8 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
       if (worldRef.current) {
         worldRef.current.style.transform = `translate(${x}px, ${y}px) scale(${k})`
         worldRef.current.style.setProperty('--k', String(k))
-        // Initials fade in (and the dots out) as you zoom in, from where the side panel says (lib/initialsAt)
-        const fitK = fit().k
-        setFitZoom(fitK)
-        worldRef.current.style.setProperty('--ini', initialsOpacity(k, getInitialsAt().t, fitK).toFixed(3))
+        // Initials fade in (and the dots out) as you zoom in
+        worldRef.current.style.setProperty('--ini', initialsOpacity(k, fit().k).toFixed(3))
         worldRef.current.style.setProperty('--inv', String(Math.min(3, 1 / k))) // keeps group names readable when zoomed out
       }
       for (const n of graph.nodes) {
@@ -420,16 +426,6 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
   }, [people, links, groupOf])
 
   useEffect(() => drawRef.current(), [selected, ink, focus])
-  // Redraw when the side panel's "initials appear" slider moves
-  useEffect(() => {
-    let t = getInitialsAt().t
-    return onInitialsAt(() => {
-      if (getInitialsAt().t === t) return
-      t = getInitialsAt().t
-      drawRef.current()
-    })
-  }, [])
-
   // Pointer: drag a node, drag the background to pan, wheel or two-finger pinch to zoom.
   const pointers = useRef(new Map<number, { x: number; y: number }>())
   const drag = useRef<{ id: string | null; grab: string | null; moved: boolean; pinch: number; travel: number }>({ id: null, grab: null, moved: false, pinch: 0, travel: 0 })
