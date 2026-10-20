@@ -1,6 +1,7 @@
 {
   "version": "0.0.1",
   "configurations": [
-    { "name": "peepl-dev", "runtimeExecutable": "npm", "runtimeArgs": ["run", "dev"], "port": 5173 }
+    { "name": "peepl-dev", "runtimeExecutable": "npm", "runtimeArgs": ["run", "dev"], "port": 5173 },
+    { "name": "peepl-phone", "runtimeExecutable": "npm", "runtimeArgs": ["run", "dev", "--", "--host", "0.0.0.0", "--port", "5174", "--strictPort"], "port": 5174 }
   ]
 }

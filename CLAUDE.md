@@ -7,6 +7,7 @@ A private, personal "people log": remember everyone you meet, where you met them
 ## Running it
 
 - `npm install` once, then `npm run dev` → http://localhost:5173
+- **On a phone** (same Wi-Fi as the Mac): `npm run dev -- --host 0.0.0.0 --port 5174 --strictPort` (also `peepl-phone` in `.claude/launch.json`), then open the "Network" address it prints, e.g. `http://<Mac's IP>:5174`. The normal dev server stays local-only (`host: '127.0.0.1'` in `vite.config.ts`). Some office / school Wi-Fi blocks phone-to-laptop connections.
 - Check before committing: `npx tsc -b && npx eslint src`
 - Stack: React 19 + TypeScript + Vite, plain CSS in `src/index.css`. No backend; data is sample data in code.
 
