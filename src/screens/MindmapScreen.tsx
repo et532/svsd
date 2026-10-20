@@ -127,6 +127,9 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
   const drawRef = useRef<() => void>(() => {})
   const fitRef = useRef<() => { x: number; y: number; k: number }>(() => ({ x: 0, y: 0, k: 1 }))
   const settleTimer = useRef(0)
+  // Smooth wheel zoom: ticks accumulate a target scale (`k`) that the view eases toward each frame, around the world
+  // point under the cursor (`wx`/`wy`) kept pinned at the cursor's screen point (`px`/`py`). `raf` = active glide.
+  const wheelZoom = useRef({ k: 0, px: 0, py: 0, wx: 0, wy: 0, raf: 0 })
   // Background orbs: their elements, where each was last drawn, where the current blend started, and which group each
   // one wraps (null = none: it fades out so the grey ground shows)
   const orbEls = useRef<(HTMLElement | null)[]>([])
@@ -388,6 +391,8 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
   const onPointerDown = (e: React.PointerEvent) => {
     ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
     cancelAnimationFrame(flight.current)
+    cancelAnimationFrame(wheelZoom.current.raf)
+    wheelZoom.current.raf = 0
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
     const nodeEl = (e.target as HTMLElement).closest<HTMLElement>('[data-id]')
     const id = pointers.current.size === 1 ? (nodeEl?.dataset.id ?? null) : null
@@ -468,6 +473,8 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
   const animateTo = (target: { x: number; y: number; k: number }, rate = 0.16) => {
     touched.current = true
     cancelAnimationFrame(flight.current)
+    cancelAnimationFrame(wheelZoom.current.raf)
+    wheelZoom.current.raf = 0
     const v = view.current
     const step = () => {
       const fast = reduceMotion() ? 1 : rate
@@ -514,19 +521,59 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
     drawRef.current()
   }
 
-  // React's onWheel is passive, so attach the wheel listener by hand to stop the page scrolling.
+  // React's onWheel is passive, so attach the wheel listener by hand to stop the page scrolling. Each notch feeds a
+  // target scale that the view glides toward every frame (eased), so zooming reads as one smooth motion instead of a
+  // stair-step per notch; the world point under the cursor stays pinned while it changes.
   useEffect(() => {
     const el = rootRef.current!
+    const z = wheelZoom.current
     const onWheel = (e: WheelEvent) => {
       e.preventDefault()
-      cancelAnimationFrame(flight.current)
-      zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * 0.002))
+      const root = el.getBoundingClientRect()
+      const v = view.current
+      const lo = minK()
+      z.px = e.clientX - root.left - root.width / 2
+      z.py = e.clientY - root.top - root.height / 2
+      if (!z.raf) z.k = v.k // not already gliding: start accumulating from where the view is now
+      z.wx = (z.px - v.x) / v.k // the world point under the cursor, kept fixed as k changes
+      z.wy = (z.py - v.y) / v.k
+      // Faster per notch; past a limit only a fraction of the scroll counts and the stretch is capped
+      let factor = Math.exp(-e.deltaY * 0.0075)
+      if ((z.k <= lo && factor < 1) || (z.k >= MAX_K && factor > 1)) factor = Math.pow(factor, 0.3)
+      z.k = Math.min(MAX_K * 1.25, Math.max(lo * 0.7, z.k * factor))
       // The wheel has no "let go", so spring back once it pauses
       clearTimeout(settleTimer.current)
       settleTimer.current = window.setTimeout(settle, 140)
+      if (reduceMotion()) {
+        cancelAnimationFrame(flight.current)
+        v.k = z.k
+        v.x = z.px - z.wx * z.k
+        v.y = z.py - z.wy * z.k
+        touched.current = true
+        drawRef.current()
+        return
+      }
+      if (!z.raf) {
+        cancelAnimationFrame(flight.current) // take over from any fly / settle glide
+        const glide = () => {
+          const vv = view.current
+          vv.k += (z.k - vv.k) * 0.3
+          vv.x = z.px - z.wx * vv.k
+          vv.y = z.py - z.wy * vv.k
+          touched.current = true
+          drawRef.current()
+          if (Math.abs(z.k - vv.k) > 0.001) z.raf = requestAnimationFrame(glide)
+          else z.raf = 0
+        }
+        z.raf = requestAnimationFrame(glide)
+      }
     }
     el.addEventListener('wheel', onWheel, { passive: false })
-    return () => el.removeEventListener('wheel', onWheel)
+    return () => {
+      el.removeEventListener('wheel', onWheel)
+      cancelAnimationFrame(z.raf)
+      z.raf = 0
+    }
   }, [])
 
   const person = people.find((p) => p.id === selected)
