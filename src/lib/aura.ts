@@ -1,5 +1,5 @@
 // The background behind the mindmap and list: the Figma "Aura" in "Disc study · Default" (node 317:13603), four big
-// blurred color orbs on the light grey ground, with the dark grain on top (index.css). Positions are orb centers and
+// blurred color orbs on the light grey ground, with the light grain under them (index.css). Positions are orb centers and
 // sizes are full width / height, in the 393 × 852 phone; the Figma blur (stdDeviation 150) is a CSS blur of 150px.
 // On the mindmap the same orbs move to wrap the groups when a filter is on (MindmapScreen), so the colors never change.
 

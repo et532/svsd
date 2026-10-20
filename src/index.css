@@ -658,8 +658,6 @@ button {
   --grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.9 0'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>");
   /* Figma "Texture/Grain": fine fractal noise thresholded to a speckle, about half the pixels white at 80% */
   --noise: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n' x='0' y='0' width='100%' height='100%' color-interpolation-filters='sRGB'><feTurbulence type='fractalNoise' baseFrequency='1.25' numOctaves='3' seed='1132' stitchTiles='stitch'/><feColorMatrix type='luminanceToAlpha'/><feComponentTransfer result='speck'><feFuncA type='discrete' tableValues='1 0'/></feComponentTransfer><feFlood flood-color='white' flood-opacity='0.8'/><feComposite operator='in' in2='speck'/></filter><rect width='200' height='200' filter='url(%23n)'/></svg>");
-  /* Figma Texture/Grain dark on the "Disc study" Aura (node 317:13603): fractal noise at frequency 1 / 3 octaves, the band of it between 12% and 38% luminance drawn in night at 22% */
-  --noise-dark: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n' x='0' y='0' width='100%' height='100%' color-interpolation-filters='sRGB'><feTurbulence type='fractalNoise' baseFrequency='1' numOctaves='3' seed='0' stitchTiles='stitch'/><feColorMatrix type='luminanceToAlpha'/><feComponentTransfer result='speck'><feFuncA type='discrete' tableValues='0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0'/></feComponentTransfer><feFlood flood-color='rgb(22,18,28)' flood-opacity='0.22'/><feComposite operator='in' in2='speck'/></filter><rect width='200' height='200' filter='url(%23n)'/></svg>");
   --shadow-float: 0 10px 24px rgba(22, 18, 28, 0.25);
   --on-dark-glass: rgba(255, 255, 255, 0.14);
   --on-dark-edge: rgba(255, 255, 255, 0.3);
@@ -2998,7 +2996,8 @@ button {
 }
 
 /* Behind the mindmap and list: the Figma "Aura" from "Disc study · Default" (lib/aura.ts), four big blurred orbs on
-   the light grey ground (#f5f5f5 at 80% over ground-300 #ccc), with the dark grain on top. The list shows them still
+   the light grey ground (#f5f5f5 at 80% over ground-300 #ccc), with the light Figma "Texture/Grain" on the ground under them (as in
+   "Disc study · Grouped by context", node 317:13760). The list shows them still
    (AuraBackground); the mindmap (.mm-aura) moves the same orbs to the groups when a filter is on. The Add / Find flows
    and profiles cover it with their own backgrounds. */
 .aura-bg {
@@ -3009,11 +3008,12 @@ button {
   pointer-events: none;
 }
 
-.aura-bg::after {
+/* The grain is on the ground under the orbs, as in the Figma, so the colors stay smooth */
+.aura-bg::before {
   content: '';
   position: absolute;
   inset: 0;
-  background-image: var(--noise-dark);
+  background-image: var(--noise);
   background-size: 200px;
 }
 

@@ -1,6 +1,6 @@
 import { AURA, AURA_BLUR, AURA_H, AURA_W } from '../lib/aura'
 
-// The still background (the list): the Figma "Aura" orbs at their spots, with the dark grain on top.
+// The still background (the list): the Figma "Aura" orbs at their spots, with the light grain on the ground under them.
 // The mindmap draws its own copy so the orbs can move to the groups.
 export function AuraBackground() {
   return (
