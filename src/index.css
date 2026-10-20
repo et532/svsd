@@ -166,6 +166,8 @@ button {
 
   .phone {
     border-radius: 55px;
+    /* overflow: hidden alone lets masked / backdrop-filter layers (the drifting auras) show past the rounded corners */
+    clip-path: inset(0 round 55px);
     box-shadow: 0 0 0 1px rgba(17, 17, 19, 0.1);
     --safe-top: 54px;
     --safe-bottom: 20px;
@@ -3115,4 +3117,67 @@ button {
 /* The Filters menu has Figma's Glass frost at 12: what's behind is blurred before it's bent (lib/glass.ts) */
 .filters-menu {
   --glass-frost: 12;
+}
+
+/* A finished voice note with its names outlined (components/Composer.tsx): tap a name word to retype it in place */
+.composer-note {
+  flex: 1;
+  min-width: 0;
+  max-height: 144px;
+  overflow-y: auto;
+  padding: 8px 0;
+  font-size: 16px;
+  line-height: 1.4;
+  color: var(--ink);
+  white-space: pre-wrap;
+  cursor: text;
+}
+
+.name-token {
+  display: inline;
+  margin: 0 1px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px rgba(17, 17, 19, 0.16);
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: opacity 0.2s var(--ios-press), box-shadow 0.2s var(--ios-press);
+}
+
+/* The word being retyped: a dark outline, the old name faded underneath, your letters overwriting it from the left.
+   The textarea on top has invisible text but a visible caret. */
+.name-edit {
+  position: relative;
+  display: inline-block;
+  vertical-align: top;
+  margin: 0 1px;
+  padding: 0 6px;
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1.5px var(--ink);
+}
+
+.name-edit-old {
+  display: block;
+  min-width: 1ch;
+  white-space: pre;
+  color: rgba(17, 17, 19, 0.3);
+}
+
+.name-edit-old b {
+  font-weight: inherit;
+  color: var(--ink);
+}
+
+.composer .name-edit textarea {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0 6px;
+  overflow: hidden;
+  color: transparent;
+  caret-color: var(--ink);
 }

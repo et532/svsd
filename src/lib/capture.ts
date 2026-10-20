@@ -13,6 +13,14 @@ export type Draft = Partial<Record<Field, string>> & {
   from?: string
   lives?: string
   knowsIds?: string[]
+  company?: string
+}
+
+// The company in "Founder at Voltcell" / "works for Acme Labs" (a capitalized name after a role and at / @ / for).
+export function parseCompany(text: string): string | undefined {
+  return text.match(
+    /\b(?:[Ff]ounders?|[Cc]o-?founders?|[Ee]ngineers?|[Dd]esigners?|[Ii]nvestors?|[Rr]esearchers?|[Mm]anagers?|[Rr]ecruiters?|CEO|CTO|PM|works?|working)\s+(?:at|@|for)\s+([A-Z][\w&'-]*(?:\s+[A-Z][\w&'-]*)*)/,
+  )?.[1]
 }
 
 // The demo person's story and tags, as if summarized from the voice note.
@@ -21,7 +29,7 @@ const scriptedStory =
 const scriptedTags = ['climate tech', 'founder', 'climbing', 'e-bikes']
 
 export const voiceScript =
-  'Jordan Lee, met at Demo Day. Founder at [Startup], battery recycling for e-bikes. From Seattle, lives in Brooklyn now. Climbs Tuesdays. Owe them a hardware intro.'
+  'Jorden Lee, met at Demo Day. Founder at Voltsel, battery recycling for e-bikes. From Seattle, lives in Brooklyn now. Climbs Tuesdays. Owe them a hardware intro.'
 
 export const momentScript = (first: string) =>
   `Came across ${first} on my way home and he said how much he hates his job search and that the job market is cooked. He hates his current job and wants out`
@@ -47,6 +55,7 @@ export function parsePerson(text: string, people: Person[]): Draft {
     t.match(/\b(?:[Mm]et|[Mm]eet|[Mm]eeting)\s+([A-Z][\w'-]+(?:\s+[A-Z][\w'-]+)?)/) ??
     t.match(/^(?!(?:Just|Met|I|Today|We)\b)([A-Z][\w'-]+(?:\s+[A-Z][\w'-]+)?)/)
   if (name) out.name = name[1]
+  out.company = parseCompany(t)
   const firstSentence = t.split(/[.!?]/)[0]
   const met =
     t.match(/\bat ([A-Z][^.,]+)/) ??
@@ -168,7 +177,7 @@ export function draftToPerson(draft: Draft, how: { voice: boolean; text: string;
     id,
     name,
     context: draft.context ?? 'unsorted',
-    profession: how.voice ? 'Founder @ [Startup]' : (draft.does ?? '').split(/,| at /)[0] || 'Unknown',
+    profession: how.voice ? `Founder @ ${draft.company ?? '[Startup]'}` : (draft.does ?? '').split(/,| at /)[0] || 'Unknown',
     story,
     tags: tags.length ? tags : ['new'],
     from: place(draft.from, 'Unknown'),
