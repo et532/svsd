@@ -40,11 +40,22 @@ const homeOf = (i: number, w: number, h: number): OrbState => {
 }
 
 // The more you've interacted with someone (moments logged + how close you are), the bigger their dot.
-const radiusOf = (p: Person) => 8 + Math.min(momentsOf(p).length + auraDepth(p.id), 10) * 2.4
+// Three sizes, as the Figma "Disc study" (node 317:13363): ranked by interaction, the top ~22% are large, the next ~45%
+// medium, the rest small, so the sizes stay varied however the scores bunch up. r 8 / 19.2 / 32 gives discs 48 / 76 /
+// 108 across with dots 9 / 12 / 16 (discOf, dotOf).
+const interactionOf = (p: Person) => momentsOf(p).length + auraDepth(p.id)
+const TIER_R = [8, 19.2, 32]
+const radiiOf = (people: Person[]) => {
+  const ranked = [...people].sort((a, b) => interactionOf(b) - interactionOf(a) || a.id.localeCompare(b.id))
+  const n = ranked.length
+  return new Map(ranked.map((p, i) => [p.id, TIER_R[i < n * 0.22 ? 2 : i < n * 0.67 ? 1 : 0]]))
+}
 // Zoomed out past this, dragging anywhere pans the map instead of moving a person.
 const GRAB_ZOOM = 0.6
 // Disc (halo) radius for a person, from their interaction size r: 24px for the least up to ~54px.
 const discOf = (r: number) => 14 + r * 1.25
+// The white dot's radius inside the disc: 4.4 / 6 / 8 for the three sizes.
+const dotOf = (r: number) => 3.2 + r * 0.15
 const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
 // Ink style: a link is a filled, tapered branch (w0 wide at the parent, w1 thin at the child) along a gentle curve.
@@ -117,7 +128,7 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
   const groupByRef = useRef(groupBy)
 
   const links = useMemo(() => linksOf(people), [people])
-  const radii = useMemo(() => new Map(people.map((p) => [p.id, radiusOf(p)])), [people])
+  const radii = useMemo(() => radiiOf(people), [people])
   const radiiRef = useRef(radii)
   radiiRef.current = radii
   // Selected person = 0, their direct connections = 1. Everyone else isn't listed.
@@ -625,7 +636,7 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
                 height: discOf(r) * 2,
                 margin: -discOf(r),
                 fontSize: r * 0.62,
-                ['--dot' as string]: `${(3 + r * 0.14) * 2}px`,
+                ['--dot' as string]: `${dotOf(r) * 2}px`,
               }}
             >
               <b>{initials(p.name)}</b>
