@@ -53,7 +53,7 @@ const homeOf = (i: number, w: number, h: number): OrbState => {
 // The more you've interacted with someone (moments logged + how close you are), the bigger their dot.
 // Three sizes, as the Figma "Disc study" (node 317:13363): ranked by interaction, the top ~22% are large, the next ~45%
 // medium, the rest small, so the sizes stay varied however the scores bunch up. r 8 / 19.2 / 32 gives discs 48 / 76 /
-// 108 across with dots 9 / 12 / 16 (discOf, dotOf).
+// 108 across with dots 12 / 17 / 22 (discOf, dotOf).
 const interactionOf = (p: Person) => momentsOf(p).length + auraDepth(p.id)
 const TIER_R = [8, 19.2, 32]
 const radiiOf = (people: Person[]) => {
@@ -65,8 +65,9 @@ const radiiOf = (people: Person[]) => {
 const GRAB_ZOOM = 0.6
 // Disc (halo) radius for a person, from their interaction size r: 24px for the least up to ~54px.
 const discOf = (r: number) => 14 + r * 1.25
-// The white dot's radius inside the disc: 4.4 / 6 / 8 for the three sizes.
-const dotOf = (r: number) => 3.2 + r * 0.15
+// The white dot's radius inside the disc: 6.2 / 8.5 / 11.2 for the three sizes (1.4× the Figma's, so the initials fit
+// inside it). The initials' font size equals this radius, i.e. half the dot's width: two letters then sit inside the circle.
+const dotOf = (r: number) => (3.2 + r * 0.15) * 1.4
 // When the initials appear: INITIALS_AT runs from 0 (fully shown at the fitted "everyone in frame" zoom) to 1 (only at
 // the closest zoom, 3×), on a zoom (log) scale, so it holds for any filter or number of people. 0.27 is where the user
 // set it with a side panel slider (since removed). They fade in over the 20% of zoom before that point.
@@ -745,7 +746,7 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
                 width: discOf(r) * 2,
                 height: discOf(r) * 2,
                 margin: -discOf(r),
-                fontSize: r * 0.75, // Geist SemiBold ~24px on a large disc, as the Figma "Disc study" initials
+                fontSize: dotOf(r), // half the white dot's width, so the initials fit inside it
                 ['--dot' as string]: `${dotOf(r) * 2}px`,
               }}
             >

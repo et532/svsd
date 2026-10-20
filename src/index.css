@@ -415,8 +415,6 @@ button {
   box-shadow:
     0 0 0 1px rgba(22, 18, 28, 0.06),
     0 1px 5px rgba(22, 18, 28, 0.2);
-  /* swaps with the initials as you zoom in; --ini (0 to 1) is set by MindmapScreen (INITIALS_AT) */
-  opacity: calc(1 - var(--ini, 0));
   pointer-events: none;
 }
 
@@ -426,7 +424,7 @@ button {
   font-weight: 600; /* Geist SemiBold, as the Figma "Disc study" initials */
   color: #000;
   letter-spacing: -0.04em;
-  /* Figma: black at 24%; still fades in as you zoom (--k) so the dot reads first */
+  /* Figma: black at 24%, on the white dot (which stays); fades in as you zoom in (--ini, set by MindmapScreen) */
   opacity: calc(var(--ini, 0) * 0.24);
 }
 
