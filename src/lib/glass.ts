@@ -129,8 +129,8 @@ function radiusOf(el: HTMLElement, w: number, h: number) {
 }
 
 function glassify(el: HTMLElement) {
-  // Inside another glass card (tags on the summary card, a result's action) a second backdrop filter only sees blank,
-  // so those keep just the white fill and rim over their parent's glass.
+  // Nothing inside another glass card is glass (tags on the summary card, a result's Draft a message button): those
+  // keep their own style (the CSS rule leaves them out too).
   if (el.parentElement?.closest(GLASS_SELECTOR)) return
   const w = el.offsetWidth
   const h = el.offsetHeight
