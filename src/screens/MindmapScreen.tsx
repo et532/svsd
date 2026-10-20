@@ -748,6 +748,7 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
                 margin: -discOf(r),
                 fontSize: dotOf(r), // half the white dot's width, so the initials fit inside it
                 ['--dot' as string]: `${dotOf(r) * 2}px`,
+                ['--disc' as string]: `${discOf(r) * 2}px`,
               }}
             >
               <b>{initials(p.name)}</b>
