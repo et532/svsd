@@ -18,9 +18,13 @@ const groupValue: Record<GroupBy, (p: Person) => string> = {
 }
 
 // The background orbs (lib/aura.ts) are drawn as a 400px circle placed and scaled with transform. Their blur is set at
-// that base size, so on screen it scales with the orb: at home it's the Figma 150px; around a group it's sharper.
+// that base size, so on screen it scales with the orb: at home it's the Figma 150px. Around a group it follows the Figma
+// "Disc study · Grouped by context" (node 317:13760): an oval about the size of the group, blurred by about a third of
+// its size (Figma blur 50 on a ~160px shape), so it's soft and fades smoothly into the ground.
 const ORB = 400
-const GROUP_BLUR = 64 // at the base size, about a sixth of the orb
+const GROUP_BLUR = 130 // at the base size, about a third of the orb
+const GROUP_PAD = 150 // added to the span of the group's people (centers), so the color reaches past their discs, in world px
+const GROUP_MIN = 220 // smallest oval side, in world px
 const BLEND_MS = 1100 // orbs easing between the background and the groups
 type OrbState = { x: number; y: number; w: number; h: number; blur: number; op: number }
 const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2)
@@ -293,7 +297,7 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
         el.style.transform = `translate(${(x0 + x1) / 2 - r}px, ${(y0 + y1) / 2 - r}px)`
       }
       // The background orbs: at home when nothing's grouped; around their group (in the world, so they zoom with it)
-      // when something is, round and a bit sharper; spare ones fade out. Eases between the two after the grouping changes.
+      // when something is, a soft oval hugging the group; spare ones fade out. Eases between the two after the grouping changes.
       const rootEl = rootRef.current
       if (rootEl) {
         const w = rootEl.clientWidth
@@ -308,9 +312,10 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
           let target: OrbState = groupByRef.current === 'none' ? home : { ...home, w: home.w * 0.6, h: home.h * 0.6, op: 0 }
           if (b) {
             const [x0, y0, x1, y1] = b
-            const d = (Math.max(x1 - x0, y1 - y0) / 2 + 70) * 2 * k * 1.25
+            const ow = Math.max(GROUP_MIN, x1 - x0 + GROUP_PAD) * k
+            const oh = Math.max(GROUP_MIN, y1 - y0 + GROUP_PAD) * k
             const f = focusRef.current
-            target = { x: w / 2 + x + ((x0 + x1) / 2) * k, y: h / 2 + y + ((y0 + y1) / 2) * k, w: d, h: d, blur: GROUP_BLUR, op: f && f !== g ? 0.3 : 1 }
+            target = { x: w / 2 + x + ((x0 + x1) / 2) * k, y: h / 2 + y + ((y0 + y1) / 2) * k, w: ow, h: oh, blur: GROUP_BLUR, op: f && f !== g ? 0.3 : 1 }
           }
           const s = o.from[i] && t < 1 ? mix(o.from[i], target, ease(t)) : target
           o.cur[i] = s
