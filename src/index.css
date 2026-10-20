@@ -365,13 +365,13 @@ button {
   padding: 0;
   background: none;
   border: 0;
-  /* Figma "Disc study · Grouped by context" territory labels (node 294:34132): Geist Medium 13 / 18, -0.52px, ink #16121c, no pill */
+  /* Figma "Disc study · Grouped by context" territory labels (node 294:32536): Geist Medium 13 / 18, -0.52px, ink #16121c at 70%, no pill */
   font-size: 13px;
   font-weight: 500;
   line-height: 18px;
   letter-spacing: -0.04em;
   color: var(--ink);
-  opacity: 1;
+  opacity: 0.7;
   white-space: nowrap;
   pointer-events: auto;
   cursor: pointer;
