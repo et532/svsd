@@ -3027,3 +3027,8 @@ button {
 .phone .profile-bar .round-button {
   background: var(--on-dark-glass);
 }
+
+/* The top controls and the Connections rows are lighter glass: 40% white instead of 60% */
+.phone :is(.view-toggle, .filters-button, .person-row) {
+  background: rgba(255, 255, 255, 0.4);
+}
