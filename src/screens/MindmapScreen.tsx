@@ -6,9 +6,10 @@ import type { ColorBy } from '../lib/mindmapColors'
 import type { GroupBy } from '../components/TopControls'
 import { Avatar } from '../components/Avatar'
 import { ChevronRightIcon } from '../components/Icons'
+import { AURA, AURA_BLUR, AURA_H, AURA_W } from '../lib/aura'
 
 
-// Grouping (territory clouds by city / met at / job), chosen in the Filters menu at the top right.
+// Grouping (by city / met at / job), chosen in the Filters menu at the top right. The background orbs wrap the groups.
 const groupValue: Record<GroupBy, (p: Person) => string> = {
   none: () => '',
   city: (p) => p.livesNow.city,
@@ -16,8 +17,27 @@ const groupValue: Record<GroupBy, (p: Person) => string> = {
   job: (p) => p.profession,
 }
 
-// Territory clouds: one soft color per group (yellow, orange, pink, blue like the Figma disc study).
-const territoryColors = ['#f5dc6a', '#f2724c', '#e0508f', '#6f7fe6', '#7fd1b0', '#b48ae6']
+// The background orbs (lib/aura.ts) are drawn as a 400px circle placed and scaled with transform. Their blur is set at
+// that base size, so on screen it scales with the orb: at home it's the Figma 150px; around a group it's sharper.
+const ORB = 400
+const GROUP_BLUR = 64 // at the base size, about a sixth of the orb
+const BLEND_MS = 1100 // orbs easing between the background and the groups
+type OrbState = { x: number; y: number; w: number; h: number; blur: number; op: number }
+const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2)
+const mix = (a: OrbState, b: OrbState, t: number): OrbState => ({
+  x: a.x + (b.x - a.x) * t,
+  y: a.y + (b.y - a.y) * t,
+  w: a.w + (b.w - a.w) * t,
+  h: a.h + (b.h - a.h) * t,
+  blur: a.blur + (b.blur - a.blur) * t,
+  op: a.op + (b.op - a.op) * t,
+})
+// An orb's own spot in the background, for a screen this size (orbs past the four are spares for extra groups)
+const homeOf = (i: number, w: number, h: number): OrbState => {
+  const o = AURA[i % AURA.length]
+  const s = w / AURA_W
+  return { x: o.x * s, y: (o.y * h) / AURA_H, w: o.w * s, h: o.h * s, blur: (AURA_BLUR * ORB) / (Math.sqrt(o.w * o.h) * s), op: i < AURA.length ? 1 : 0 }
+}
 
 // The more you've interacted with someone (moments logged + how close you are), the bigger their dot.
 const radiusOf = (p: Person) => 8 + Math.min(momentsOf(p).length + auraDepth(p.id), 10) * 2.4
@@ -89,6 +109,12 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
   const drawRef = useRef<() => void>(() => {})
   const fitRef = useRef<() => { x: number; y: number; k: number }>(() => ({ x: 0, y: 0, k: 1 }))
   const settleTimer = useRef(0)
+  // Background orbs: their elements, where each was last drawn, where the current blend started, and which group each
+  // one wraps (null = none: it fades out so the grey ground shows)
+  const orbEls = useRef<(HTMLElement | null)[]>([])
+  const orbs = useRef({ cur: [] as OrbState[], from: [] as OrbState[], t0: 0, dur: 0, groupFor: [] as (string | null)[], raf: 0 })
+  const focusRef = useRef<string | null>(null)
+  const groupByRef = useRef(groupBy)
 
   const links = useMemo(() => linksOf(people), [people])
   const radii = useMemo(() => new Map(people.map((p) => [p.id, radiusOf(p)])), [people])
@@ -130,6 +156,9 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
   selectedRef.current = selected
   inkRef.current = ink
   depthRef.current = depth
+  focusRef.current = focus
+  groupByRef.current = groupBy
+  const orbCount = Math.max(AURA.length, groups.length)
 
   // Build the simulation whenever the people or the grouping change; keep existing positions.
   useEffect(() => {
@@ -142,6 +171,42 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
     graphRef.current = graph
     graph.setGroups((id) => groupOf.get(id) ?? '')
     touched.current = false
+
+    // Hand each group the nearest free orb (from where its people are now), then blend the orbs from where they are
+    // to their new places.
+    {
+      const root = rootRef.current
+      const w = root?.clientWidth ?? AURA_W
+      const h = root?.clientHeight ?? AURA_H
+      const { x: vx, y: vy, k: vk } = view.current
+      const sum = new Map<string, number[]>()
+      for (const n of graph.nodes) {
+        if (!n.group) continue
+        const c = sum.get(n.group) ?? [0, 0, 0]
+        sum.set(n.group, [c[0] + n.x, c[1] + n.y, c[2] + 1])
+      }
+      const count = Math.max(AURA.length, sum.size)
+      const free = new Set(Array.from({ length: count }, (_, i) => i))
+      const groupFor: (string | null)[] = Array(count).fill(null)
+      for (const [g, [sx, sy, c]] of [...sum].sort((a, b) => b[1][2] - a[1][2])) {
+        const gx = w / 2 + vx + (sx / c) * vk
+        const gy = h / 2 + vy + (sy / c) * vk
+        let best = -1
+        let bestD = Infinity
+        for (const i of free) {
+          const o = homeOf(i, w, h)
+          const dist = Math.hypot(o.x - gx, o.y - gy)
+          if (dist < bestD) [best, bestD] = [i, dist]
+        }
+        free.delete(best)
+        groupFor[best] = g
+      }
+      const o = orbs.current
+      o.groupFor = groupFor
+      o.from = o.cur.slice()
+      o.t0 = performance.now()
+      o.dur = o.cur.length && !reduceMotion() ? BLEND_MS : 0
+    }
 
     // Frame everyone inside the phone, clear of the search bar and the nav.
     const fit = () => {
@@ -202,7 +267,7 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
           el.setAttribute('d', branch(p.x, p.y, c.x, c.y, w0, root ? 4.5 : 3, bendOf(`${p.id}${c.id}`)))
         }
       }
-      // Each group's cloud wraps its members.
+      // Each group's name sits in the middle of its members.
       const box = new Map<string, number[]>()
       for (const n of graph.nodes) {
         if (!n.group) continue
@@ -215,6 +280,38 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
         const r = Math.max(x1 - x0, y1 - y0) / 2 + 70
         el.style.width = el.style.height = `${r * 2}px`
         el.style.transform = `translate(${(x0 + x1) / 2 - r}px, ${(y0 + y1) / 2 - r}px)`
+      }
+      // The background orbs: at home when nothing's grouped; around their group (in the world, so they zoom with it)
+      // when something is, round and a bit sharper; spare ones fade out. Eases between the two after the grouping changes.
+      const rootEl = rootRef.current
+      if (rootEl) {
+        const w = rootEl.clientWidth
+        const h = rootEl.clientHeight
+        const o = orbs.current
+        const t = o.dur ? Math.min(1, (performance.now() - o.t0) / o.dur) : 1
+        orbEls.current.forEach((el, i) => {
+          if (!el) return
+          const home = homeOf(i, w, h)
+          const g = o.groupFor[i]
+          const b = g ? box.get(g) : undefined
+          let target: OrbState = groupByRef.current === 'none' ? home : { ...home, w: home.w * 0.6, h: home.h * 0.6, op: 0 }
+          if (b) {
+            const [x0, y0, x1, y1] = b
+            const d = (Math.max(x1 - x0, y1 - y0) / 2 + 70) * 2 * k * 1.25
+            const f = focusRef.current
+            target = { x: w / 2 + x + ((x0 + x1) / 2) * k, y: h / 2 + y + ((y0 + y1) / 2) * k, w: d, h: d, blur: GROUP_BLUR, op: f && f !== g ? 0.3 : 1 }
+          }
+          const s = o.from[i] && t < 1 ? mix(o.from[i], target, ease(t)) : target
+          o.cur[i] = s
+          el.style.transform = `translate(${s.x - ORB / 2}px, ${s.y - ORB / 2}px) scale(${s.w / ORB}, ${s.h / ORB})`
+          el.style.filter = `blur(${s.blur.toFixed(1)}px)`
+          el.style.opacity = s.op.toFixed(3)
+        })
+        if (t < 1 && !o.raf)
+          o.raf = requestAnimationFrame(() => {
+            o.raf = 0
+            drawRef.current()
+          })
       }
       // The label card follows its node but stays the same size when zoomed.
       const sel = graph.nodes.find((n) => n.id === selectedRef.current)
@@ -251,7 +348,7 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
     return () => cancelAnimationFrame(raf)
   }, [people, links, groupOf])
 
-  useEffect(() => drawRef.current(), [selected, ink])
+  useEffect(() => drawRef.current(), [selected, ink, focus])
 
   // Pointer: drag a node, drag the background to pan, wheel or two-finger pinch to zoom.
   const pointers = useRef(new Map<number, { x: number; y: number }>())
@@ -434,8 +531,20 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
     >
+      <div className="aura-bg mm-aura" aria-hidden>
+        {Array.from({ length: orbCount }, (_, i) => (
+          <span
+            key={i}
+            ref={(el) => {
+              orbEls.current[i] = el
+            }}
+            className="mm-aura-orb"
+            style={{ background: AURA[i % AURA.length].color, opacity: 0 }}
+          />
+        ))}
+      </div>
       <div ref={worldRef} className="mm-world">
-        {groups.map((g, i) => (
+        {groups.map((g) => (
           <div
             key={g}
             ref={(el) => {
@@ -443,7 +552,6 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
               else turfEls.current.delete(g)
             }}
             className={`mm-turf${focus === g ? ' is-focus' : ''}`}
-            style={{ background: `radial-gradient(closest-side, ${territoryColors[i % territoryColors.length]} 55%, transparent)` }}
           >
             <button type="button" className="mm-turf-name" onPointerDown={(e) => e.stopPropagation()} onClick={() => setFocus(focus === g ? null : g)}>
               {g}

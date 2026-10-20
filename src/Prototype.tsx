@@ -1,5 +1,5 @@
 import { useGlassEverywhere } from './lib/glass'
-import { MeshBackground } from './components/MeshBackground'
+import { AuraBackground } from './components/AuraBackground'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AskBar } from './components/AskBar'
 import type { Sent } from './components/Composer'
@@ -142,7 +142,8 @@ export function Prototype() {
 
   return (
     <div ref={phoneRef} className={`phone${top?.kind === 'profile' ? ' is-dark-top' : ''}${kbTarget ? ' has-kb' : ''}`}>
-      <MeshBackground />
+      {/* The mindmap draws its own copy of this background, so its orbs can move to the groups */}
+      {tab !== 'mindmap' && <AuraBackground />}
       <StatusBar />
       {tab === 'list' && <ListScreen people={people} onOpen={openProfile} />}
       {tab === 'mindmap' && <MindmapScreen people={focusId ? allPeople : people} focusId={focusId} onView={openProfile} groupBy={groupBy} ink={look === 'ink'} />}
