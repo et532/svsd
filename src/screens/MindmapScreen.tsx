@@ -23,8 +23,11 @@ const groupValue: Record<GroupBy, (p: Person) => string> = {
 // its size (Figma blur 50 on a ~160px shape), so it's soft and fades smoothly into the ground.
 const ORB = 400
 const GROUP_BLUR = 130 // at the base size, about a third of the orb
-const GROUP_PAD = 150 // added to the span of the group's people (centers), so the color reaches past their discs, in world px
-const GROUP_MIN = 220 // smallest oval side, in world px
+// The oval's sides: GROUP_SPREAD × the group's spread (standard deviation of its people), plus GROUP_PAD so the color
+// reaches past their discs, at least GROUP_MIN (so small, tight groups still get a generous aura). World px.
+const GROUP_SPREAD = 3
+const GROUP_PAD = 170
+const GROUP_MIN = 280
 const BLEND_MS = 1100 // orbs easing between the background and the groups
 type OrbState = { x: number; y: number; w: number; h: number; blur: number; op: number }
 const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2)
@@ -282,19 +285,26 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
           el.setAttribute('d', branch(p.x, p.y, c.x, c.y, w0, root ? 4.5 : 3, bendOf(`${p.id}${c.id}`)))
         }
       }
-      // Each group's name sits in the middle of its members.
-      const box = new Map<string, number[]>()
+      // Each group's middle (mean of its members) and spread (standard deviation along x and y). The spread, not the
+      // outermost member, sizes the aura, so one person pulled away by a link doesn't stretch it.
+      const sums = new Map<string, number[]>()
       for (const n of graph.nodes) {
         if (!n.group) continue
-        const b = box.get(n.group) ?? [Infinity, Infinity, -Infinity, -Infinity]
-        box.set(n.group, [Math.min(b[0], n.x), Math.min(b[1], n.y), Math.max(b[2], n.x), Math.max(b[3], n.y)])
+        const c = sums.get(n.group) ?? [0, 0, 0, 0, 0]
+        sums.set(n.group, [c[0] + n.x, c[1] + n.y, c[2] + n.x * n.x, c[3] + n.y * n.y, c[4] + 1])
       }
-      for (const [g, [x0, y0, x1, y1]] of box) {
+      const spread = new Map<string, { cx: number; cy: number; sx: number; sy: number }>()
+      for (const [g, [sx, sy, sxx, syy, c]] of sums) {
+        const cx = sx / c
+        const cy = sy / c
+        spread.set(g, { cx, cy, sx: Math.sqrt(Math.max(0, sxx / c - cx * cx)), sy: Math.sqrt(Math.max(0, syy / c - cy * cy)) })
+      }
+      // Each group's name sits in its middle.
+      for (const [g, { cx, cy }] of spread) {
         const el = turfEls.current.get(g)
         if (!el) continue
-        const r = Math.max(x1 - x0, y1 - y0) / 2 + 70
-        el.style.width = el.style.height = `${r * 2}px`
-        el.style.transform = `translate(${(x0 + x1) / 2 - r}px, ${(y0 + y1) / 2 - r}px)`
+        el.style.width = el.style.height = '400px' // just a box to center the name in
+        el.style.transform = `translate(${cx - 200}px, ${cy - 200}px)`
       }
       // The background orbs: at home when nothing's grouped; around their group (in the world, so they zoom with it)
       // when something is, a soft oval hugging the group; spare ones fade out. Eases between the two after the grouping changes.
@@ -308,14 +318,13 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
           if (!el) return
           const home = homeOf(i, w, h)
           const g = o.groupFor[i]
-          const b = g ? box.get(g) : undefined
+          const b = g ? spread.get(g) : undefined
           let target: OrbState = groupByRef.current === 'none' ? home : { ...home, w: home.w * 0.6, h: home.h * 0.6, op: 0 }
           if (b) {
-            const [x0, y0, x1, y1] = b
-            const ow = Math.max(GROUP_MIN, x1 - x0 + GROUP_PAD) * k
-            const oh = Math.max(GROUP_MIN, y1 - y0 + GROUP_PAD) * k
+            const ow = Math.max(GROUP_MIN, b.sx * GROUP_SPREAD + GROUP_PAD) * k
+            const oh = Math.max(GROUP_MIN, b.sy * GROUP_SPREAD + GROUP_PAD) * k
             const f = focusRef.current
-            target = { x: w / 2 + x + ((x0 + x1) / 2) * k, y: h / 2 + y + ((y0 + y1) / 2) * k, w: ow, h: oh, blur: GROUP_BLUR, op: f && f !== g ? 0.3 : 1 }
+            target = { x: w / 2 + x + b.cx * k, y: h / 2 + y + b.cy * k, w: ow, h: oh, blur: GROUP_BLUR, op: f && f !== g ? 0.3 : 1 }
           }
           const s = o.from[i] && t < 1 ? mix(o.from[i], target, ease(t)) : target
           o.cur[i] = s

@@ -25,8 +25,11 @@ export type Graph = {
 
 const REPEL = 16000
 const GRAVITY = 0.006
-const GROUP_PULL = 0.05
-const GROUP_SPACING = 420
+const GROUP_PULL = 0.07
+const GROUP_SPACING = 330
+// While grouped, a link between two different groups pulls this much as hard, so groups made by place met or job (whose
+// people know people in other groups) stay together instead of being stretched across the map.
+const CROSS_GROUP = 0.2
 
 export function createGraph(ids: string[], pairs: [string, string][], prev?: Map<string, { x: number; y: number }>): Graph {
   const nodes: GNode[] = ids.map((id, i) => {
@@ -95,7 +98,8 @@ export function createGraph(ids: string[], pairs: [string, string][], prev?: Map
         const dx = q.x - p.x
         const dy = q.y - p.y
         const d = Math.hypot(dx, dy) || 1
-        const f = ((d - rest) / d) * strength * a
+        const cross = p.group && q.group && p.group !== q.group ? CROSS_GROUP : 1
+        const f = ((d - rest) / d) * strength * cross * a
         p.vx += dx * f
         p.vy += dy * f
         q.vx -= dx * f
