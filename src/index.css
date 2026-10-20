@@ -2942,11 +2942,6 @@ button {
   height: 100%;
 }
 
-/* The mesh at 80% over the off-white, as in the Figma */
-.main-bg-mesh {
-  opacity: 0.8;
-}
-
 /* The noise (--noise-mesh: mono, size 1, density 60%, #7B51E8 at 24%). Figma draws it one device pixel per grain,
    so the tile is drawn at half size (one grain per pixel on a 2x screen) to stay as fine. */
 .main-bg::after {
@@ -3039,12 +3034,7 @@ button {
   background: var(--on-dark-glass);
 }
 
-/* The top controls, the Filters menu and the Connections rows are lighter glass: 40% white instead of 60% */
-.phone :is(.view-toggle, .filters-button, .filters-menu, .person-row) {
-  background: rgba(255, 255, 255, 0.4);
-}
-
-/* The Filters menu also has Figma's Glass frost at 12: what's behind is blurred before it's bent (lib/glass.ts) */
+/* The Filters menu has Figma's Glass frost at 12: what's behind is blurred before it's bent (lib/glass.ts) */
 .filters-menu {
   --glass-frost: 12;
 }
