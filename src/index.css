@@ -2955,6 +2955,8 @@ button {
   inset: 0;
   background-image: var(--noise-mesh);
   background-size: 100px;
+  /* softened a bit from the preset's full strength, at the user's request */
+  opacity: 0.6;
 }
 
 /* Liquid glass, as the Figma "Nav pill" (node 248:2181), on every white card and button (the list is GLASS_SELECTOR in
