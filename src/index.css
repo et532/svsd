@@ -1643,13 +1643,17 @@ button {
   font-size: 12px;
 }
 
+/* As the Figma "Connections" text (node 252:2166): Geist Light 32, auto line height, -1.28px tracking, ink at 80%
+   opacity, 16px in from the edge and 137px from the top (9px higher than the list's padding; the rows stay put). */
 .list-title {
-  margin: 0 0 14px 4px;
+  margin: -9px 0 23px;
   font-family: var(--font-heading);
-  letter-spacing: var(--heading-tracking);
+  letter-spacing: -1.28px;
   font-size: 32px;
   font-weight: 300;
-  color: var(--ink-muted);
+  line-height: normal;
+  color: var(--ink);
+  opacity: 0.8;
 }
 
 /* The ask bar: ask about people, or add someone */
