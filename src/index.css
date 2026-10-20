@@ -503,30 +503,6 @@ button {
   opacity: 1;
 }
 
-.look-row {
-  display: flex;
-  gap: 6px;
-  padding: 0 8px 8px;
-}
-
-.look-chip {
-  flex: 1;
-  height: 34px;
-  border-radius: 999px;
-  font: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--ink);
-  background: rgba(255, 255, 255, 0.6);
-  border: 1px solid var(--glass-vivid-edge);
-  cursor: pointer;
-}
-
-.look-chip.is-on {
-  background: var(--night);
-  color: #fff;
-}
-
 .mm-label {
   position: absolute;
   left: 0;
