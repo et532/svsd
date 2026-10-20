@@ -141,6 +141,10 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
   const focusRef = useRef<string | null>(null)
   const groupByRef = useRef(groupBy)
   const asBgRef = useRef(asBackground)
+  // Once the screen has faded in (or was already showing as the list's background), it must not fade in again: coming
+  // back from the Connections list would replay the fade from transparent and flash the still aura underneath.
+  const [settled, setSettled] = useState(asBackground)
+  if (asBackground && !settled) setSettled(true) // left for the list before the first fade-in finished
   asBgRef.current = asBackground
 
   const links = useMemo(() => linksOf(people), [people])
@@ -622,7 +626,8 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
   return (
     <div
       ref={rootRef}
-      className={`screen mindmap-screen${ink ? ' look-ink' : ''}${selected ? ' has-sel' : ''}${focus ? ' has-focus' : ''}${asBackground ? ' as-bg' : ''}`}
+      className={`screen mindmap-screen${ink ? ' look-ink' : ''}${selected ? ' has-sel' : ''}${focus ? ' has-focus' : ''}${asBackground ? ' as-bg' : ''}${settled ? ' is-settled' : ''}`}
+      onAnimationEnd={(e) => e.target === e.currentTarget && setSettled(true)}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
