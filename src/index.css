@@ -341,10 +341,49 @@ button {
 }
 
 .mm-line {
-  stroke: rgba(58, 42, 120, 0.7);
-  stroke-width: 1.6;
+  stroke: rgba(255, 255, 255, 0.55);
+  stroke-width: 1.4;
   stroke-linecap: round;
   transition: opacity 0.25s;
+}
+
+/* Liquid glow under the links (reference: Figma "Mindmap graph"). The filter lives in MindmapScreen. */
+.mindmap-screen {
+  --mm-glow: #00d2ff;
+}
+
+.mm-glow {
+  position: absolute;
+  overflow: visible;
+  pointer-events: none;
+  filter: drop-shadow(0 0 10px rgba(0, 210, 255, 0.35));
+}
+
+.mm-glow line {
+  stroke: var(--mm-glow);
+  stroke-width: 12;
+  stroke-linecap: round;
+}
+
+.mm-glow circle {
+  fill: var(--mm-glow);
+}
+
+.mm-glow .is-far {
+  opacity: 0.15;
+}
+
+.mm-glow-all {
+  transition: opacity 0.35s;
+}
+
+/* With someone selected, the rest of the glow fades back and their own links glow wider */
+.has-sel .mm-glow-all {
+  opacity: 0.22;
+}
+
+.mm-glow-lit line {
+  stroke-width: 18;
 }
 
 .mm-turf {
@@ -395,13 +434,8 @@ button {
   overflow: hidden;
   border-radius: 50%;
   color: #fff;
-  background: radial-gradient(
-    circle closest-side,
-    var(--orb-deep, color-mix(in srgb, var(--orb) 58%, #000)) 0%,
-    var(--orb-deep, color-mix(in srgb, var(--orb) 58%, #000)) 22%,
-    var(--orb) 55%,
-    var(--orb-wash, color-mix(in srgb, var(--orb) 18%, #fff)) 100%
-  );
+  /* Ink dots like the reference; the selected person shows their aura color (is-lit below) */
+  background: var(--ink);
   cursor: pointer;
   /* no will-change: it rasterizes the dot once and scales the bitmap, which blurs it when zoomed in */
   transition: opacity 0.25s;
@@ -409,7 +443,17 @@ button {
 
 /* Two ways you know someone (Figma "Aura/Blend social–family" etc.): their deep and core color at the
    heart, the second context's core at 80%, fading to its wash */
-.mm-node.is-blend {
+.mm-node.is-lit {
+  background: radial-gradient(
+    circle closest-side,
+    var(--orb-deep, color-mix(in srgb, var(--orb) 58%, #000)) 0%,
+    var(--orb-deep, color-mix(in srgb, var(--orb) 58%, #000)) 22%,
+    var(--orb) 55%,
+    var(--orb-wash, color-mix(in srgb, var(--orb) 18%, #fff)) 100%
+  );
+}
+
+.mm-node.is-blend.is-lit {
   background: radial-gradient(
     circle closest-side,
     var(--orb-deep) 0%,
@@ -442,17 +486,16 @@ button {
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--orb) 28%, transparent);
 }
 
-.mm-node.is-near {
-  opacity: 0.55;
+.mm-node.is-far {
+  opacity: 0.3;
 }
 
-.mm-node.is-far,
 .mm-line.is-far {
-  opacity: 0.08;
+  opacity: 0.25;
 }
 
 .mm-line.is-near {
-  stroke: rgba(40, 28, 96, 0.95);
+  stroke: rgba(255, 255, 255, 0.9);
 }
 
 .mm-label {

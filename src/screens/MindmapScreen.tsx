@@ -21,8 +21,6 @@ const territoryColors = ['#ffd6c2', '#d9f2e6', '#e3d9ff', '#ffd9ea', '#fbf0c4', 
 
 // The more you've interacted with someone (moments logged + how close you are), the bigger their dot.
 const radiusOf = (p: Person) => 8 + Math.min(momentsOf(p).length + auraDepth(p.id), 10) * 2.4
-// Zoomed out past this, dragging anywhere pans the map instead of moving a person.
-const GRAB_ZOOM = 0.6
 const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
 type Props = {
@@ -41,7 +39,6 @@ export function MindmapScreen({ people, focusId = null, onView, colorBy = 'relat
   const worldRef = useRef<HTMLDivElement>(null)
   const labelRef = useRef<HTMLDivElement>(null)
   const nodeEls = useRef(new Map<string, HTMLElement>())
-  const lineEls = useRef(new Map<string, SVGLineElement>())
   const turfEls = useRef(new Map<string, HTMLElement>())
   const graphRef = useRef<Graph | null>(null)
   const view = useRef({ x: 0, y: 0, k: 1 })
@@ -133,14 +130,23 @@ export function MindmapScreen({ people, focusId = null, onView, colorBy = 'relat
         const el = nodeEls.current.get(n.id)
         if (el) el.style.transform = `translate(${n.x}px, ${n.y}px)`
       }
-      for (const l of graph.links) {
-        const el = lineEls.current.get(`${l.a.id}|${l.b.id}`)
-        if (el) {
-          el.setAttribute('x1', String(l.a.x))
-          el.setAttribute('y1', String(l.a.y))
-          el.setAttribute('x2', String(l.b.x))
-          el.setAttribute('y2', String(l.b.y))
-        }
+      // Connection lines and the glow underneath them (lines are keyed "a|b", glow blobs by person id)
+      const at = new Map(graph.nodes.map((n) => [n.id, n]))
+      for (const el of worldRef.current?.querySelectorAll<SVGLineElement>('line[data-l]') ?? []) {
+        const [a, b] = el.dataset.l!.split('|')
+        const p = at.get(a)
+        const q = at.get(b)
+        if (!p || !q) continue
+        el.setAttribute('x1', String(p.x))
+        el.setAttribute('y1', String(p.y))
+        el.setAttribute('x2', String(q.x))
+        el.setAttribute('y2', String(q.y))
+      }
+      for (const el of worldRef.current?.querySelectorAll<SVGCircleElement>('circle[data-g]') ?? []) {
+        const n = at.get(el.dataset.g!)
+        if (!n) continue
+        el.setAttribute('cx', String(n.x))
+        el.setAttribute('cy', String(n.y))
       }
       // Each group's cloud wraps its members.
       const box = new Map<string, number[]>()
@@ -193,15 +199,9 @@ export function MindmapScreen({ people, focusId = null, onView, colorBy = 'relat
 
   useEffect(() => drawRef.current(), [selected])
 
-  // Pointer: drag a node, drag the background to pan, wheel or two-finger pinch to zoom.
+  // Pointer: people stay put. Drag anywhere to pan, wheel or two-finger pinch to zoom, tap a person to select.
   const pointers = useRef(new Map<number, { x: number; y: number }>())
-  const drag = useRef<{ id: string | null; grab: string | null; moved: boolean; pinch: number; travel: number }>({ id: null, grab: null, moved: false, pinch: 0, travel: 0 })
-
-  const toWorld = (cx: number, cy: number) => {
-    const root = rootRef.current!.getBoundingClientRect()
-    const { x, y, k } = view.current
-    return { x: (cx - root.left - root.width / 2 - x) / k, y: (cy - root.top - root.height / 2 - y) / k }
-  }
+  const drag = useRef<{ id: string | null; moved: boolean; pinch: number; travel: number }>({ id: null, moved: false, pinch: 0, travel: 0 })
 
   const onPointerDown = (e: React.PointerEvent) => {
     ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
@@ -209,9 +209,7 @@ export function MindmapScreen({ people, focusId = null, onView, colorBy = 'relat
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
     const nodeEl = (e.target as HTMLElement).closest<HTMLElement>('[data-id]')
     const id = pointers.current.size === 1 ? (nodeEl?.dataset.id ?? null) : null
-    drag.current = { id, grab: view.current.k >= GRAB_ZOOM ? id : null, moved: false, pinch: 0, travel: 0 }
-    const node = graphRef.current?.nodes.find((n) => n.id === drag.current.grab)
-    if (node) node.pinned = true
+    drag.current = { id, moved: false, pinch: 0, travel: 0 }
   }
 
   const onPointerMove = (e: React.PointerEvent) => {
@@ -230,19 +228,9 @@ export function MindmapScreen({ people, focusId = null, onView, colorBy = 'relat
     }
     d.travel += Math.hypot(now.x - last.x, now.y - last.y)
     if (d.travel > 4) d.moved = true
-    const graph = graphRef.current
-    const node = graph?.nodes.find((n) => n.id === d.grab)
-    if (node && graph) {
-      const w = toWorld(now.x, now.y)
-      node.x = w.x
-      node.y = w.y
-      graph.alpha = Math.max(graph.alpha, 0.35)
-      wake.current()
-    } else {
-      touched.current = true
-      view.current.x += now.x - last.x
-      view.current.y += now.y - last.y
-    }
+    touched.current = true
+    view.current.x += now.x - last.x
+    view.current.y += now.y - last.y
     drawRef.current()
   }
 
@@ -250,8 +238,6 @@ export function MindmapScreen({ people, focusId = null, onView, colorBy = 'relat
     // A press that started on an overlay (name pill, legend) never reached us, so it isn't a tap on the graph.
     if (!pointers.current.delete(e.pointerId)) return
     const d = drag.current
-    const node = graphRef.current?.nodes.find((n) => n.id === d.grab)
-    if (node) node.pinned = false
     if (pointers.current.size < 2) settle() // let go of a pinch: spring back if it went too far
     if (pointers.current.size === 0) {
       if (!d.moved) {
@@ -259,7 +245,7 @@ export function MindmapScreen({ people, focusId = null, onView, colorBy = 'relat
         if (d.id) flyTo(d.id)
         if (!d.id) setFocus(null)
       }
-      d.id = d.grab = null
+      d.id = null
       d.pinch = 0
     }
   }
@@ -390,16 +376,47 @@ export function MindmapScreen({ people, focusId = null, onView, colorBy = 'relat
             </button>
           </div>
         ))}
+        {/* Liquid glow under the links: blurred strokes and blobs, then the alpha is sharpened so
+            neighbours melt into one shape (a "gooey" filter), with a soft halo on top */}
+        <svg className="mm-glow" width="1" height="1" aria-hidden>
+          <defs>
+            <filter id="mm-goo" filterUnits="userSpaceOnUse" x="-20000" y="-20000" width="40000" height="40000">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur" />
+              <feColorMatrix in="blur" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -8" result="goo" />
+              <feGaussianBlur in="goo" stdDeviation="9" result="halo" />
+              <feColorMatrix in="goo" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.15 0" result="body" />
+              <feMerge>
+                <feMergeNode in="halo" />
+                <feMergeNode in="body" />
+              </feMerge>
+            </filter>
+          </defs>
+          <g className="mm-glow-all" filter="url(#mm-goo)">
+            {links.map(([a, b]) => (
+              <line key={`${a}|${b}`} data-l={`${a}|${b}`} className={dimmed(a) || dimmed(b) ? 'is-far' : undefined} />
+            ))}
+            {people.map((p) => (
+              <circle key={p.id} data-g={p.id} r={(radii.get(p.id) ?? 12) + 6} className={dimmed(p.id) ? 'is-far' : undefined} />
+            ))}
+          </g>
+          {selected && (
+            <g className="mm-glow-lit" filter="url(#mm-goo)">
+              {links
+                .filter(([a, b]) => a === selected || b === selected)
+                .map(([a, b]) => (
+                  <line key={`${a}|${b}`} data-l={`${a}|${b}`} />
+                ))}
+              {people
+                .filter((p) => depth.has(p.id))
+                .map((p) => (
+                  <circle key={p.id} data-g={p.id} r={(radii.get(p.id) ?? 12) + 8} />
+                ))}
+            </g>
+          )}
+        </svg>
         <svg className="mm-lines" width="1" height="1" aria-hidden>
           {links.map(([a, b]) => (
-            <line
-              key={`${a}|${b}`}
-              ref={(el) => {
-                if (el) lineEls.current.set(`${a}|${b}`, el)
-                else lineEls.current.delete(`${a}|${b}`)
-              }}
-              className={`mm-line${lineState(a, b)}`}
-            />
+            <line key={`${a}|${b}`} data-l={`${a}|${b}`} className={`mm-line${lineState(a, b)}`} />
           ))}
         </svg>
         {people.map((p) => {
