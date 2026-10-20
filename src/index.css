@@ -364,10 +364,13 @@ button {
   border-radius: 999px;
   background: none;
   border: 0;
+  /* Figma "Disc study · Grouped by context" labels: Geist Medium 13 / 18, -0.52px, ink at 80% */
   font-size: 13px;
   font-weight: 500;
+  line-height: 18px;
   letter-spacing: -0.04em;
   color: var(--ink);
+  opacity: 0.8;
   white-space: nowrap;
   pointer-events: auto;
   cursor: pointer;
@@ -377,6 +380,7 @@ button {
 .mm-turf.is-focus .mm-turf-name {
   background: var(--night);
   color: #fff;
+  opacity: 1;
 }
 
 .has-sel .mm-turf,
@@ -409,7 +413,11 @@ button {
   height: var(--dot);
   border-radius: 50%;
   background: #fff;
-  box-shadow: 0 1px 4px rgba(22, 18, 28, 0.12);
+  /* A hairline ring + soft shadow so a white dot still reads on bare off-white ground
+     (ungrouped loners sit off the auras in grouped views) */
+  box-shadow:
+    0 0 0 1px rgba(22, 18, 28, 0.06),
+    0 1px 5px rgba(22, 18, 28, 0.2);
   opacity: clamp(0, calc(1 - (var(--k, 1) - 0.9) * 2.5), 1);
   pointer-events: none;
 }
@@ -417,8 +425,11 @@ button {
 .mm-node b {
   position: relative;
   z-index: 1;
-  font-weight: 600;
-  opacity: clamp(0, calc((var(--k, 1) - 0.9) * 2.5), 1);
+  font-weight: 600; /* Geist SemiBold, as the Figma "Disc study" initials */
+  color: #000;
+  letter-spacing: -0.04em;
+  /* Figma: black at 24%; still fades in as you zoom (--k) so the dot reads first */
+  opacity: calc(clamp(0, (var(--k, 1) - 0.9) * 2.5, 1) * 0.24);
 }
 
 .mm-node.is-lit {
@@ -2795,13 +2806,13 @@ button {
 .mm-label {
   gap: 0;
   padding: 0;
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--glass-edge);
   box-shadow:
-    0 6px 20px -12px rgba(60, 50, 110, 0.18),
-    0 0 0 1px rgba(17, 17, 19, 0.03);
+    0 0 0 1px rgba(17, 17, 19, 0.03),
+    0 6px 20px -12px rgba(60, 50, 110, 0.18);
 }
 
 .mm-label-open {

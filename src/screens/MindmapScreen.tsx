@@ -649,7 +649,7 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
                 width: discOf(r) * 2,
                 height: discOf(r) * 2,
                 margin: -discOf(r),
-                fontSize: r * 0.62,
+                fontSize: r * 0.75, // Geist SemiBold ~24px on a large disc, as the Figma "Disc study" initials
                 ['--dot' as string]: `${dotOf(r) * 2}px`,
               }}
             >
