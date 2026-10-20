@@ -107,7 +107,6 @@ export const GLASS_SELECTOR = [
   '.filters-menu',
   '.person-row',
   '.mm-label',
-  '.mm-turf-name',
   '.ask-pill',
   '.add-button',
   '.ask-filter',

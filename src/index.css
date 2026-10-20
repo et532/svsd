@@ -354,33 +354,28 @@ button {
   display: grid;
   place-items: center;
   border-radius: 50%;
-  opacity: 0.85;
+  opacity: 1;
   pointer-events: none;
+  /* Above the discs: the labels render before the nodes in the DOM, so without this they'd paint behind the circles. */
+  z-index: 5;
   will-change: transform;
 }
 
 .mm-turf-name {
-  padding: 4px 6px;
-  border-radius: 999px;
+  padding: 0;
   background: none;
   border: 0;
-  /* Figma "Disc study · Grouped by context" labels (node 294:34132): Geist Medium 13 / 18, -0.52px, ink-muted #5b5361 */
+  /* Figma "Disc study · Grouped by context" territory labels (node 294:34132): Geist Medium 13 / 18, -0.52px, ink #16121c, no pill */
   font-size: 13px;
   font-weight: 500;
   line-height: 18px;
   letter-spacing: -0.04em;
-  color: var(--ink-muted);
+  color: var(--ink);
   opacity: 1;
   white-space: nowrap;
   pointer-events: auto;
   cursor: pointer;
   transform: scale(var(--inv, 1));
-}
-
-.mm-turf.is-focus .mm-turf-name {
-  background: var(--night);
-  color: #fff;
-  opacity: 1;
 }
 
 .has-sel .mm-turf,
@@ -3050,7 +3045,6 @@ button {
   .filters-menu,
   .person-row,
   .mm-label,
-  .mm-turf-name,
   .ask-pill,
   .add-button,
   .ask-filter,
@@ -3072,7 +3066,6 @@ button {
   .filters-menu,
   .person-row,
   .mm-label,
-  .mm-turf-name,
   .ask-pill,
   .add-button,
   .ask-filter,
