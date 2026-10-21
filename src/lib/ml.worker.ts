@@ -14,8 +14,17 @@ let embedder: Promise<Embed> | undefined
 let whisper: Promise<Transcribe> | undefined
 const loadEmbedder = () =>
   (embedder ??= pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', { dtype: 'q8' }) as unknown as Promise<Embed>)
+const wasmWhisper = () =>
+  pipeline('automatic-speech-recognition', 'Xenova/whisper-base.en', { dtype: 'q8' }) as unknown as Promise<Transcribe>
+// WebGPU is several times faster than WASM; q8 doesn't suit the GPU, so it takes fp32 encoder + q4 decoder.
+// ponytail: falls back to WASM only if loading fails, not if the first run fails
 const loadWhisper = () =>
-  (whisper ??= pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny.en', { dtype: 'q8' }) as unknown as Promise<Transcribe>)
+  (whisper ??= ('gpu' in navigator
+    ? (pipeline('automatic-speech-recognition', 'Xenova/whisper-base.en', {
+        device: 'webgpu',
+        dtype: { encoder_model: 'fp32', decoder_model_merged: 'q4' },
+      }) as unknown as Promise<Transcribe>).catch(wasmWhisper)
+    : wasmWhisper()))
 
 self.onmessage = async (e: MessageEvent<Request>) => {
   const m = e.data
@@ -26,7 +35,10 @@ self.onmessage = async (e: MessageEvent<Request>) => {
     } else if (m.kind === 'transcribe') {
       self.postMessage({ id: m.id, result: (await (await loadWhisper())(m.audio, { chunk_length_s: 30, stride_length_s: 5 })).text })
     } else {
-      await (m.model === 'whisper' ? loadWhisper() : loadEmbedder())
+      if (m.model === 'whisper') {
+        // One second of silence compiles the WebGPU shaders now, so the first real recording isn't slow
+        await (await loadWhisper())(new Float32Array(16000))
+      } else await loadEmbedder()
       self.postMessage({ id: m.id, result: true })
     }
   } catch (err) {
