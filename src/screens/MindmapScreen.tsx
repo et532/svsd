@@ -174,12 +174,10 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
   const orbs = useRef({ cur: [] as OrbState[], from: [] as OrbState[], t0: 0, dur: 0, groupFor: [] as (string | null)[], raf: 0 })
   const focusRef = useRef<string | null>(null)
   const groupByRef = useRef(groupBy)
-  const asBgRef = useRef(asBackground)
   // Once the screen has faded in (or was already showing as the list's background), it must not fade in again: coming
   // back from the Connections list would replay the fade from transparent and flash the still aura underneath.
   const [settled, setSettled] = useState(asBackground)
   if (asBackground && !settled) setSettled(true) // left for the list before the first fade-in finished
-  asBgRef.current = asBackground
 
   const links = useMemo(() => linksOf(people), [people])
   const radii = useMemo(() => radiiOf(people), [people])
@@ -228,10 +226,6 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
   groupByRef.current = groupBy
   const orbCount = Math.max(AURA.length, groups.length)
 
-  // Entering / leaving background mode: redraw so the orbs pick up (or drop) the 30% dim.
-  useEffect(() => {
-    drawRef.current()
-  }, [asBackground])
 
   // Build the simulation whenever the people or the grouping change; keep existing positions.
   useEffect(() => {
@@ -456,8 +450,7 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
           o.cur[i] = s
           el.style.transform = `translate(${s.x - ORB / 2}px, ${s.y - ORB / 2}px) scale(${s.w / ORB}, ${s.h / ORB})`
           el.style.filter = `blur(${s.blur.toFixed(1)}px)`
-          // As the list's background the colored auras carry over 30% dimmer than on the mindmap.
-          el.style.opacity = (s.op * (asBgRef.current ? 0.7 : 1)).toFixed(3)
+          el.style.opacity = s.op.toFixed(3)
         })
         if (t < 1 && !o.raf)
           o.raf = requestAnimationFrame(() => {
@@ -798,7 +791,9 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
               orbEls.current[i] = el
             }}
             className="mm-aura-orb"
-            style={{ background: AURA[i % AURA.length].color, opacity: 0 }}
+            // As the list's background the colored auras carry over 30% lighter: mixed toward the list's ground rather
+            // than made see-through, so the grain under them stays as hidden as on the mindmap
+            style={{ background: asBackground ? `color-mix(in srgb, ${AURA[i % AURA.length].color} 70%, #f4f4f4)` : AURA[i % AURA.length].color, opacity: 0 }}
           />
         ))}
       </div>

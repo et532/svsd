@@ -14,7 +14,7 @@ export function AuraBackground() {
             top: `${(o.y / AURA_H) * 100}%`,
             width: `${(o.w / AURA_W) * 100}%`,
             aspectRatio: `${o.w} / ${o.h}`,
-            background: o.color,
+            background: `color-mix(in srgb, ${o.color} 80%, #f4f4f4)`, // lighter than the mindmap's, still opaque so the grain stays hidden
             filter: `blur(${AURA_BLUR}px)`,
           }}
         />
