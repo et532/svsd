@@ -19,7 +19,8 @@ export type Action = {
 export type Match = { person: Person; why: string; say?: string; via?: string; action?: Action }
 
 export type AskResult =
-  | { kind: 'people'; title: string; matches: Match[]; groups?: { label: string; matches: Match[] }[] }
+  // generic: found by the plain keyword filters (not a special answer), so meaning-based results can be added
+  | { kind: 'people'; title: string; matches: Match[]; groups?: { label: string; matches: Match[] }[]; generic?: boolean }
   | { kind: 'add' }
   | { kind: 'moment'; person: Person }
   | { kind: 'profile'; person: Person }
@@ -83,7 +84,7 @@ const filler = new Set(
     'that thats is are was were be been being the a an and or of to with into in at on from by like likes liked ' +
     'love loves into interested interest interests can could would please any some who’s that’s there their them ' +
     'they he she his her it its just also really guys folks lot lots much many works working work does do into ' +
-    'lives live living met meet meeting'
+    'lives live living met meet meeting play plays playing played want wants need needs something'
   ).split(' '),
 )
 
@@ -176,11 +177,15 @@ export function interpret(input: string, people: Person[]): AskResult {
     filters.push({
       label: word,
       test: (p) => {
+        // What actually happened with them comes first; the profile (tags, job, story) is the fallback reason
+        const moment = inMoments(p, terms)
+        if (moment) return moment
         const tag = p.tags.find((t) => terms.some((term) => norm(t).includes(term)))
         if (tag) return `Into ${tag}`
         if (terms.some((term) => norm(p.profession).includes(term))) return p.profession
-        if (terms.some((term) => norm(p.story).includes(term))) return p.story
-        return null
+        // Just the sentence of their story that matches, not all of it
+        const line = p.story.split(/(?<=[.!?])\s+/).find((x) => terms.some((term) => norm(x).includes(term)))
+        return line ? line.replace(/\.$/, '') : null
       },
     })
   }
@@ -191,14 +196,25 @@ export function interpret(input: string, people: Person[]): AskResult {
   const matches: Match[] = []
   for (const person of people) {
     const reasons = filters.map((f) => f.test(person))
-    if (reasons.every(Boolean)) matches.push({ person, why: [...new Set(reasons)].join(' · ') })
+    // A moment ("… (Coffee, Oct 2026)") is the best reason: say that, not every filter's reason
+    const moment = reasons.find((r) => r && /\(.+, [A-Z][a-z]{2} \d{4}\)$/.test(r))
+    if (reasons.every(Boolean)) matches.push({ person, why: moment ?? [...new Set(reasons)].join(' · ') })
   }
   const about = filters.map((f) => f.label).join(', ')
   const title =
     matches.length === 0
       ? `No one matches “${about}” yet`
       : `${matches.length} ${matches.length === 1 ? 'person' : 'people'} · ${about}`
-  return { kind: 'people', title, matches }
+  return { kind: 'people', title, matches, generic: true }
+}
+
+// What happened with someone that mentions one of the words: the sentence from a logged moment, and when.
+function inMoments(p: Person, terms: string[]): string | undefined {
+  const re = new RegExp(`\\b(${terms.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`)
+  for (const m of p.moments ?? []) {
+    const hit = (m.transcript ?? m.text ?? m.title).split(/(?<=[.!?])\s+/).find((x) => re.test(norm(x)))
+    if (hit) return `${hit.replace(/\.$/, '')} (${m.title}, ${new Date(m.date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })})`
+  }
 }
 
 // Someone mentioned by full name, or by a first name only one person has.

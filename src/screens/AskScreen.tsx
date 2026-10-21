@@ -4,6 +4,7 @@ import { ChevronRightIcon, CloseIcon, GamepadIcon, PartyIcon, PinIcon } from '..
 import type { Person } from '../data/people'
 import { interpret, storyRequest, type Action, type AskResult, type Match } from '../lib/ask'
 import { updatePerson } from '../lib/peopleStore'
+import { findPeople, warmUp } from '../lib/semantic'
 import { Avatar } from '../components/Avatar'
 import type { Tab } from '../components/TopControls'
 
@@ -20,7 +21,8 @@ type Props = {
 }
 
 // What you can search by, as examples.
-const THINK_MS = 1600
+const THINK_MS = 1600 // the pace of the status lines while searching
+const MIN_THINK_MS = 450
 
 const ways = [
   { Icon: GamepadIcon, label: 'Interest', example: 'Someone to go climbing with', query: 'Someone to go climbing with' },
@@ -34,7 +36,10 @@ export function AskScreen({ people, tab, start, onClose, onOpenProfile, onAdd, o
   // The request being "made": shown for a beat so it reads as a real search, not an instant answer
   const [pending, setPending] = useState<string | null>(null)
   const timer = useRef(0)
+  // Only the latest question may show its answer (the meaning search is async)
+  const seq = useRef(0)
   useEffect(() => () => window.clearTimeout(timer.current), [])
+  useEffect(() => warmUp(people), [people])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
@@ -47,14 +52,24 @@ export function AskScreen({ people, tab, start, onClose, onOpenProfile, onAdd, o
     window.clearTimeout(timer.current)
     setAsked(null)
     setPending(text)
-    timer.current = window.setTimeout(() => {
-      const result = interpret(query ?? text, people)
+    const mine = ++seq.current
+    const asking = query ?? text
+    const search = async () => {
+      let result = interpret(asking, people)
+      // A plain "find people like this" (or nothing found): add the closest people by meaning to what the rules found
+      if (result.kind === 'none' || (result.kind === 'people' && (result.generic || result.matches.length === 0)))
+        result = await findPeople(asking, people, result).catch(() => result)
+      return result
+    }
+    // The answer shows as soon as the search is done; only a very quick one is held for a beat so it doesn't flash
+    Promise.all([search(), new Promise((r) => (timer.current = window.setTimeout(r, MIN_THINK_MS)))]).then(([result]) => {
+      if (mine !== seq.current) return
       setPending(null)
       setAsked({ text, result })
       // Actions hand off to the right screen after a beat, so you see what's happening
       const go = result.kind === 'add' ? onAdd : result.kind === 'none' || result.kind === 'people' ? null : () => onOpenProfile(result.person.id)
       if (go) timer.current = window.setTimeout(go, 900)
-    }, THINK_MS)
+    })
   }
 
   // Copying or sharing a draft counts as sending it: tick off the follow-up it answers

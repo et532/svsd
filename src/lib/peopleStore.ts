@@ -1,9 +1,10 @@
 import { useSyncExternalStore } from 'react'
 import { samplePeople, type Person } from '../data/people'
+import { readDb, writeDb } from './localDb'
 
 // Everyone in the app: the sample people plus anyone added with the + button, with changes from
-// logging moments and ticking things off. Additions and changes are kept in this browser
-// (localStorage), so they survive a reload. Mock mode (?mock=200) never saves.
+// logging moments and ticking things off. Additions and changes are saved to local-data/people.json by the
+// local backend (and mirrored in localStorage), so they survive a reload. Mock mode (?mock=200) never saves.
 
 const KEY = 'peepl.people.v1'
 const mock = new URLSearchParams(window.location.search).has('mock')
@@ -34,14 +35,27 @@ function build(): Person[] {
 
 function commit() {
   people = build()
-  if (!mock)
+  if (!mock) {
+    writeDb('people', saved)
     try {
       localStorage.setItem(KEY, JSON.stringify(saved))
     } catch {
       // Not saved; the change still applies for this session.
     }
+  }
   for (const listener of listeners) listener()
 }
+
+// The file on this machine is the source of truth; localStorage is just the instant first paint. With no file
+// yet (first run with the backend), whatever this browser already had is moved into it.
+if (!mock)
+  readDb<Saved>('people').then((remote) => {
+    if (remote) {
+      saved = remote
+      people = build()
+      for (const listener of listeners) listener()
+    } else if (saved.added.length || Object.keys(saved.changed).length) writeDb('people', saved)
+  })
 
 export function getPeople(): Person[] {
   return people

@@ -3,6 +3,7 @@ import type { Person } from '../data/people'
 import { parseCompany } from '../lib/capture'
 import { applyFixes, detectNames, replaceName, resolveName, saveFix, splitNames } from '../lib/nameFixes'
 import { MicIcon, SendIcon, StopIcon } from './Icons'
+import { listen } from '../lib/speech'
 import { Wave } from './Wave'
 
 export type Sent = { text: string; voice: boolean; seconds: number }
@@ -35,7 +36,13 @@ export function Composer({ placeholder, script, start, waitForOpen = false, peop
   const [fixed, setFixed] = useState<[string, string][]>([])
   // The name word being retyped: which name, and which of its words
   const [editing, setEditing] = useState<{ name: string; word: number } | null>(null)
+  // Why the mic couldn't listen, shown in place of the placeholder
+  const [voiceError, setVoiceError] = useState('')
+  // A local recording is being turned into text (the first time this downloads the speech model)
+  const [transcribing, setTranscribing] = useState(false)
   const taRef = useRef<HTMLTextAreaElement>(null)
+  // Remembered name fixes are applied to the words as they appear
+  const fixNames = !!people
   // Names and the company in the note, outlined for fixing
   const company = useMemo(() => (people && review ? parseCompany(text) : undefined), [people, review, text])
   const names = useMemo(() => {
@@ -46,18 +53,34 @@ export function Composer({ placeholder, script, start, waitForOpen = false, peop
 
   useEffect(() => {
     if (!voice) return
+    const s = setInterval(() => setSeconds((x) => x + 1), 1000)
+    // The real mic where the browser has one; otherwise the scripted demo types the script word by word.
+    setVoiceError('')
+    const stopListening = listen(
+      (t) => setText(fixNames ? applyFixes(t).text : t),
+      (reason) => {
+        setVoiceError(reason)
+        setVoice(false)
+        setTyping(true)
+      },
+      setTranscribing,
+    )
+    if (stopListening)
+      return () => {
+        clearInterval(s)
+        stopListening()
+      }
     const words = script.split(' ')
     let n = 0
     const w = setInterval(() => {
       n = Math.min(n + 1, words.length)
       setText(words.slice(0, n).join(' '))
     }, WORD_MS)
-    const s = setInterval(() => setSeconds((x) => x + 1), 1000)
     return () => {
       clearInterval(w)
       clearInterval(s)
     }
-  }, [voice, script])
+  }, [voice, script, fixNames])
 
   // Grow with the text, and take focus when typing starts.
   useEffect(() => {
@@ -162,7 +185,7 @@ export function Composer({ placeholder, script, start, waitForOpen = false, peop
           rows={1}
           value={text}
           readOnly={voice}
-          placeholder={placeholder}
+          placeholder={transcribing ? 'Turning your voice into text…' : voiceError ? voiceMessage(voiceError) : placeholder}
           aria-label={placeholder}
           onFocus={() => {
             setTyping(true)
@@ -200,6 +223,12 @@ export function Composer({ placeholder, script, start, waitForOpen = false, peop
       )}
     </div>
   )
+}
+
+function voiceMessage(reason: string) {
+  if (reason === 'not-allowed' || reason === 'service-not-allowed') return 'The mic is blocked. Allow it in the address bar, or type.'
+  if (reason === 'network') return 'This browser cannot reach its speech service. Try Chrome or Edge, or type.'
+  return 'Voice is not working in this browser. Type instead.'
 }
 
 // One name word, retyped in place. The old name stays visible, faded, and what you type overwrites it from the left

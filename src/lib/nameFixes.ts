@@ -1,5 +1,6 @@
 import type { Person } from '../data/people'
 import { parsePerson, splitPeople } from './capture'
+import { readDb, writeDb } from './localDb'
 
 // Speech-to-text gets names wrong. When the user corrects one, the fix is kept (what it heard -> what they meant,
 // per browser) and applied to every later transcript. Names may be first name only.
@@ -37,13 +38,21 @@ export function saveFix(heard: string, meant: string) {
     else next[a.toLowerCase()] = b
   }
   fixes = next
-  if (!mock)
+  if (!mock) {
+    writeDb('namefixes', fixes)
     try {
       localStorage.setItem(KEY, JSON.stringify(fixes))
     } catch {
       // Not saved; still applies this session.
     }
+  }
 }
+
+if (!mock)
+  readDb<Record<string, string>>('namefixes').then((remote) => {
+    if (remote) fixes = remote
+    else if (Object.keys(fixes).length) writeDb('namefixes', fixes)
+  })
 
 // Applies the remembered fixes. `fixed` lists [heard, meant] for what changed, to show the "Jorden → Jordan" chip.
 export function applyFixes(text: string): { text: string; fixed: [string, string][] } {

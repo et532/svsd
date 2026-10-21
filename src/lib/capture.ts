@@ -14,6 +14,8 @@ export type Draft = Partial<Record<Field, string>> & {
   lives?: string
   knowsIds?: string[]
   company?: string
+  // Something they want to do ("wants to train for a half marathon"), kept as a thing to bring up
+  goal?: string
 }
 
 // The company in "Founder at Voltcell" / "works for Acme Labs" (a capitalized name after a role and at / @ / for).
@@ -90,14 +92,19 @@ export function parsePerson(text: string, people: Person[]): Draft {
   out.company = parseCompany(t)
   const firstSentence = t.split(/[.!?]/)[0]
   const met =
-    t.match(/met (?:at|in|through|during) ([^.,]+)/i) ??
+    // "met Sam Rivera at a pickleball meetup": a name between "met" and "at" must still count; a capitalized
+    // place later on ("designer at Kiln") is only the fallback
+    t.match(/\bmet (?:[A-Z][\w'-]+(?:\s+[A-Z][\w'-]+)?\s+)?(?:at|in|through|during|via) ([^.,]+)/i) ??
     t.match(/\bat ([A-Z][^.,]+)/) ??
     firstSentence.match(/\bat (?:an? |the )?([^.,]+)/i)
-  if (met) out.met = met[1].trim()
-  const does = t.match(/\b(founder|co-?founder|engineer|designer|investor|student|researcher|artist|writer|recruiter|PM|manager|climbing coach|coach)\b[^.,]*/i)
+  if (met) out.met = met[1].trim().replace(/^(?:an?|the)\s+/i, '')
+  const does = t.match(/\b((?:(?:product|project|program|engineering|marketing|operations|account|sales|general) manager|(?:software|hardware|mechanical|electrical|data|machine learning|research) (?:engineer|scientist)|(?:(?!an?\b|the\b)[a-z]+ )?(?:architect|chef|teacher|nurse|doctor|lawyer|developer|musician|photographer|filmmaker|professor|consultant|analyst|scientist|director|editor|producer|journalist|therapist|illustrator|accountant|barista|baker|carpenter|plumber|electrician|pilot)|founder|co-?founder|engineer|designer|investor|student|researcher|artist|writer|recruiter|PM|manager|climbing coach|coach)\b)[^.,]*/i)
   if (does) out.does = cut(does[0].trim())
-  const rem = t.match(/\b(climbs?|loves?|likes?|plays?|runs?|has an?|collects?|training)\b[^.,]*/i)
-  if (rem) out.remember = cut(rem[0].trim())
+  const rem = t.match(/\b(climbs?|loves?|likes?|enjoys?|plays?|runs(?! club)|has an?|collects?|training)\b[^.,]*/i)
+  // Only the one thing they like: "loves trail running and wants to train…" stops before "and"
+  if (rem) out.remember = cut(rem[0].split(/\s+(?:and|but)\s+/)[0].trim())
+  const goal = t.match(/\b(?:wants to|is trying to|hopes to|plans to) ([^.,]+)/i)
+  if (goal) out.goal = cut(`Wants to ${goal[1].trim()}`)
   const fol = t.match(/\b(owe|intro|follow up|send|asked me|ask about)\b[^.]*/i)
   if (fol) out.follow = cut(fol[0].trim())
   const from = t.match(/\b[Ff]rom ([A-Z][a-z]+(?: [A-Z][a-z]+)?)(?!'s)/)
@@ -189,15 +196,28 @@ function slug(name: string) {
 // "Loves pottery" -> "pottery"; "Climbs Tuesdays" -> "climbs".
 function interest(remember?: string) {
   const words = remember?.toLowerCase().split(/\s+/) ?? []
-  return /^(loves?|likes?|plays?|collects?|has|into)$/.test(words[0] ?? '') ? words[1] : words[0]
+  if (!/^(loves?|likes?|enjoys?|plays?|collects?|has|into)$/.test(words[0] ?? '')) return words[0]
+  // "loves trail running on weekends" -> "trail running"
+  const rest = words.slice(1).filter((w) => !/^(an?|the|my|every)$/.test(w))
+  const end = rest.findIndex((w) => /^(on|at|in|and|to|with|every|for)$/.test(w))
+  return rest.slice(0, end < 0 ? 2 : Math.min(end, 2)).join(' ') || undefined
 }
 
-const today = () => new Date().toISOString().slice(0, 10)
+// The activity in a place you met ("pickleball meetup" -> "pickleball", "run club" -> "run").
+function activity(met?: string) {
+  const w = met?.match(/^(.*?)\s+(?:meetups?|clubs?|class(?:es)?|leagues?|groups?|tournaments?|teams?|sessions?|workshops?)\b/i)?.[1]
+  const word = w?.split(/\s+/).slice(-1)[0]?.toLowerCase().replace(/[^a-z-]/g, '')
+  return word === 'run' ? 'running' : word || undefined
+}
+
+const today = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10)
 const uid = () => Math.random().toString(36).slice(2, 8)
 
 // "Designer @ Kiln" from "designer at Kiln"; just the role when there is no company.
+const roleOf = (draft: Draft) => (draft.does ?? '').split(/,| at | in /)[0].trim() || undefined
+
 function professionOf(draft: Draft) {
-  const role = (draft.does ?? '').split(/,| at | in /)[0].trim()
+  const role = roleOf(draft)
   if (!role) return 'Unknown'
   const title = role[0].toUpperCase() + role.slice(1)
   return draft.company ? `${title} @ ${draft.company}` : title
@@ -208,16 +228,18 @@ export function draftToPerson(draft: Draft, how: { voice: boolean; text: string;
   const name = draft.name?.trim() || 'New person'
   let id = slug(name)
   while (taken.has(id)) id = `${slug(name)}-${uid()}`
-  const story = how.voice ? scriptedStory : how.text.trim()
-  const tags = how.voice
+  // Only the scripted demo note gets the made-up story; anything really said or typed is kept as it is
+  const demo = how.voice && how.text.includes('battery recycling')
+  const story = demo ? scriptedStory : how.text.trim()
+  const tags = demo
     ? scriptedTags
-    : [draft.does?.split(/[ ,]/)[0].toLowerCase(), interest(draft.remember)].filter((x): x is string => !!x)
-  const todos = [draft.follow, draft.remember].filter((x): x is string => !!x).map((text) => ({ id: uid(), text, done: false }))
+    : [...new Set([roleOf(draft)?.toLowerCase(), interest(draft.remember), activity(draft.met)].filter((x): x is string => !!x))]
+  const todos = [draft.follow, draft.goal, draft.remember].filter((x): x is string => !!x).map((text) => ({ id: uid(), text, done: false }))
   return {
     id,
     name,
     context: draft.context ?? 'unsorted',
-    profession: how.voice ? `Founder @ ${draft.company ?? '[Startup]'}` : professionOf(draft),
+    profession: demo ? `Founder @ ${draft.company ?? '[Startup]'}` : professionOf(draft),
     story,
     tags: tags.length ? tags : ['new'],
     from: place(draft.from, 'Unknown'),
