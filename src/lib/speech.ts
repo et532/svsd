@@ -1,3 +1,5 @@
+import { preload, transcribeAudio } from './ml'
+
 // Voice-to-text. First choice is the browser's built-in speech recognition (Chrome / Edge / Safari): live words,
 // but Chrome sends the audio to Google. Brave, Firefox and other builds cannot use that service ("network" error,
 // or no API at all), so there the mic is recorded and transcribed on this machine by Whisper (a ~40 MB model,
@@ -89,13 +91,6 @@ export function listen(
   }
 }
 
-type Transcribe = (audio: Float32Array) => Promise<{ text: string }>
-let whisper: Promise<Transcribe> | undefined
-const loadWhisper = () =>
-  (whisper ??= import('@huggingface/transformers').then(
-    (m) => m.pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny.en', { dtype: 'q8' }) as unknown as Transcribe,
-  ))
-
 const RATE = 16000 // what Whisper wants
 const TICK_MS = 500 // how often the recording so far is transcribed (a tick is skipped while the last one is still running)
 const MAX_SEGMENT = 25 * RATE // Whisper reads 30 s at a time: past ~25 s the text so far is kept and a new piece starts
@@ -116,13 +111,13 @@ function recordLocal(onText: (t: string) => void, onFail: (reason: string) => vo
   let committed = '' // text of finished 25 s pieces
   let working: Promise<void> = Promise.resolve()
   let failed = false
-  loadWhisper().catch(() => {}) // start the model download while the user is still talking
+  preload('whisper').catch(() => {}) // start the model download while the user is still talking
 
   const transcribe = async () => {
     const audio = join(chunks)
     // Too short, or silence (Whisper invents words like " you" for silence): nothing to say yet
     if (audio.length < RATE * 0.8 || rms(audio) < 0.003) return
-    const { text } = await (await loadWhisper())(audio)
+    const text = await transcribeAudio(audio)
     const clean = text.replace(/\[[^\]]*\]|\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() // drop "[BLANK_AUDIO]" style tags
     const all = `${committed} ${clean}`.trim()
     if (all) onText(all)

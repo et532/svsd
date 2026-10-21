@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import { exportBackup, importBackup } from '../lib/localDb'
 import {
   BriefcaseIcon,
   BuildingIcon,
@@ -32,7 +31,6 @@ type Props = {
 // Top left: switch between the mindmap and the list. Top right (mindmap only): Filters, which groups the graph.
 export function TopControls({ tab, onTab, groupBy, onGroupBy }: Props) {
   const [open, setOpen] = useState(false)
-  const restore = useRef<HTMLInputElement>(null)
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -114,29 +112,6 @@ export function TopControls({ tab, onTab, groupBy, onGroupBy }: Props) {
                   {groupBy === id && <CheckIcon size={18} />}
                 </button>
               ))}
-              <span className="filters-title">Your data</span>
-              <button role="menuitem" className="filters-item" onClick={() => void exportBackup()}>
-                <span>
-                  <b>Back up</b>
-                  <small>Save everything to a file</small>
-                </span>
-              </button>
-              <button role="menuitem" className="filters-item" onClick={() => restore.current?.click()}>
-                <span>
-                  <b>Restore</b>
-                  <small>Load a backup file</small>
-                </span>
-              </button>
-              <input
-                ref={restore}
-                type="file"
-                accept="application/json,.json"
-                hidden
-                onChange={(e) => {
-                  const file = e.target.files?.[0]
-                  if (file) void importBackup(file).then((ok) => !ok && window.alert('That is not a Peepl backup file.'))
-                }}
-              />
             </div>
           )}
         </div>

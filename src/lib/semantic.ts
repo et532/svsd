@@ -1,6 +1,7 @@
 import type { Person } from '../data/people'
 import type { AskResult, Match } from './ask'
 import { readDb, writeDb } from './localDb'
+import { embedTexts } from './ml'
 
 // Search by meaning, fully on this machine: a small embedding model (all-MiniLM-L6-v2, ~25 MB, downloaded once and
 // then cached by the browser) turns text into vectors, so "pickleball" lands near "tennis" and "racquet sports".
@@ -13,14 +14,6 @@ const CLOSE_TO_BEST = 0.15 // and a result has to be within this of the best one
 const MAX_RESULTS = 10
 const mock = new URLSearchParams(window.location.search).has('mock')
 
-type Extract = (texts: string[], opts: { pooling: 'mean'; normalize: boolean }) => Promise<{ tolist(): number[][] }>
-
-let model: Promise<Extract> | undefined
-const loadModel = () =>
-  (model ??= import('@huggingface/transformers').then(
-    (m) => m.pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', { dtype: 'q8' }) as unknown as Extract,
-  ))
-
 // chunk text -> vector. Kept in the browser (IndexedDB) so the next start doesn't re-embed anyone.
 type Vectors = Record<string, number[]>
 let cache: Promise<Vectors> | undefined
@@ -30,10 +23,10 @@ async function embed(texts: string[]): Promise<number[][]> {
   const have = await vectors()
   const missing = [...new Set(texts.filter((t) => !have[t]))]
   if (missing.length) {
-    const run = await loadModel()
+    // In the background worker, a batch at a time, so the screen stays responsive and a question can slip in between
     for (let i = 0; i < missing.length; i += 16) {
       const batch = missing.slice(i, i + 16)
-      const out = (await run(batch, { pooling: 'mean', normalize: true })).tolist()
+      const out = await embedTexts(batch)
       batch.forEach((t, j) => (have[t] = out[j].map((x) => Math.round(x * 1e4) / 1e4)))
     }
     if (!mock) writeDb('vectors', have)
