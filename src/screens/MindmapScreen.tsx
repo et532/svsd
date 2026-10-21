@@ -276,6 +276,8 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
     }
 
     // Frame everyone inside the phone, clear of the search bar and the nav.
+    // The fitted zoom, for the initials: only recomputed after the layout moves (fit() sorts everyone's position)
+    const fitK = { k: 1, stale: true }
     const fit = () => {
       const root = rootRef.current
       if (!root || !graph.nodes.length) return { ...view.current }
@@ -297,7 +299,8 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
         worldRef.current.style.transform = `translate(${x}px, ${y}px) scale(${k})`
         worldRef.current.style.setProperty('--k', String(k))
         // Initials fade in (and the dots out) as you zoom in
-        worldRef.current.style.setProperty('--ini', initialsOpacity(k, fit().k).toFixed(3))
+        if (fitK.stale) Object.assign(fitK, { k: fit().k, stale: false })
+        worldRef.current.style.setProperty('--ini', initialsOpacity(k, fitK.k).toFixed(3))
         worldRef.current.style.setProperty('--inv', String(Math.min(3, 1 / k))) // keeps group names readable when zoomed out
       }
       // Float the dots (see FLOAT_K): leave each one behind by its share of how far the view carried it on screen since
@@ -473,6 +476,7 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
     let raf = 0
     const tick = () => {
       graph.step()
+      fitK.stale = true
       if (!touched.current) {
         const t = fit()
         const v = view.current
@@ -880,7 +884,6 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
                 margin: -discOf(r),
                 fontSize: dotOf(r), // half the white dot's width, so the initials fit inside it
                 ['--dot' as string]: `${dotOf(r) * 2}px`,
-                ['--disc' as string]: `${discOf(r) * 2}px`,
               }}
             >
               <b>{initials(p.name)}</b>

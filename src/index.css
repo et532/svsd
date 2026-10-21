@@ -401,18 +401,29 @@ button {
   transition: opacity 0.25s;
 }
 
-/* The disc, exactly as the Figma "Disc · Zara Ahmed" (node 294:33993): white at 50%, layer at 60% opacity, Color Dodge,
-   and a white inner shadow (blur 23.9, spread 9.6 on that 258px disc; scaled to each disc's size via --disc). Its own
-   layer, so the 60% doesn't dim the white dot and the initials. */
+/* The disc, as the Figma "Disc · Zara Ahmed" (node 294:33993): white at 50%, layer at 60% opacity, and a white inner
+   shadow (blur 23.9, spread 9.6 on that 258px disc). Drawn cheaply for speed (user's call 2026-10-20, the dots felt
+   laggy with many people): the inner shadow is a radial gradient with the same falloff (stops computed from the Figma
+   blur and spread, as fractions of the radius) instead of a blurred inset box-shadow, which made the browser re-blur every
+   disc on every frame (150 people: 21 fps -> 60 fps); and no Color Dodge, which with a pure white disc looks the same as
+   normal blending but is costly. Its own layer, so the 60% doesn't dim the white dot and the initials. */
 .mindmap-screen:not(.look-ink) .mm-node::before {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.5);
-  box-shadow: inset 0 0 calc(var(--disc) * 0.0926) calc(var(--disc) * 0.037) #fff;
+  background: radial-gradient(
+    circle closest-side,
+    rgba(255, 255, 255, 0.5) 68%,
+    rgba(255, 255, 255, 0.511) 74%,
+    rgba(255, 255, 255, 0.543) 80%,
+    rgba(255, 255, 255, 0.603) 85%,
+    rgba(255, 255, 255, 0.674) 89%,
+    rgba(255, 255, 255, 0.75) 92.6%,
+    rgba(255, 255, 255, 0.822) 96%,
+    rgba(255, 255, 255, 0.894) 100%
+  );
   opacity: 0.6;
-  mix-blend-mode: color-dodge;
   pointer-events: none;
 }
 
