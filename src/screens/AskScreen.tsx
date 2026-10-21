@@ -39,7 +39,7 @@ export function AskScreen({ people, tab, start, onClose, onOpenProfile, onAdd, o
   // Only the latest question may show its answer (the meaning search is async)
   const seq = useRef(0)
   useEffect(() => () => window.clearTimeout(timer.current), [])
-  useEffect(() => warmUp(people), [people])
+  useEffect(() => void warmUp(people), [people])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
@@ -116,7 +116,7 @@ export function AskScreen({ people, tab, start, onClose, onOpenProfile, onAdd, o
         {asked && result && (
           <div className="ask-answer" aria-live="polite">
             <h2 className="flow-title is-ink">{asked.text}</h2>
-            <Answer result={result} tab={tab} onOpenProfile={onOpenProfile} onShow={onShow} onSent={sent} />
+            <Answer result={result} tab={tab} count={people.length} onOpenProfile={onOpenProfile} onShow={onShow} onAdd={onAdd} onSent={sent} />
           </div>
         )}
       </div>
@@ -132,12 +132,15 @@ export function AskScreen({ people, tab, start, onClose, onOpenProfile, onAdd, o
 type AnswerProps = {
   result: AskResult
   tab: Tab
+  // How many people are searched, for "none of your N people"
+  count: number
   onOpenProfile: (id: string) => void
   onShow: (ids: string[], label: string) => void
+  onAdd: () => void
   onSent: (action: Action) => void
 }
 
-function Answer({ result, tab, onOpenProfile, onShow, onSent }: AnswerProps) {
+function Answer({ result, tab, count, onOpenProfile, onShow, onAdd, onSent }: AnswerProps) {
   if (result.kind === 'add') return <p className="flow-note">Okay, let’s add someone new…</p>
   if (result.kind === 'moment' || result.kind === 'profile') return <p className="flow-note">Opening {result.person.name}…</p>
   if (result.kind === 'none')
@@ -148,7 +151,27 @@ function Answer({ result, tab, onOpenProfile, onShow, onSent }: AnswerProps) {
     )
 
   const { matches, title } = result
-  if (matches.length === 0) return <p className="flow-note">{title}</p>
+  if (matches.length === 0)
+    return (
+      <>
+        <p className="flow-note">
+          {title}. None of the {count} {count === 1 ? 'person' : 'people'} in your list fit, so I won’t guess.
+        </p>
+        {result.near && result.near.length > 0 && (
+          <div className="ask-group">
+            <span className="label ask-group-label">Closest, but not quite</span>
+            <div className="ask-results">
+              {result.near.map((m) => (
+                <ResultCard key={m.person.id} match={m} onOpenProfile={onOpenProfile} onSent={onSent} />
+              ))}
+            </div>
+          </div>
+        )}
+        <button className="ask-show" onClick={onAdd}>
+          Add someone new
+        </button>
+      </>
+    )
   return (
     <>
       {(result.groups ?? [{ label: '', matches }]).map((g) => (

@@ -1,3 +1,4 @@
+import { startLive } from './live'
 import { preload, transcribeAudio } from './ml'
 
 // Voice-to-text. First choice is the browser's built-in speech recognition (Chrome / Edge / Safari): live words,
@@ -30,15 +31,21 @@ const BLOCKED = ['not-allowed', 'service-not-allowed', 'audio-capture']
 // - onText: everything heard so far (the whole text, replacing the last).
 // - onFail: the reason when the mic is blocked or nothing works.
 // - onBusy: true while the last of a local recording is being transcribed after stop (text is coming).
+// - onLoading: true while the local voice model is still getting ready (first use downloads it), so nothing shows yet.
+// Whether the mic is heard by the local models (Brave, Firefox...) rather than the browser's own speech service
+export const usesLocalVoice = !Ctor || 'brave' in navigator
+
 export function listen(
   onText: (text: string) => void,
   onFail: (reason: string) => void,
   onBusy: (busy: boolean) => void,
+  onLoading: (loading: boolean) => void = () => {},
 ): (() => void) | null {
   if (!Ctor && !navigator.mediaDevices?.getUserMedia) return null
   let stopLocal = () => {}
-  const fallToWhisper = () => (stopLocal = recordLocal(onText, onFail, onBusy))
-  if (!Ctor) {
+  const fallToWhisper = () => (stopLocal = recordLocal(onText, onFail, onBusy, onLoading))
+  // Brave has the built-in API but blocks the Google service behind it, so it would only fail after a delay
+  if (!Ctor || usesLocalVoice) {
     fallToWhisper()
     return () => stopLocal()
   }
@@ -103,24 +110,36 @@ const join = (a: Float32Array[]) => {
 }
 const rms = (a: Float32Array) => Math.sqrt(a.reduce((s, x) => s + x * x, 0) / (a.length || 1))
 
-// Records the mic as 16 kHz mono and keeps transcribing it with Whisper while it runs.
-function recordLocal(onText: (t: string) => void, onFail: (reason: string) => void, onBusy: (b: boolean) => void) {
+// Records the mic as 16 kHz mono. While it runs, Vosk (live.ts) shows each word as it is said; if that model isn't
+// available (still downloading, or offline) Whisper passes over the recording so far fill in instead. When stopped,
+// Whisper transcribes the whole recording for the accurate final text.
+function recordLocal(
+  onText: (t: string) => void,
+  onFail: (reason: string) => void,
+  onBusy: (b: boolean) => void,
+  onLoading: (b: boolean) => void,
+) {
   let stopped = false
   let release = () => {}
   let chunks: Float32Array[] = []
   let committed = '' // text of finished 25 s pieces
   let working: Promise<void> = Promise.resolve()
   let failed = false
-  preload('whisper').catch(() => {}) // start the model download while the user is still talking
+  let live: ReturnType<typeof startLive> | undefined
+  onLoading(true)
+  // The word-by-word model downloads first; Whisper (for the final text) only after it, so they don't compete
+  const seen = (t: string) => (onLoading(false), onText(t))
 
   const transcribe = async () => {
     const audio = join(chunks)
     // Too short, or silence (Whisper invents words like " you" for silence): nothing to say yet
     if (audio.length < RATE * 0.8 || rms(audio) < 0.003) return
     const text = await transcribeAudio(audio)
+    // A pass that finished after the live words took over would only make the text jump back: drop it
+    if (!live?.failed && !stopped) return
     const clean = text.replace(/\[[^\]]*\]|\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() // drop "[BLANK_AUDIO]" style tags
     const all = `${committed} ${clean}`.trim()
-    if (all) onText(all)
+    if (all) seen(all)
     if (audio.length > MAX_SEGMENT) {
       committed = all
       chunks = [join(chunks).slice(audio.length)] // keep only what was recorded while transcribing
@@ -134,7 +153,8 @@ function recordLocal(onText: (t: string) => void, onFail: (reason: string) => vo
     }))
   let isBusy = false
   const tick = setInterval(() => {
-    if (isBusy || stopped) return
+    // Whisper passes only stand in when the word-by-word model could not load
+    if (isBusy || stopped || !live?.failed) return
     isBusy = true
     run().finally(() => (isBusy = false))
   }, TICK_MS)
@@ -146,7 +166,15 @@ function recordLocal(onText: (t: string) => void, onFail: (reason: string) => vo
       const source = ctx.createMediaStreamSource(stream)
       // ponytail: ScriptProcessor is deprecated but works in every browser without a separate worklet file
       const tap = ctx.createScriptProcessor(4096, 1, 1)
-      tap.onaudioprocess = (e) => void chunks.push(new Float32Array(e.inputBuffer.getChannelData(0)))
+      live = startLive(ctx.sampleRate, seen, () => {
+        onLoading(false)
+        preload('whisper').catch(() => {})
+      })
+      tap.onaudioprocess = (e) => {
+        const samples = new Float32Array(e.inputBuffer.getChannelData(0))
+        chunks.push(samples)
+        live?.feed(new Float32Array(samples))
+      }
       const mute = ctx.createGain()
       mute.gain.value = 0 // the processor only runs while connected to the output
       source.connect(tap)
@@ -169,6 +197,7 @@ function recordLocal(onText: (t: string) => void, onFail: (reason: string) => vo
     stopped = true
     clearInterval(tick)
     release()
+    live?.stop()
     // The last words: queued after any transcription in flight, over everything recorded
     onBusy(true)
     run().finally(() => onBusy(false))

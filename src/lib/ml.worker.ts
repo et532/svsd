@@ -3,7 +3,7 @@
 import { pipeline } from '@huggingface/transformers'
 
 type Embed = (texts: string[], opts: { pooling: 'mean'; normalize: boolean }) => Promise<{ tolist(): number[][] }>
-type Transcribe = (audio: Float32Array) => Promise<{ text: string }>
+type Transcribe = (audio: Float32Array, opts?: { chunk_length_s: number; stride_length_s: number }) => Promise<{ text: string }>
 
 export type Request =
   | { id: number; kind: 'embed'; texts: string[] }
@@ -24,7 +24,7 @@ self.onmessage = async (e: MessageEvent<Request>) => {
       const out = (await (await loadEmbedder())(m.texts, { pooling: 'mean', normalize: true })).tolist()
       self.postMessage({ id: m.id, result: out })
     } else if (m.kind === 'transcribe') {
-      self.postMessage({ id: m.id, result: (await (await loadWhisper())(m.audio)).text })
+      self.postMessage({ id: m.id, result: (await (await loadWhisper())(m.audio, { chunk_length_s: 30, stride_length_s: 5 })).text })
     } else {
       await (m.model === 'whisper' ? loadWhisper() : loadEmbedder())
       self.postMessage({ id: m.id, result: true })

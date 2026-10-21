@@ -40,6 +40,8 @@ export function Composer({ placeholder, script, start, waitForOpen = false, peop
   const [voiceError, setVoiceError] = useState('')
   // A local recording is being turned into text (the first time this downloads the speech model)
   const [transcribing, setTranscribing] = useState(false)
+  // The local voice model is still getting ready (first use downloads it): nothing can show until it is
+  const [loadingVoice, setLoadingVoice] = useState(false)
   const taRef = useRef<HTMLTextAreaElement>(null)
   // Remembered name fixes are applied to the words as they appear
   const fixNames = !!people
@@ -64,6 +66,7 @@ export function Composer({ placeholder, script, start, waitForOpen = false, peop
         setTyping(true)
       },
       setTranscribing,
+      setLoadingVoice,
     )
     if (stopListening)
       return () => {
@@ -201,6 +204,9 @@ export function Composer({ placeholder, script, start, waitForOpen = false, peop
             }
           }}
         />
+      )}
+      {voice && loadingVoice && !text && (
+        <p className="composer-hint">Getting the voice model ready. This takes a minute the first time, then it is instant.</p>
       )}
       {voice ? (
         <div className="composer-row">

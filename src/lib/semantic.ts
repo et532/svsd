@@ -1,5 +1,5 @@
 import type { Person } from '../data/people'
-import type { AskResult, Match } from './ask'
+import { filler, type AskResult, type Match } from './ask'
 import { readDb, writeDb } from './localDb'
 import { embedTexts } from './ml'
 
@@ -10,8 +10,9 @@ import { embedTexts } from './ml'
 // scores as their best chunk, and that chunk is the "why" (for a moment: what happened, and when).
 
 const MIN_SCORE = 0.35 // below this is noise: real matches score 0.45–0.6, one-word chunks like "food" drift to ~0.3
-const CLOSE_TO_BEST = 0.15 // and a result has to be within this of the best one, so a strong match isn't buried in weak ones
+const CLOSE_TO_BEST = 0.1 // and a result has to be within this of the best one, so a strong match isn't buried in weak ones
 const MAX_RESULTS = 10
+const NEAR_SCORE = 0.3 // under MIN_SCORE but still in the same area: worth showing as "closest, but not quite"
 const mock = new URLSearchParams(window.location.search).has('mock')
 
 // chunk text -> vector. Kept in the browser (IndexedDB) so the next start doesn't re-embed anyone.
@@ -54,15 +55,21 @@ const chunksOf = (p: Person): Chunk[] => {
 
 // Load the model and embed everyone ahead of time (when Find opens), so the answer is quick.
 export function warmUp(people: Person[]) {
-  if (!mock) embed(people.flatMap(chunksOf).map((c) => c.text)).catch(() => {})
+  return mock ? Promise.resolve() : embed(people.flatMap(chunksOf).map((c) => c.text)).then(() => {}, () => {})
 }
 
 const dot = (a: number[], b: number[]) => a.reduce((s, x, i) => s + x * b[i], 0)
 
 // Everyone, closest to the query first, each with the piece of what you know that matched best.
+// "someone who does my taxes" -> "taxes": the little words in how people ask make every job title look close
+const topic = (query: string) => {
+  const words = query.toLowerCase().replace(/[^\p{L}\p{N}\s'’-]/gu, ' ').split(/\s+/).filter((w) => w && !filler.has(w) && !/^(do|does|did|make|makes|can|help|need|want|my|me)$/.test(w))
+  return words.join(' ') || query
+}
+
 async function rank(query: string, people: Person[]) {
   const chunks = people.map(chunksOf)
-  const [q, ...all] = await embed([query, ...chunks.flat().map((c) => c.text)])
+  const [q, ...all] = await embed([topic(query), ...chunks.flat().map((c) => c.text)])
   let at = 0
   const scored = people.map((person, i) => {
     let best = { score: -1, chunk: chunks[i][0] }
@@ -78,18 +85,18 @@ async function rank(query: string, people: Person[]) {
 export async function semanticSearch(query: string, people: Person[]): Promise<AskResult> {
   const scored = await rank(query, people)
   const floor = Math.max(MIN_SCORE, scored[0].score - CLOSE_TO_BEST)
-  const matches: Match[] = scored
-    .filter((s) => s.score >= floor)
-    .slice(0, MAX_RESULTS)
-    .map(({ person, chunk }) => ({
-      person,
-      // A moment reads as what happened, with when; a profile line as itself
-      why: chunk.from ? `${chunk.text.replace(/\.$/, '')} (${chunk.from})` : person.tags.includes(chunk.text) ? `Into ${chunk.text}` : chunk.text.replace(/\.$/, ''),
-    }))
+  // A moment reads as what happened, with when; a profile line as itself
+  const toMatch = ({ person, chunk }: (typeof scored)[number]): Match => ({
+    person,
+    why: chunk.from ? `${chunk.text.replace(/\.$/, '')} (${chunk.from})` : person.tags.includes(chunk.text) ? `Into ${chunk.text}` : chunk.text.replace(/\.$/, ''),
+  })
+  const matches: Match[] = scored.filter((s) => s.score >= floor).slice(0, MAX_RESULTS).map(toMatch)
   const title = matches.length
     ? `${matches.length} ${matches.length === 1 ? 'person' : 'people'} closest to “${query}”`
     : `No one matches “${query}” yet`
-  return { kind: 'people', title, matches }
+  // Nothing close enough: still offer the nearest few, clearly as "not quite"
+  const near = matches.length ? undefined : scored.filter((s) => s.score >= NEAR_SCORE).slice(0, 2).map(toMatch)
+  return { kind: 'people', title, matches, near }
 }
 
 // What the keyword rules found first (exact words, places, how you know them), then the people closest in meaning.
@@ -107,5 +114,7 @@ export async function findPeople(query: string, people: Person[], rules: AskResu
   const title = matches.length
     ? `${matches.length} ${matches.length === 1 ? 'person' : 'people'} for “${query}”`
     : `No one matches “${query}” yet`
-  return { kind: 'people', title, matches }
+  // With no real match at all, keep the nearest few the search found, so the screen can offer them as "not quite"
+  const near = matches.length ? undefined : closest.kind === 'people' ? closest.near : undefined
+  return { kind: 'people', title, matches, near }
 }

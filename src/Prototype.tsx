@@ -1,4 +1,5 @@
 import { useGlassEverywhere } from './lib/glass'
+import { preloadModels } from './lib/preload'
 import { AuraBackground } from './components/AuraBackground'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AskBar } from './components/AskBar'
@@ -58,6 +59,9 @@ export function Prototype() {
   const focusId = navFocus
   const top = layers[layers.length - 1]
   const byId = (id: string) => allPeople.find((p) => p.id === id)
+
+  // Start getting the voice and search models ready right away, so they are there when first used
+  useEffect(() => preloadModels(), [])
 
   const say = useCallback((text: string, ok = false) => setToast({ text, ok, key: Date.now() }), [])
   useEffect(() => {

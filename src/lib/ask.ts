@@ -20,7 +20,7 @@ export type Match = { person: Person; why: string; say?: string; via?: string; a
 
 export type AskResult =
   // generic: found by the plain keyword filters (not a special answer), so meaning-based results can be added
-  | { kind: 'people'; title: string; matches: Match[]; groups?: { label: string; matches: Match[] }[]; generic?: boolean }
+  | { kind: 'people'; title: string; matches: Match[]; groups?: { label: string; matches: Match[] }[]; generic?: boolean; near?: Match[] }
   | { kind: 'add' }
   | { kind: 'moment'; person: Person }
   | { kind: 'profile'; person: Person }
@@ -77,7 +77,7 @@ const relationWords: [RegExp, Context, string][] = [
 ]
 
 // Words that carry no meaning for matching.
-const filler = new Set(
+export const filler = new Set(
   (
     'who whos whom what which where when do does did i im ive me my mine you your know knows known people person ' +
     'everyone everybody anyone someone somebody all show find search look looking for get give list tell about ' +
