@@ -4,7 +4,7 @@ import { ChevronRightIcon, CloseIcon, GamepadIcon, PartyIcon, PinIcon } from '..
 import type { Person } from '../data/people'
 import { interpret, storyRequest, type Action, type AskResult, type Match } from '../lib/ask'
 import { updatePerson } from '../lib/peopleStore'
-import { findPeople, warmUp } from '../lib/semantic'
+import { findPeople, searchProgress, warmUp } from '../lib/semantic'
 import { Avatar } from '../components/Avatar'
 import type { Tab } from '../components/TopControls'
 
@@ -23,6 +23,7 @@ type Props = {
 // What you can search by, as examples.
 const THINK_MS = 1600 // the pace of the status lines while searching
 const MIN_THINK_MS = 450
+const SLOW_MS = 4000 // after this, show what is known and keep working
 
 const ways = [
   { Icon: GamepadIcon, label: 'Interest', example: 'Someone to go climbing with', query: 'Someone to go climbing with' },
@@ -54,12 +55,17 @@ export function AskScreen({ people, tab, start, onClose, onOpenProfile, onAdd, o
     setPending(text)
     const mine = ++seq.current
     const asking = query ?? text
-    const search = async () => {
-      let result = interpret(asking, people)
+    const search = async (): Promise<AskResult> => {
+      const rules = interpret(asking, people)
       // A plain "find people like this" (or nothing found): add the closest people by meaning to what the rules found
-      if (result.kind === 'none' || (result.kind === 'people' && (result.generic || result.matches.length === 0)))
-        result = await findPeople(asking, people, result).catch(() => result)
-      return result
+      if (!(rules.kind === 'none' || (rules.kind === 'people' && (rules.generic || rules.matches.length === 0)))) return rules
+      const meaning = findPeople(asking, people, rules).catch(() => rules)
+      // The very first search has to read every moment, which can take a while: after a few seconds show what the
+      // rules found, say so, and swap in the full answer when it is ready
+      const quick = await Promise.race([meaning, new Promise<null>((r) => window.setTimeout(() => r(null), SLOW_MS))])
+      if (quick) return quick
+      void meaning.then((full) => mine === seq.current && setAsked({ text, result: full }))
+      return { ...(rules.kind === 'people' ? rules : { kind: 'people' as const, title: '', matches: [] }), slow: true }
     }
     // The answer shows as soon as the search is done; only a very quick one is held for a beat so it doesn't flash
     Promise.all([search(), new Promise((r) => (timer.current = window.setTimeout(r, MIN_THINK_MS)))]).then(([result]) => {
@@ -151,6 +157,7 @@ function Answer({ result, tab, count, onOpenProfile, onShow, onAdd, onSent }: An
     )
 
   const { matches, title } = result
+  if (result.slow && matches.length === 0) return <Reading />
   if (matches.length === 0)
     return (
       <>
@@ -174,6 +181,7 @@ function Answer({ result, tab, count, onOpenProfile, onShow, onAdd, onSent }: An
     )
   return (
     <>
+      {result.slow && <Reading hasSome />}
       {(result.groups ?? [{ label: '', matches }]).map((g) => (
         <div key={g.label} className="ask-group">
           {g.label && <span className="label ask-group-label">{g.label}</span>}
@@ -249,6 +257,23 @@ function ResultCard({ match, onOpenProfile, onSent }: { match: Match; onOpenProf
         )}
       </div>
     </div>
+  )
+}
+
+// The first search reads every moment once; say so, with how far it has got, instead of just spinning
+function Reading({ hasSome = false }: { hasSome?: boolean }) {
+  const [, tick] = useState(0)
+  useEffect(() => {
+    const t = window.setInterval(() => tick((n) => n + 1), 500)
+    return () => window.clearInterval(t)
+  }, [])
+  const { done, total } = searchProgress()
+  const pct = total ? Math.round((done / total) * 100) : 0
+  return (
+    <p className="flow-note">
+      Still reading your moments so I can search by meaning{pct ? ` (${pct}%)` : ''}. This only takes a while the first time.
+      {hasSome ? ' Here is what I have so far; the full answer will replace it.' : ' The answer will appear here when it is ready.'}
+    </p>
   )
 }
 

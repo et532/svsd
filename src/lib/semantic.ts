@@ -20,15 +20,30 @@ type Vectors = Record<string, number[]>
 let cache: Promise<Vectors> | undefined
 const vectors = () => (cache ??= mock ? Promise.resolve({} as Vectors) : readDb<Vectors>('vectors').then((v) => v ?? {}))
 
-async function embed(texts: string[]): Promise<number[][]> {
+// How far the first reading of everyone's moments has got (for the "Reading your moments…" line)
+let progress = { done: 0, total: 0 }
+export const searchProgress = () => progress
+
+// One request at a time, so a search asked while the warm-up is still running waits for its work instead of
+// repeating it
+let queue: Promise<unknown> = Promise.resolve()
+const embed = (texts: string[]) => {
+  const next = queue.then(() => embedNow(texts))
+  queue = next.catch(() => {})
+  return next
+}
+
+async function embedNow(texts: string[]): Promise<number[][]> {
   const have = await vectors()
   const missing = [...new Set(texts.filter((t) => !have[t]))]
   if (missing.length) {
+    progress = { done: 0, total: missing.length }
     // In the background worker, a batch at a time, so the screen stays responsive and a question can slip in between
     for (let i = 0; i < missing.length; i += 16) {
       const batch = missing.slice(i, i + 16)
       const out = await embedTexts(batch)
       batch.forEach((t, j) => (have[t] = out[j].map((x) => Math.round(x * 1e4) / 1e4)))
+      progress = { done: Math.min(i + 16, missing.length), total: missing.length }
     }
     if (!mock) writeDb('vectors', have)
   }

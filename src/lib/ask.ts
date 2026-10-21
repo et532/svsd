@@ -20,7 +20,7 @@ export type Match = { person: Person; why: string; say?: string; via?: string; a
 
 export type AskResult =
   // generic: found by the plain keyword filters (not a special answer), so meaning-based results can be added
-  | { kind: 'people'; title: string; matches: Match[]; groups?: { label: string; matches: Match[] }[]; generic?: boolean; near?: Match[] }
+  | { kind: 'people'; title: string; matches: Match[]; groups?: { label: string; matches: Match[] }[]; generic?: boolean; near?: Match[]; slow?: boolean }
   | { kind: 'add' }
   | { kind: 'moment'; person: Person }
   | { kind: 'profile'; person: Person }
