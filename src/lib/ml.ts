@@ -11,7 +11,17 @@ type Body = Request extends infer R ? (R extends unknown ? Omit<R, 'id'> : never
 
 function call<T>(request: Body): Promise<T> {
   if (!worker) {
-    worker = new Worker(new URL('./ml.worker.ts', import.meta.url), { type: 'module' })
+    const w = (worker = new Worker(new URL('./ml.worker.ts', import.meta.url), { type: 'module' }))
+    // If the worker dies (out of memory, failed to start) nothing would ever answer: fail everything waiting, and
+    // start a fresh worker on the next call
+    const die = () => {
+      if (worker === w) worker = undefined
+      w.terminate()
+      for (const p of waiting.values()) p.reject(new Error('The model worker stopped'))
+      waiting.clear()
+    }
+    w.onerror = die
+    w.onmessageerror = die
     worker.onmessage = (e: MessageEvent<{ id: number; result?: unknown; error?: string }>) => {
       const w = waiting.get(e.data.id)
       waiting.delete(e.data.id)

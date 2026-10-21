@@ -1,12 +1,13 @@
 import { makeMockPeople } from './mockPeople'
 import { linkAll, seed } from './seed'
-import { seedA } from './seedA'
-import { seedB } from './seedB'
+import { nycSeeds } from './nyc'
 
 export type Place = {
   city: string
   lat: number
   lng: number
+  // Neighborhood, when known ("Bushwick"); `city` stays the broader place ("Brooklyn, NY")
+  hood?: string
 }
 
 // How you know someone. Drives the hue of their aura (Peepl design foundation: profile color coding).
@@ -31,11 +32,15 @@ export type Person = {
   mutualNotes?: Record<string, string>
   // Set by capture: how well you know them (aura depth 1-3). Falls back to recency when missing.
   closeness?: 1 | 2 | 3
+  // Where in your life they come from (hometown, college, nyc-work...), for "who do I know from where".
+  lifeStage?: LifeStage
   // Things to talk about next time (from capture's "follow up" and "remember" answers).
   todos?: Todo[]
   // Logged moments, newest first. Sample people without any show their story as the first meeting.
   moments?: Moment[]
 }
+
+export type LifeStage = 'family' | 'hometown' | 'high-school' | 'college' | 'first-job' | 'nyc-work' | 'nyc-social' | 'networking'
 
 export type Todo = { id: string; text: string; done: boolean }
 
@@ -64,7 +69,8 @@ const jordanLee: Person =
     tags: ['climate tech', 'founder', 'climbing', 'e-bikes'],
     from: { city: 'Seattle', lat: 47.606, lng: -122.332 },
     met: { city: 'New York', lat: 40.741, lng: -73.99, context: 'Climate Demo Day' },
-    livesNow: { city: 'Brooklyn', lat: 40.678, lng: -73.944 },
+    livesNow: { city: 'Brooklyn', lat: 40.7304, lng: -73.9515, hood: 'Greenpoint' },
+    lifeStage: 'networking',
     lastContacted: '2026-10-13',
     knows: ['aisha-khan'],
     mutualNotes: { 'aisha-khan': 'introduced you' },
@@ -95,9 +101,9 @@ const jordanLee: Person =
     ],
   }
 
-// 50 sample people with stories, to-dos and moments (see seedA.ts, seedB.ts); every link is made two-way.
-const basePeople: Person[] = linkAll([...[...seedA, ...seedB].map(seed), jordanLee])
+// 500 sample people with stories, to-dos and moments (see nyc/); every link is made two-way.
+const basePeople: Person[] = linkAll([...nycSeeds.map(seed), jordanLee])
 
 // ?mock=200 swaps in that many fabricated people (see mockPeople.ts) to stress-test the mindmap.
-const mockCount = Math.min(500, Number(new URLSearchParams(window.location.search).get('mock')) || 0)
+const mockCount = Math.min(500, Number(new URLSearchParams(typeof window === 'undefined' ? '' : window.location.search).get('mock')) || 0)
 export const samplePeople: Person[] = mockCount ? makeMockPeople(mockCount) : basePeople
