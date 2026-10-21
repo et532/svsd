@@ -250,7 +250,7 @@ const openTodos = (p: Person) => (p.todos ?? []).filter((t) => !t.done)
 
 // Only climbing is answered this way (the pitch demo: Jordan, then Zara). With 200 people nearly everyone runs or
 // hikes, so those go through the ranking in rank/, which weighs how much each person is into it.
-const activities: [RegExp, RegExp, string, string][] = [[/(climb|climbing|boulder|bouldering)/, /climb|boulder/, 'climbing', 'climbing buddy']]
+const activities: [RegExp, RegExp, string, string][] = [[/\b(climb|climbing|boulder|bouldering)\b/, /climb|boulder/, 'climbing', 'climbing buddy']]
 
 // "I want a climbing buddy. Who in the city can I reach out to?"
 function buddy(text: string, people: Person[]): AskResult | null {

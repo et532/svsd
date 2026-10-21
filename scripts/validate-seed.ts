@@ -1,4 +1,4 @@
-// Checks the 200-person dataset against the persona's timeline and the distribution targets. Run: npm run validate
+// Checks the 500-person dataset against the persona's timeline and the distribution targets. Run: npm run validate
 import { nycSeeds } from '../src/data/nyc'
 import { samplePeople } from '../src/data/people'
 import { homePlace, lookupPlace, placeOfPerson, sameMetro } from '../src/lib/places'
@@ -19,9 +19,9 @@ const windows: Record<string, [string, string]> = {
   'nyc-social': ['2021-08-15', TODAY],
   networking: ['2021-08-15', TODAY],
 }
-// [min, max] per stage for the 200
+// [min, max] per stage for the 500
 const targets: Record<string, [number, number]> = {
-  family: [8, 12], hometown: [8, 14], 'high-school': [6, 12], college: [28, 38], 'first-job': [14, 22], 'nyc-work': [20, 30], 'nyc-social': [50, 70], networking: [28, 40],
+  family: [12, 18], hometown: [26, 36], 'high-school': [30, 40], college: [84, 96], 'first-job': [40, 50], 'nyc-work': [64, 74], 'nyc-social': [125, 145], networking: [70, 80],
 }
 const BANNED = /lorem|ipsum|\bTODO\b|\bTBD\b|placeholder|as an ai|n\/a/i
 
@@ -67,9 +67,9 @@ for (const p of samplePeople) {
 // Distribution
 const home = homePlace()
 const count = (f: (p: (typeof samplePeople)[number]) => boolean) => samplePeople.filter(f).length
-if (samplePeople.length !== 200) fail('dataset', `${samplePeople.length} people (want 200)`)
+if (samplePeople.length !== 500) fail('dataset', `${samplePeople.length} people (want 500)`)
 const nyc = count((p) => sameMetro(home, placeOfPerson(p)))
-if (nyc < 95 || nyc > 115) fail('dataset', `${nyc} people in the New York area (want 95-115)`)
+if (nyc < 235 || nyc > 265) fail('dataset', `${nyc} people in the New York area (want 235-265)`)
 for (const [stage, [lo, hi]] of Object.entries(targets)) {
   const n = count((p) => p.lifeStage === stage)
   if (n < lo || n > hi) fail('dataset', `${n} people at stage ${stage} (want ${lo}-${hi})`)

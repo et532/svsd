@@ -101,7 +101,7 @@ const jordanLee: Person =
     ],
   }
 
-// 200 sample people with stories, to-dos and moments (see nyc/); every link is made two-way.
+// 500 sample people with stories, to-dos and moments (see nyc/); every link is made two-way.
 const basePeople: Person[] = linkAll([...nycSeeds.map(seed), jordanLee])
 
 // ?mock=200 swaps in that many fabricated people (see mockPeople.ts) to stress-test the mindmap.

@@ -3,10 +3,16 @@ import type { Seed } from '../seed'
 import { seedA } from '../seedA'
 import { seedB } from '../seedB'
 import { collegeRows } from './collegeRows'
+import { collegeRows2 } from './collegeRows2'
 import { homeRows } from './homeRows'
+import { homeRows2 } from './homeRows2'
 import { firstJobRows, nycWorkRows } from './workRows'
+import { firstJobRows2, nycWorkRows2 } from './workRows2'
 import { socialRowsA } from './socialRowsA'
 import { socialRowsB } from './socialRowsB'
+import { socialRowsC } from './socialRowsC'
+import { networkRows } from './networkRows'
+import { finalRows } from './finalRows'
 
 // The 200 people of the New York persona: 50 from the original cast (re-slotted into the persona's life story here)
 // and 150 written for it. See supabase/seed/README.md for the timeline everything must fit.
@@ -95,4 +101,4 @@ const original = [...seedA, ...seedB].map((x) => {
   return { ...x, ...patch, stage }
 })
 
-export const nycSeeds: Seed[] = [...original, ...homeRows, ...collegeRows, ...firstJobRows, ...nycWorkRows, ...socialRowsA, ...socialRowsB]
+export const nycSeeds: Seed[] = [...original, ...homeRows, ...homeRows2, ...collegeRows, ...collegeRows2, ...firstJobRows, ...firstJobRows2, ...nycWorkRows, ...nycWorkRows2, ...socialRowsA, ...socialRowsB, ...socialRowsC, ...networkRows, ...finalRows]
