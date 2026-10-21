@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Composer, type Sent } from '../components/Composer'
 import { ChevronRightIcon, CloseIcon } from '../components/Icons'
 import type { Person } from '../data/people'
-import { momentCandidates, parsePerson, voiceScript } from '../lib/capture'
+import { momentCandidates, parsePerson, splitPeople, voiceScript, type PersonNote } from '../lib/capture'
 import { Avatar } from '../components/Avatar'
 import { cardBackground } from '../lib/people'
 
@@ -11,6 +11,8 @@ type Props = {
   onClose: () => void
   // Makes the person from a note about someone new (or finds them if you already have them).
   onCreate: (sent: Sent) => Person
+  // Makes one person per note when you talk about several people at once, and links them to each other.
+  onCreateMany: (sent: Sent, notes: PersonNote[]) => Person[]
   // Saves a note as a moment with someone you already know, then opens their profile.
   onMoment: (personId: string, sent: Sent) => void
   onOpenProfile: (id: string) => void
@@ -20,15 +22,15 @@ type Props = {
 
 type Stage =
   | { kind: 'input' }
-  | { kind: 'processing'; sent: Sent; name: string }
-  | { kind: 'preview'; sent: Sent; person: Person }
+  | { kind: 'processing'; sent: Sent; name: string; group: PersonNote[] }
+  | { kind: 'preview'; sent: Sent; people: Person[] }
   | { kind: 'select'; sent: Sent; options: Person[] }
 
 const monthYear = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
 
 // One input for both: "Tell me about a new person or moment". A note about someone new becomes a profile;
 // a note about someone you know becomes a moment (asking which one when two share a name).
-export function CaptureScreen({ people, onClose, onCreate, onMoment, onOpenProfile, mutualWith }: Props) {
+export function CaptureScreen({ people, onClose, onCreate, onCreateMany, onMoment, onOpenProfile, mutualWith }: Props) {
   const [stage, setStage] = useState<Stage>({ kind: 'input' })
 
   useEffect(() => {
@@ -40,7 +42,10 @@ export function CaptureScreen({ people, onClose, onCreate, onMoment, onOpenProfi
   // "Creating a new profile…" for a moment, then the profile card appears.
   useEffect(() => {
     if (stage.kind !== 'processing') return
-    const t = setTimeout(() => setStage({ kind: 'preview', sent: stage.sent, person: onCreate(stage.sent) }), 1700)
+    const t = setTimeout(
+      () => setStage({ kind: 'preview', sent: stage.sent, people: stage.group.length > 1 ? onCreateMany(stage.sent, stage.group) : [onCreate(stage.sent)] }),
+      1700,
+    )
     return () => clearTimeout(t)
     // onCreate is stable enough for one timer per stage
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -50,7 +55,8 @@ export function CaptureScreen({ people, onClose, onCreate, onMoment, onOpenProfi
     const options = mutualWith ? [] : momentCandidates(sent.text, people)
     if (options.length === 1) return onMoment(options[0].id, sent)
     if (options.length > 1) return setStage({ kind: 'select', sent, options })
-    setStage({ kind: 'processing', sent, name: parsePerson(sent.text, people).name ?? 'them' })
+    const group = mutualWith ? [] : splitPeople(sent.text)
+    setStage({ kind: 'processing', sent, name: parsePerson(sent.text, people).name ?? 'them', group })
   }
 
   const note = stage.kind === 'input' ? null : stage.sent.text
@@ -67,21 +73,32 @@ export function CaptureScreen({ people, onClose, onCreate, onMoment, onOpenProfi
         {stage.kind === 'input' && <h2 className="flow-title">{mutualWith ? `Who does ${mutualWith} know?` : 'Tell me about a new person or moment'}</h2>}
         {stage.kind === 'processing' && (
           <>
-            <h2 className="flow-title is-ink">Creating a new profile for {stage.name}…</h2>
-            <div className="person-card is-skeleton" aria-hidden>
-              <span className="skel skel-avatar" />
-              <span className="person-card-text">
-                <span className="skel" style={{ width: '70%', height: 18 }} />
-                <span className="skel is-short" />
-                <span className="skel is-short" style={{ width: '35%' }} />
-              </span>
+            <h2 className="flow-title is-ink">{creating(stage.group.map((g) => g.name), stage.name)}</h2>
+            <div className="flow-cards">
+              {(stage.group.length > 1 ? stage.group : [null]).map((_, i) => (
+                <div key={i} className="person-card is-skeleton" aria-hidden>
+                  <span className="skel skel-avatar" />
+                  <span className="person-card-text">
+                    <span className="skel" style={{ width: '70%', height: 18 }} />
+                    <span className="skel is-short" />
+                    <span className="skel is-short" style={{ width: '35%' }} />
+                  </span>
+                </div>
+              ))}
             </div>
           </>
         )}
         {stage.kind === 'preview' && (
           <>
-            <h2 className="flow-title is-ink">Creating a new profile for {stage.person.name}…</h2>
-            <PersonCard person={stage.person} line={`Met ${monthYear(new Date())}`} typed onClick={() => onOpenProfile(stage.person.id)} />
+            <h2 className="flow-title is-ink">{creating(stage.people.map((p) => p.name), stage.people[0].name)}</h2>
+            <div className="flow-cards">
+              {stage.people.map((p) => (
+                <PersonCard key={p.id} person={p} line={`Met ${monthYear(new Date())}`} typed onClick={() => onOpenProfile(p.id)} />
+              ))}
+            </div>
+            {stage.people.length > 1 && (
+              <p className="flow-link-note">{`${list(stage.people.map((p) => p.name.split(' ')[0]))} were met together, so they're linked as mutuals.`}</p>
+            )}
           </>
         )}
         {stage.kind === 'select' && (
@@ -99,7 +116,7 @@ export function CaptureScreen({ people, onClose, onCreate, onMoment, onOpenProfi
             </div>
             <button
               className="flow-neither"
-              onClick={() => setStage({ kind: 'processing', sent: stage.sent, name: parsePerson(stage.sent.text, people).name ?? 'them' })}
+              onClick={() => setStage({ kind: 'processing', sent: stage.sent, name: parsePerson(stage.sent.text, people).name ?? 'them', group: [] })}
             >
               Neither, add a new profile
             </button>
@@ -115,6 +132,13 @@ export function CaptureScreen({ people, onClose, onCreate, onMoment, onOpenProfi
     </section>
   )
 }
+
+// "A, B and C"
+const list = (names: string[]) => (names.length < 2 ? (names[0] ?? '') : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`)
+
+// The heading while profiles are made: one name, or "2 new profiles for A and B"
+const creating = (names: string[], single: string) =>
+  names.length > 1 ? `Creating ${names.length} new profiles for ${list(names)}…` : `Creating a new profile for ${names[0] ?? single}…`
 
 // Reveals the parts one after another, a letter at a time, like the profile being filled in.
 function useTyped(parts: string[], on: boolean) {

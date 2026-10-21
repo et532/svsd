@@ -1,5 +1,5 @@
 import type { Person } from '../data/people'
-import { parsePerson } from './capture'
+import { parsePerson, splitPeople } from './capture'
 
 // Speech-to-text gets names wrong. When the user corrects one, the fix is kept (what it heard -> what they meant,
 // per browser) and applied to every later transcript. Names may be first name only.
@@ -65,14 +65,18 @@ export function detectNames(text: string, people: Person[]): string[] {
   const add = (n?: string) => {
     if (n && !out.some((o) => o.toLowerCase() === n.toLowerCase())) out.push(n)
   }
-  add(parsePerson(text, people).name)
+  const group = splitPeople(text)
+  // A note about several people: all of them, and their first names where said on their own ("Maya is a designer")
+  group.forEach((g) => add(g.name))
+  if (!group.length) add(parsePerson(text, people).name)
   for (const p of people) {
     const first = p.name.split(' ')[0]
     if (text.includes(p.name)) add(p.name)
     else if (word(first).test(text)) add(first)
   }
-  // Not "Jordan" when "Jordan Lee" is already there
-  return out.filter((n) => text.includes(n) && !out.some((o) => o !== n && word(n).test(o)))
+  group.forEach((g) => word(g.name.split(' ')[0]).test(text.replace(word(g.name), '')) && add(g.name.split(' ')[0]))
+  // Not "Jordan" when only "Jordan Lee" is there; but "Maya" stays if it is also said on its own
+  return out.filter((n) => text.includes(n) && !out.some((o) => o !== n && o.length > n.length && word(n).test(o) && !word(n).test(text.replace(word(o), ''))))
 }
 
 // The note cut around its names: plain text at even indexes, a name at odd ones.

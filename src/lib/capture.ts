@@ -44,6 +44,38 @@ export function momentCandidates(text: string, people: Person[]): Person[] {
   return people.filter((p) => text.includes(p.name) || new RegExp(`\\b${p.name.split(' ')[0]}\\b`).test(text))
 }
 
+// A note about several new people: "Dinner with Maya Chen and Theo Park. Maya is a designer at Kiln. Theo coaches
+// climbing." The people are listed after with / met (two or more names).
+const NAME = "[A-Z][\\w'-]+(?:\\s+[A-Z][\\w'-]+)?"
+const LIST = new RegExp(`\\b(?:[Ww]ith|[Mm]et|[Mm]eet|[Mm]eeting)\\s+(${NAME}(?:\\s*(?:,|and|&)\\s*${NAME})+)`)
+
+export type PersonNote = { name: string; text: string }
+
+// One note per person: the sentences that name them, the ones that name nobody, and how you met ("Met at dinner.").
+// [] when the note is about one person or none.
+export function splitPeople(text: string): PersonNote[] {
+  const list = text.match(LIST)
+  if (!list) return []
+  const names = list[1]
+    .split(/\s*(?:,|and|&)\s*/)
+    .map((n) => n.trim())
+    .filter(Boolean)
+  if (names.length < 2) return []
+  const sentences = text.trim().split(/(?<=[.!?])\s+/)
+  const at = sentences.findIndex((x) => LIST.test(x))
+  const intro = sentences[at]
+  const im = intro.match(LIST)!
+  const before = intro.slice(0, im.index).trim()
+  const after = intro.slice((im.index ?? 0) + im[0].length).replace(/[.!?]/g, '').trim()
+  const named = (x: string, n: string) => new RegExp(`\\b${n.split(' ')[0]}\\b`).test(x)
+  return names.map((name) => {
+    // "Dinner with Maya Chen and Theo Park." -> "Met at dinner."; otherwise the same sentence with just this person
+    const how = !after && /^\w+$/.test(before) ? `Met at ${before.toLowerCase()}.` : intro.replace(im[1], name)
+    const own = sentences.filter((x, i) => i !== at && (!names.some((n) => named(x, n)) || named(x, name)))
+    return { name, text: [`${name}.`, how, ...own].join(' ') }
+  })
+}
+
 const cut = (v: string) => (v.length <= 44 ? v : v.slice(0, 44).replace(/\s+\S*$/, '') + '…')
 
 // Pulls prompt answers out of a typed note about someone new. `people` is used to spot mutuals by name.
@@ -58,11 +90,11 @@ export function parsePerson(text: string, people: Person[]): Draft {
   out.company = parseCompany(t)
   const firstSentence = t.split(/[.!?]/)[0]
   const met =
-    t.match(/\bat ([A-Z][^.,]+)/) ??
     t.match(/met (?:at|in|through|during) ([^.,]+)/i) ??
+    t.match(/\bat ([A-Z][^.,]+)/) ??
     firstSentence.match(/\bat (?:an? |the )?([^.,]+)/i)
   if (met) out.met = met[1].trim()
-  const does = t.match(/\b(founder|co-?founder|engineer|designer|investor|student|researcher|artist|writer|recruiter|PM|manager)\b[^.,]*/i)
+  const does = t.match(/\b(founder|co-?founder|engineer|designer|investor|student|researcher|artist|writer|recruiter|PM|manager|climbing coach|coach)\b[^.,]*/i)
   if (does) out.does = cut(does[0].trim())
   const rem = t.match(/\b(climbs?|loves?|likes?|plays?|runs?|has an?|collects?|training)\b[^.,]*/i)
   if (rem) out.remember = cut(rem[0].trim())
@@ -70,7 +102,7 @@ export function parsePerson(text: string, people: Person[]): Draft {
   if (fol) out.follow = cut(fol[0].trim())
   const from = t.match(/\b[Ff]rom ([A-Z][a-z]+(?: [A-Z][a-z]+)?)(?!'s)/)
   if (from) out.from = from[1]
-  const lives = t.match(/lives? in ([A-Z][a-z]+(?: [A-Z][a-z]+)?)/)
+  const lives = t.match(/(?:lives?|based|living|works?|working|coach|designer|engineer|manager|writer|artist) in ([A-Z][a-z]+(?: [A-Z][a-z]+)?)/)
   if (lives) out.lives = lives[1]
 
   // Mutuals: anyone already in your people whose full or first name appears (not the new person).
@@ -163,6 +195,14 @@ function interest(remember?: string) {
 const today = () => new Date().toISOString().slice(0, 10)
 const uid = () => Math.random().toString(36).slice(2, 8)
 
+// "Designer @ Kiln" from "designer at Kiln"; just the role when there is no company.
+function professionOf(draft: Draft) {
+  const role = (draft.does ?? '').split(/,| at | in /)[0].trim()
+  if (!role) return 'Unknown'
+  const title = role[0].toUpperCase() + role.slice(1)
+  return draft.company ? `${title} @ ${draft.company}` : title
+}
+
 // Turns a finished capture into a new person.
 export function draftToPerson(draft: Draft, how: { voice: boolean; text: string; seconds: number }, taken: Set<string>): Person {
   const name = draft.name?.trim() || 'New person'
@@ -177,7 +217,7 @@ export function draftToPerson(draft: Draft, how: { voice: boolean; text: string;
     id,
     name,
     context: draft.context ?? 'unsorted',
-    profession: how.voice ? `Founder @ ${draft.company ?? '[Startup]'}` : (draft.does ?? '').split(/,| at /)[0] || 'Unknown',
+    profession: how.voice ? `Founder @ ${draft.company ?? '[Startup]'}` : professionOf(draft),
     story,
     tags: tags.length ? tags : ['new'],
     from: place(draft.from, 'Unknown'),

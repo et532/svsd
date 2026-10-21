@@ -8,7 +8,7 @@ import { BackIcon, CheckIcon, CloseIcon } from './components/Icons'
 import { HomeIndicator, StatusBar } from './components/StatusBar'
 import { TopControls, type GroupBy, type Tab } from './components/TopControls'
 import type { Person } from './data/people'
-import { draftToMoment, draftToPerson, newTodo, parseMoment, parsePerson } from './lib/capture'
+import { draftToMoment, draftToPerson, newTodo, parseMoment, parsePerson, type PersonNote } from './lib/capture'
 import { auraDepth, firstName, momentsOf, todosOf } from './lib/people'
 import { addPerson, updatePerson, usePeople } from './lib/peopleStore'
 import { AskScreen } from './screens/AskScreen'
@@ -117,6 +117,14 @@ export function Prototype() {
     return person
   }
 
+  // A note about several new people: one profile each, and they all know each other (they were met together).
+  function createPeople(sent: Sent, notes: PersonNote[]): Person[] {
+    const made = notes.map((n) => createPerson({ ...sent, text: n.text, voice: false }))
+    const ids = made.map((p) => p.id)
+    for (const p of made) updatePerson(p.id, { knows: [...new Set([...p.knows, ...ids.filter((i) => i !== p.id)])] })
+    return made
+  }
+
   // A note about someone you know: a new moment, their follow-up, and one step closer.
   function addMoment(id: string, sent: Sent) {
     const person = byId(id)
@@ -222,6 +230,7 @@ export function Prototype() {
                 people={allPeople}
                 onClose={closeGrow}
                 onCreate={(sent) => createPerson(sent, layer.mutualOf)}
+                onCreateMany={createPeople}
                 mutualWith={layer.mutualOf ? firstName(byId(layer.mutualOf)?.name ?? '') : undefined}
                 onMoment={(id, sent) => replaceTop({ kind: 'profile', id, fresh: addMoment(id, sent) })}
                 onOpenProfile={(id) => replaceTop({ kind: 'profile', id })}
