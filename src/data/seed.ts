@@ -1,60 +1,14 @@
-import type { Context, Moment, Person, Place } from './people'
+import { lookupPlace } from '../lib/places'
+import type { Context, LifeStage, Moment, Person, Place } from './people'
 
 // A compact way to write the sample people: `seed()` fills in places, ids, to-dos and moments, and `linkAll()`
 // makes every "knows" link two-way (so each person only needs listing on one side).
 
-const PLACES: Record<string, [number, number]> = {
-  'Brooklyn, NY': [40.678, -73.944],
-  'Manhattan, NY': [40.776, -73.971],
-  'Queens, NY': [40.728, -73.794],
-  'New York': [40.741, -73.99],
-  'Jersey City, NJ': [40.718, -74.043],
-  'San Francisco': [37.776, -122.417],
-  'Oakland, CA': [37.804, -122.271],
-  'Berkeley, CA': [37.872, -122.272],
-  'Los Angeles': [34.052, -118.244],
-  Portland: [45.515, -122.679],
-  Seattle: [47.606, -122.332],
-  Denver: [39.739, -104.99],
-  Austin: [30.267, -97.743],
-  Houston: [29.76, -95.37],
-  Chicago: [41.878, -87.63],
-  Boston: [42.36, -71.059],
-  Philadelphia: [39.952, -75.165],
-  'Washington, DC': [38.907, -77.037],
-  Atlanta: [33.749, -84.388],
-  Toronto: [43.653, -79.383],
-  Vancouver: [49.283, -123.121],
-  'Mexico City': [19.432, -99.133],
-  'Buenos Aires': [-34.604, -58.382],
-  'São Paulo': [-23.551, -46.633],
-  Lagos: [6.524, 3.379],
-  Accra: [5.604, -0.187],
-  Nairobi: [-1.292, 36.822],
-  London: [51.507, -0.128],
-  Dublin: [53.349, -6.26],
-  Paris: [48.857, 2.352],
-  Berlin: [52.52, 13.405],
-  Hamburg: [53.551, 9.993],
-  Copenhagen: [55.676, 12.568],
-  Milan: [45.464, 9.19],
-  Lisbon: [38.722, -9.139],
-  Beirut: [33.894, 35.502],
-  Karachi: [24.861, 67.01],
-  Mumbai: [19.076, 72.878],
-  Bangalore: [12.972, 77.595],
-  Taipei: [25.033, 121.565],
-  Tokyo: [35.676, 139.65],
-  Osaka: [34.694, 135.502],
-  Seoul: [37.566, 126.978],
-  Sydney: [-33.869, 151.209],
-  Melbourne: [-37.814, 144.963],
-}
-
-const place = (city: string): Place => {
-  const at = PLACES[city]
-  if (!at) throw new Error(`seed: no coordinates for ${city}`)
-  return { city, lat: at[0], lng: at[1] }
+// Places come from the gazetteer (a city, or a neighborhood inside it), so a new city only needs adding there.
+const place = (city: string, hood?: string): Place => {
+  const at = lookupPlace(hood ?? city)
+  if (!at) throw new Error(`seed: ${hood ?? city} is not in the gazetteer`)
+  return { city, lat: at.lat, lng: at.lng, ...(hood ? { hood: at.name } : {}) }
 }
 
 export type Seed = {
@@ -69,6 +23,8 @@ export type Seed = {
   met: [city: string, where: string]
   since: string // the day you met
   lives: string
+  hood?: string // neighborhood you live in
+  stage?: LifeStage
   last: string // last time you talked
   knows?: string[]
   close?: 1 | 2 | 3
@@ -109,7 +65,8 @@ export function seed(s: Seed): Person {
     tags: s.tags,
     from: place(s.from),
     met: { ...place(s.met[0]), context: s.met[1] },
-    livesNow: place(s.lives),
+    livesNow: place(s.lives, s.hood),
+    ...(s.stage ? { lifeStage: s.stage } : {}),
     lastContacted: s.last,
     knows: s.knows ?? [],
     ...(s.notes ? { mutualNotes: s.notes } : {}),
