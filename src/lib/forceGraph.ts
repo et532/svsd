@@ -74,6 +74,7 @@ export function createGraph(ids: string[], pairs: [string, string][], prev?: Map
   // People who know nobody ring the outside of everything, evenly spaced.
   const loners = [...compSize].filter(([, n]) => n === 1)
   const ring = COMP_SPACING * Math.sqrt(placed) + 800
+  const inner = ring - 450 // people who know someone stay inside this, so nobody sits outside the loner ring
   loners.forEach(([r], i) => {
     const t = (i / loners.length) * Math.PI * 2
     compHome.set(r, { x: Math.cos(t) * ring, y: Math.sin(t) * ring, pull: LONER_PULL })
@@ -145,6 +146,13 @@ export function createGraph(ids: string[], pairs: [string, string][], prev?: Map
         n.vy *= 0.6
         n.x += n.vx
         n.y += n.vy
+        if (!anchors.size && compSize.get(root(n.id))! > 1) {
+          const r = Math.hypot(n.x, n.y)
+          if (r > inner) {
+            n.x *= inner / r
+            n.y *= inner / r
+          }
+        }
       }
       graph.alpha = Math.max(graph.alpha * 0.985, 0)
     },

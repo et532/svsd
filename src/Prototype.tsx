@@ -160,9 +160,8 @@ export function Prototype() {
       {/* With a filter on, the mindmap stays mounted (stable key, no remount) as the list's background so its grouped
           colored auras carry over — dimmed, same positions — behind the Connections rows. Rendered before the list so
           it paints behind it; `asBackground` fades the discs/labels/links out and leaves only the auras. */}
-      {(tab === 'mindmap' || (tab === 'list' && groupBy !== 'none')) && (
-        <MindmapScreen key="map" people={focusId ? allPeople : people} focusId={focusId} onView={openProfile} groupBy={groupBy} asBackground={tab !== 'mindmap'} />
-      )}
+      {/* Without a filter it stays mounted too, just hidden, so switching tabs doesn't redraw the layout. */}
+      <MindmapScreen key="map" people={focusId ? allPeople : people} focusId={focusId} onView={openProfile} groupBy={groupBy} asBackground={tab !== 'mindmap'} hidden={tab === 'list' && groupBy === 'none'} />
       {tab === 'list' && <ListScreen key="list" people={people} onOpen={openProfile} />}
 
       <TopControls tab={tab} onTab={changeTab} groupBy={groupBy} onGroupBy={setGroupBy} />

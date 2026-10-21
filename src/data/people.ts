@@ -102,7 +102,11 @@ const jordanLee: Person =
   }
 
 // 500 sample people with stories, to-dos and moments (see nyc/); every link is made two-way.
-const basePeople: Person[] = linkAll([...nycSeeds.map(seed), jordanLee])
+// In the app only 200 of them are shown (the original 50, which the demo answers rely on, plus every 3rd of the rest) so
+// the mindmap stays fast; links to people left out are dropped. Open /?all for all 500. Scripts and tests get all 500.
+const inApp = typeof window !== 'undefined' && !new URLSearchParams(window.location.search).has('all')
+const shown = inApp ? nycSeeds.filter((_, i) => i < 50 || i % 3 === 0) : nycSeeds
+const basePeople: Person[] = linkAll([...shown.map(seed), jordanLee])
 
 // ?mock=200 swaps in that many fabricated people (see mockPeople.ts) to stress-test the mindmap.
 const mockCount = Math.min(500, Number(new URLSearchParams(typeof window === 'undefined' ? '' : window.location.search).get('mock')) || 0)

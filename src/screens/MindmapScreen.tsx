@@ -73,6 +73,9 @@ const dotOf = (r: number) => (3.2 + r * 0.15) * 1.4
 // the closest zoom, 3×), on a zoom (log) scale, so it holds for any filter or number of people. 0.27 is where the user
 // set it with a side panel slider (since removed). They fade in over the 20% of zoom before that point.
 const INITIALS_AT = 0.27
+// The opening view is the "everyone in frame" fit zoomed in this much, so the ring of people is a little cut off at the sides.
+// You can still zoom out far enough to see all of it (`minK`).
+const FIT_ZOOM = 1.6
 const initialsOpacity = (k: number, fitK: number) => {
   const full = fitK * Math.pow(Math.max(1, 3 / fitK), INITIALS_AT)
   const start = full / 1.25
@@ -139,9 +142,10 @@ type Props = {
   // Set by Prototype when the mindmap is serving as the Connections list's background: keep the grouped auras in place
   // but dim them 30% and fade the discs / labels / links away.
   asBackground?: boolean
+  hidden?: boolean // on the list with no filter: kept mounted so the layout isn't redrawn on return, but not shown
 }
 
-export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none', ink = false, asBackground = false }: Props) {
+export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none', ink = false, asBackground = false, hidden = false }: Props) {
   const [selected, setSelected] = useState<string | null>(null)
   const [focus, setFocus] = useState<string | null>(null) // a group isolated by tapping its name
 
@@ -176,8 +180,8 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
   const groupByRef = useRef(groupBy)
   // Once the screen has faded in (or was already showing as the list's background), it must not fade in again: coming
   // back from the Connections list would replay the fade from transparent and flash the still aura underneath.
-  const [settled, setSettled] = useState(asBackground)
-  if (asBackground && !settled) setSettled(true) // left for the list before the first fade-in finished
+  const [settled, setSettled] = useState(asBackground || hidden)
+  if ((asBackground || hidden) && !settled) setSettled(true) // left for the list before the first fade-in finished
 
   const links = useMemo(() => linksOf(people), [people])
   const radii = useMemo(() => radiiOf(people), [people])
@@ -289,7 +293,7 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
         if (n.y < y0) y0 = n.y
         if (n.y > y1) y1 = n.y
       }
-      const k = Math.min(1.2, Math.max(0.02, Math.min((root.clientWidth - 90) / (x1 - x0 + 90), (root.clientHeight - 330) / (y1 - y0 + 90))))
+      const k = FIT_ZOOM * Math.min(1.2, Math.max(0.02, Math.min((root.clientWidth - 90) / (x1 - x0 + 90), (root.clientHeight - 330) / (y1 - y0 + 90))))
       return { x: (-(x0 + x1) / 2) * k, y: (-(y0 + y1) / 2) * k + 65, k } // +65: the controls take more room at the top than the nav does at the bottom
     }
 
@@ -695,7 +699,7 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
   // Zoom limits: a bit past "everyone in frame" going out, and 3x going in. Pushing past them stretches
   // with resistance (zoomAt); letting go springs the view back, like an iOS scroll view's rubber band.
   const MAX_K = 3
-  const minK = () => fitRef.current().k * 0.85
+  const minK = () => (fitRef.current().k / FIT_ZOOM) * 0.85
   const settle = () => {
     const v = view.current
     if (v.k < minK()) animateTo(fitRef.current(), 0.12)
@@ -802,7 +806,7 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
   return (
     <div
       ref={rootRef}
-      className={`screen mindmap-screen${ink ? ' look-ink' : ''}${selected ? ' has-sel' : ''}${focus ? ' has-focus' : ''}${asBackground ? ' as-bg' : ''}${settled ? ' is-settled' : ''}`}
+      className={`screen mindmap-screen${ink ? ' look-ink' : ''}${selected ? ' has-sel' : ''}${focus ? ' has-focus' : ''}${asBackground ? ' as-bg' : ''}${hidden ? ' is-hidden' : ''}${settled ? ' is-settled' : ''}`}
       onAnimationEnd={(e) => e.target === e.currentTarget && setSettled(true)}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
