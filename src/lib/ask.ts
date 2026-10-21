@@ -76,6 +76,7 @@ export const related: Record<string, string[]> = {
   travel: ['travel', 'trip', 'abroad', 'backpacking'],
   games: ['games', 'gaming', 'board game', 'game night', 'chess'],
   taxes: ['taxes', 'tax', 'accountant', 'cpa', 'bookkeeping'],
+  classical: ['classical', 'chamber music', 'orchestra', 'cello', 'viola', 'violin', 'piano', 'symphony', 'quartet'],
   hardware: ['hardware', 'electronics', 'robotics', 'embedded', 'mechanical'],
 }
 

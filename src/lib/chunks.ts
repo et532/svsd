@@ -5,12 +5,13 @@ import type { Person } from '../data/people'
 export type Chunk = { text: string; from?: string; kind: 'profile' | 'tag' | 'todo' | 'moment'; momentId?: string }
 
 const when = (iso: string) => new Date(iso).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
-const sentences = (t: string) => t.split(/(?<=[.!?])\s+/).map((x) => x.trim()).filter((x) => x.split(/\s+/).length >= 4)
+const SENTENCE = /(?<!\b(?:Dr|Mr|Mrs|Ms|St|Prof|Jr|Sr)\.)(?<=[.!?])\s+/ // not after "Dr." and the like
+const sentences = (t: string) => t.split(SENTENCE).map((x) => x.trim()).filter((x) => x.split(/\s+/).length >= 4)
 
 export const chunksOf = (p: Person): Chunk[] => {
   const profile: Chunk[] = [
     { text: p.profession, kind: 'profile' },
-    ...p.story.split(/(?<=[.!?])\s+/).map((text): Chunk => ({ text, kind: 'profile' })),
+    ...p.story.split(SENTENCE).map((text): Chunk => ({ text, kind: 'profile' })),
     ...p.tags.map((text): Chunk => ({ text, kind: 'tag' })),
     ...(p.todos ?? []).map((t): Chunk => ({ text: t.text, kind: 'todo' })),
   ]

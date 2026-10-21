@@ -52,7 +52,7 @@ const askWords = new Set(
   (
     'themed theme vibe invite inviting host hosting over around near nearby moved move moving fun cool good great nice best ' +
     'next month week weekend tonight tomorrow soon free thing things kind sort type totally really maybe ask grab hang come ' +
-    'mine ours join along how quiet chill relaxed easy casual cozy lively small big birthday anniversary celebration holiday'
+    'mine ours join along how night evening afternoon morning day time quiet chill relaxed easy casual cozy lively small big birthday anniversary celebration holiday'
   ).split(' '),
 )
 
@@ -87,7 +87,13 @@ export function parseQuery(input: string): Constraints {
   const found = resolvePlace(clean)
   if (found) rest = ` ${found.rest} `
 
-  const activity = activities.find((a) => a.re.test(rest))
+  // "met at Supper club": where you met them is a filter, not a topic (and not a dinner plan)
+  const metAt = rest.match(/\bmet (?:at|through|via|in)\s+(?:the\s+)?(.+?)\s*$/)?.[1]
+  if (metAt) rest = rest.replace(/\bmet (?:at|through|via|in)\s+(?:the\s+)?.+$/, ' ')
+
+  // "who knows about coffee" is a topic, not a coffee date
+  const topicOnly = /\b(who knows|knows about|know (about|anything|how)|expert|good at|help (me )?with|advice|teach)\b/.test(clean)
+  const activity = topicOnly ? undefined : activities.find((a) => a.re.test(rest))
   if (activity) rest = rest.replace(activity.re, ' ')
 
   const stage = stages.find(([re]) => re.test(rest))?.[1]
@@ -100,9 +106,6 @@ export function parseQuery(input: string): Constraints {
       rest = rest.replace(re, ' ')
       break
     }
-
-  const metAt = rest.match(/\bmet (?:at|through|via|in)\s+(?:the\s+)?(.+?)\s*$/)?.[1]
-  if (metAt) rest = rest.replace(/\bmet (?:at|through|via|in)\s+(?:the\s+)?.+$/, ' ')
 
   const plan = !!activity || /\b(invite|hang out|hang with|come over|join me|go out with|meet ?up|catch up with)\b/.test(clean)
   const knowledge = !plan && /\b(who knows|knows about|know (about|anything|how)|expert|good at|help (me )?with|does my|advice|teach)\b/.test(clean)
@@ -120,7 +123,9 @@ export function parseQuery(input: string): Constraints {
     const stem = w.replace(/(ers|ing|ies|es|s)$/, '')
     return related[w] ?? [w, stem.length >= 4 ? stem : w]
   }
-  const groups = [...(activity?.theme ? [activity.theme.flatMap(expand)] : []), ...words.map(expand)].map((g) => [...new Set(g)])
+  // "a plumber or handyman": words joined by "or" are alternatives, not all required
+  const wanted = / or /.test(rest) ? [words.flatMap(expand)] : words.map(expand)
+  const groups = [...(activity?.theme ? [activity.theme.flatMap(expand)] : []), ...wanted].map((g) => [...new Set(g)])
 
   // In-person plans are gated to a place: the one named, or home. Knowledge and introductions are not, unless a place is named.
   const place = found?.place ?? (intent === 'plan' ? homePlace() : undefined)

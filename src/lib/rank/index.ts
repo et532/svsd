@@ -46,7 +46,11 @@ const textOf = (p: Person) => {
 const esc = (t: string) => norm(t).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 // Every group of words has to be mentioned (any word of a group will do): "deep sea welding" needs all three, so
 // "deep dish" and "seamstress" don't count.
-const keyword = (p: Person, groups: string[][]) => groups.length > 0 && groups.every((g) => g.some((t) => new RegExp(`\\b${esc(t)}`).test(textOf(p))))
+// (With three or more ideas one may be missing: "a night of classical music" finds the cellist.)
+const mentions = (g: string[], text: string) => g.some((t) => new RegExp(`\\b${esc(t)}`).test(text))
+const keyword = (p: Person, groups: string[][]) => groups.length > 0 && groups.filter((g) => mentions(g, textOf(p))).length >= groups.length - (groups.length >= 3 ? 1 : 0)
+// Their job or tags say it, not just a passing mention
+const headline = (p: Person, groups: string[][]) => groups.length > 0 && groups.every((g) => mentions(g, norm([p.profession, ...p.tags].join(' | '))))
 
 // Close enough in meaning to count without the words appearing: "doctor" ~ "physician" (0.67), "lawyer" ~ "attorney"
 // (0.61), but "portraits" ~ "painter" (0.58) is only a near miss.
@@ -55,7 +59,7 @@ const meaning = (hit: Hit | undefined) => hit?.sim ?? 0
 const qualifies = (p: Person, hit: Hit | undefined, c: Constraints) => keyword(p, c.groups) || meaning(hit) >= (c.groups.length > 1 ? 0.7 : MEANING_ALONE)
 // The words appearing and a close meaning together score highest; meaning alone a little lower; a near miss lower still.
 const themeScore = (p: Person, hit: Hit | undefined, c: Constraints) => {
-  if (keyword(p, c.groups)) return 0.7 + 0.3 * clamp((meaning(hit) - 0.4) / 0.3)
+  if (keyword(p, c.groups)) return Math.min(1, 0.65 + 0.25 * clamp((meaning(hit) - 0.4) / 0.3) + (headline(p, c.groups) ? 0.1 : 0))
   if (qualifies(p, hit, c)) return 0.55 + 0.3 * clamp((meaning(hit) - 0.64) / 0.1)
   return 0.5 * clamp((meaning(hit) - 0.3) / 0.35)
 }
