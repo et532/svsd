@@ -23,10 +23,12 @@ export type Graph = {
   setGroups: (groupOf: (id: string) => string, last?: string) => void
 }
 
-const REPEL = 16000
-const GRAVITY = 0.006
+const REPEL = 60000
 const GROUP_PULL = 0.07
 const GROUP_SPACING = 330
+const COMP_SPACING = 85 // px of map radius per √person: how far apart the separate circles of people sit
+const COMP_PULL = 0.012
+const LONER_PULL = 0.05
 // While grouped, a link between two different groups pulls this much as hard, so groups made by place met or job (whose
 // people know people in other groups) stay together instead of being stretched across the map.
 const CROSS_GROUP = 0.2
@@ -49,10 +51,33 @@ export function createGraph(ids: string[], pairs: [string, string][], prev?: Map
   const links: GLink[] = pairs.map(([ia, ib]) => {
     let shared = 0
     for (const x of neighbors.get(ia)!) if (neighbors.get(ib)!.has(x)) shared++
-    return { a: byId.get(ia)!, b: byId.get(ib)!, strength: 0.05 * (1 + shared), rest: 150 / (1 + 0.5 * shared) }
+    return { a: byId.get(ia)!, b: byId.get(ib)!, strength: 0.05 * (1 + shared), rest: 200 / (1 + 0.5 * shared) }
   })
 
   let anchors = new Map<string, { x: number; y: number }>()
+
+  // Each circle of people who know each other gets its own home on the map (bigger circles nearer the middle), so
+  // people from different parts of your life form separate clusters instead of one blob. Used when no Group by is set.
+  const parent = new Map(ids.map((id) => [id, id]))
+  const root = (id: string): string => (parent.get(id) === id ? id : root(parent.get(id)!))
+  for (const [ia, ib] of pairs) parent.set(root(ia), root(ib))
+  const compSize = new Map<string, number>()
+  for (const id of ids) compSize.set(root(id), (compSize.get(root(id)) ?? 0) + 1)
+  const compHome = new Map<string, { x: number; y: number; pull: number }>()
+  let placed = 0
+  const linked = [...compSize].filter(([, n]) => n > 1).sort((x, y) => y[1] - x[1])
+  linked.forEach(([r, n], i) => {
+    const d = COMP_SPACING * Math.sqrt(placed + n / 2)
+    compHome.set(r, { x: Math.cos(i * 2.4) * d, y: Math.sin(i * 2.4) * d, pull: COMP_PULL })
+    placed += n
+  })
+  // People who know nobody ring the outside of everything, evenly spaced.
+  const loners = [...compSize].filter(([, n]) => n === 1)
+  const ring = COMP_SPACING * Math.sqrt(placed) + 800
+  loners.forEach(([r], i) => {
+    const t = (i / loners.length) * Math.PI * 2
+    compHome.set(r, { x: Math.cos(t) * ring, y: Math.sin(t) * ring, pull: LONER_PULL })
+  })
 
   const graph: Graph = {
     nodes,
@@ -108,9 +133,10 @@ export function createGraph(ids: string[], pairs: [string, string][], prev?: Map
       }
       for (const n of nodes) {
         const anchor = anchors.get(n.group)
-        const pull = anchor ? GROUP_PULL : GRAVITY
-        n.vx += ((anchor?.x ?? 0) - n.x) * pull * a
-        n.vy += ((anchor?.y ?? 0) - n.y) * pull * a
+        const home = anchor ?? compHome.get(root(n.id))!
+        const pull = anchor ? GROUP_PULL : compHome.get(root(n.id))!.pull
+        n.vx += (home.x - n.x) * pull * a
+        n.vy += (home.y - n.y) * pull * a
         if (n.pinned) {
           n.vx = n.vy = 0
           continue

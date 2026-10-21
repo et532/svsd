@@ -344,7 +344,7 @@ button {
 
 .mm-line {
   stroke: #fff;
-  stroke-width: 1;
+  stroke-width: 2;
   stroke-dasharray: 4 3;
   transition: opacity 0.25s;
 }
@@ -471,7 +471,7 @@ button {
 }
 
 .mm-line.is-near {
-  stroke-width: 1.6;
+  stroke-width: 3.2;
 }
 
 /* Ink style (Filters → Style): black branches and bulbs on white, a ragged grey halo behind each person,

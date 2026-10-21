@@ -281,15 +281,15 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
     const fit = () => {
       const root = rootRef.current
       if (!root || !graph.nodes.length) return { ...view.current }
-      // Ignore the farthest 4% of people so a few drifting loners don't shrink everyone else.
-      const span = (v: number[]) => {
-        const sorted = [...v].sort((p, q) => p - q)
-        const cut = Math.floor(sorted.length * 0.04)
-        return [sorted[cut], sorted[sorted.length - 1 - cut]]
+      // Everyone in frame, including the ring of people who know nobody.
+      let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity
+      for (const n of graph.nodes) {
+        if (n.x < x0) x0 = n.x
+        if (n.x > x1) x1 = n.x
+        if (n.y < y0) y0 = n.y
+        if (n.y > y1) y1 = n.y
       }
-      const [x0, x1] = span(graph.nodes.map((n) => n.x))
-      const [y0, y1] = span(graph.nodes.map((n) => n.y))
-      const k = Math.min(1.2, Math.max(0.08, Math.min((root.clientWidth - 90) / (x1 - x0 + 90), (root.clientHeight - 330) / (y1 - y0 + 90))))
+      const k = Math.min(1.2, Math.max(0.02, Math.min((root.clientWidth - 90) / (x1 - x0 + 90), (root.clientHeight - 330) / (y1 - y0 + 90))))
       return { x: (-(x0 + x1) / 2) * k, y: (-(y0 + y1) / 2) * k + 65, k } // +65: the controls take more room at the top than the nav does at the bottom
     }
 
@@ -342,24 +342,46 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
       // Where a dot is drawn: its spot, pushed out from the screen's center by its depth (parallax), plus its float
       // eased into FLOAT_MAX.
       const px = reduceMotion() ? 0 : PARALLAX
-      const at = (n: { id: string; x: number; y: number }) => {
-        const s = fl.dots.get(n.id)
-        if (!s) return [n.x, n.y]
-        const u = Math.hypot(s.ux, s.uy)
-        const soft = u > 0.01 ? (FLOAT_MAX * Math.tanh(u / FLOAT_MAX)) / u : 1
-        const p = s.d * px
-        return [n.x + n.x * p + (x * p + s.ux * soft) / k, n.y + n.y * p + (y * p + s.uy * soft) / k]
-      }
+      // Each dot's drawn position, worked out once per frame (lines reuse it instead of recomputing both ends)
+      const drawn = new Map<string, number[]>()
+      // The part of the world on screen (the world is centered on the screen, see the label code below), with a margin for a
+      // big disc and the float. Dots and lines outside it aren't drawn.
+      const vr = rootRef.current
+      const vw = vr ? vr.clientWidth : 0
+      const vh = vr ? vr.clientHeight : 0
+      const m = 140 / k
+      const vx0 = (-vw / 2 - x) / k - m
+      const vx1 = (vw / 2 - x) / k + m
+      const vy0 = (-vh / 2 - y) / k - m
+      const vy1 = (vh / 2 - y) / k + m
+      const cull = vw > 0
       for (const n of graph.nodes) {
+        const s = fl.dots.get(n.id)
+        let pos = [n.x, n.y]
+        if (s) {
+          const u = Math.hypot(s.ux, s.uy)
+          const soft = u > 0.01 ? (FLOAT_MAX * Math.tanh(u / FLOAT_MAX)) / u : 1
+          const p = s.d * px
+          pos = [n.x + n.x * p + (x * p + s.ux * soft) / k, n.y + n.y * p + (y * p + s.uy * soft) / k]
+        }
+        drawn.set(n.id, pos)
         const el = nodeEls.current.get(n.id)
-        const [nx, ny] = at(n)
-        if (el) el.style.transform = `translate(${nx}px, ${ny}px)`
+        if (el) {
+          const off = cull && (pos[0] < vx0 || pos[0] > vx1 || pos[1] < vy0 || pos[1] > vy1)
+          el.style.display = off ? 'none' : ''
+          if (!off) el.style.transform = `translate(${pos[0]}px, ${pos[1]}px)`
+        }
       }
+      const at = (n: { id: string; x: number; y: number }) => drawn.get(n.id) ?? [n.x, n.y]
       for (const l of graph.links) {
         const el = lineEls.current.get(`${l.a.id}|${l.b.id}`)
         if (el) {
           const [ax, ay] = at(l.a)
           const [bx, by] = at(l.b)
+          // off screen when both ends are past the same edge
+          const off = cull && ((ax < vx0 && bx < vx0) || (ax > vx1 && bx > vx1) || (ay < vy0 && by < vy0) || (ay > vy1 && by > vy1))
+          el.style.display = off ? 'none' : ''
+          if (off) continue
           el.setAttribute('x1', String(ax))
           el.setAttribute('y1', String(ay))
           el.setAttribute('x2', String(bx))

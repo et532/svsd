@@ -80,13 +80,14 @@ export function seed(s: Seed): Person {
   }
 }
 
-// Makes every link two-way, and drops links to people who don't exist.
+// Makes every link two-way, and drops links to people who don't exist or come from a different part of your life
+// (people from college don't know your coworkers), so the mindmap shows separate circles of people.
 export function linkAll(people: Person[]): Person[] {
   const byId = new Map(people.map((p) => [p.id, { ...p, knows: new Set(p.knows) }]))
   for (const p of byId.values())
     for (const id of [...p.knows]) {
       const other = byId.get(id)
-      if (other) other.knows.add(p.id)
+      if (other && (!p.lifeStage || !other.lifeStage || p.lifeStage === other.lifeStage)) other.knows.add(p.id)
       else p.knows.delete(id)
     }
   return people.map((p) => ({ ...p, knows: [...byId.get(p.id)!.knows] }))
