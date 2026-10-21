@@ -1842,6 +1842,46 @@ button {
   color: var(--ink);
 }
 
+.composer-field {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
+.composer-field textarea {
+  width: 100%;
+}
+
+.composer.is-voice .composer-field {
+  flex: none;
+}
+
+.composer.is-voice .composer-field textarea {
+  flex: 1;
+}
+
+/* The same text as the box, invisible, so the names in it can be outlined as they are typed or said */
+.composer-mirror {
+  position: absolute;
+  inset: 0;
+  padding: 8px 0;
+  overflow: hidden;
+  font-size: 16px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  color: transparent;
+  pointer-events: none;
+}
+
+.composer-mirror mark {
+  border-radius: 5px;
+  background: transparent;
+  color: transparent;
+  box-shadow: 0 0 0 1.5px rgba(17, 17, 19, 0.16);
+}
+
 .composer textarea::placeholder {
   color: var(--ink-muted);
 }
@@ -3160,6 +3200,11 @@ button {
   box-shadow:
     inset 1.5px 1.5px 1px -1px rgba(255, 255, 255, 0.8),
     inset -1.5px -1.5px 1px -1px rgba(255, 255, 255, 0.45);
+}
+
+/* The open moment keeps its blue border (Figma: 1.5px work-core); the glass rule above would hide it */
+.phone .moment.is-open {
+  border: 1.5px solid var(--focus);
 }
 
 /* The ask bar and add-person button are a little more solid than the other glass: 80% white instead of 60% */

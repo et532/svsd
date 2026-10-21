@@ -25,6 +25,20 @@ export function parseCompany(text: string): string | undefined {
   )?.[1]
 }
 
+// The university or college in a note: "University of Michigan", "Vanderbilt University", or a capitalized name
+// after "studied at / graduated from / went to" ("studied at MIT").
+export function parseSchool(text: string): string | undefined {
+  const cap = "[A-Z][\\w&'-]*"
+  return (
+    text.match(new RegExp(`\\b((?:${cap}\\s+){0,2}(?:University|College|Institute)(?:\\s+of\\s+${cap}(?:\\s+${cap})*)?)`))?.[1] ??
+    text.match(
+      new RegExp(
+        `\\b(?:[Ss]tudied|[Ss]tudies|[Ss]tudying|[Gg]raduated|[Gg]raduate|[Gg]rad|[Aa]ttended|[Aa]ttends|[Aa]ttending|[Aa]lum(?:ni|nus)?|[Ss]tudent)\\s+(?:at|from|of)\\s+(${cap}(?:\\s+${cap})*)`,
+      ),
+    )?.[1]
+  )
+}
+
 // The demo person's story and tags, as if summarized from the voice note.
 const scriptedStory =
   'Building battery recycling for e-bikes. Grew up in Seattle, just moved to Brooklyn. Climbs Tuesdays and wants a climbing buddy.'

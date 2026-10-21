@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Person } from '../data/people'
-import { parseCompany } from '../lib/capture'
+import { parseCompany, parseSchool } from '../lib/capture'
 import { applyFixes, detectNames, replaceName, resolveName, saveFix, splitNames } from '../lib/nameFixes'
 import { MicIcon, SendIcon, StopIcon } from './Icons'
 import { listen } from '../lib/speech'
@@ -46,12 +46,16 @@ export function Composer({ placeholder, script, start, waitForOpen = false, peop
   // Remembered name fixes are applied to the words as they appear
   const fixNames = !!people
   // Names and the company in the note, outlined for fixing
-  const company = useMemo(() => (people && review ? parseCompany(text) : undefined), [people, review, text])
+  // (always, as you type or talk; only after the voice stops can you tap one to fix it)
+  const company = useMemo(() => (people ? parseCompany(text) : undefined), [people, text])
+  const school = useMemo(() => (people ? parseSchool(text) : undefined), [people, text])
   const names = useMemo(() => {
-    const n = people && review ? detectNames(text, people) : []
-    return company && !n.includes(company) ? [...n, company] : n
-  }, [people, review, text, company])
+    const n = people ? detectNames(text, people) : []
+    for (const o of [company, school]) if (o && !n.includes(o)) n.push(o)
+    return n
+  }, [people, text, company, school])
   const showNames = review && !voice && names.length > 0
+  const mirrorRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!voice) return
@@ -137,8 +141,8 @@ export function Composer({ placeholder, script, start, waitForOpen = false, peop
     const words = name.split(' ')
     words[word] = typed
     const full = typed.includes(' ') ? typed : words.join(' ')
-    // A company is never linked to a person
-    const meant = name === company ? full : resolveName(full, people)
+    // A company or school is never linked to a person
+    const meant = name === company || name === school ? full : resolveName(full, people)
     if (meant === name) return
     const was = fixed.find(([, m]) => m === name)?.[0] ?? name
     saveFix(was, meant)
@@ -183,27 +187,36 @@ export function Composer({ placeholder, script, start, waitForOpen = false, peop
           )}
         </div>
       ) : (
-        <textarea
-          ref={taRef}
-          rows={1}
-          value={text}
-          readOnly={voice}
-          placeholder={transcribing ? 'Turning your voice into text…' : voiceError ? voiceMessage(voiceError) : placeholder}
-          aria-label={placeholder}
-          onFocus={() => {
-            setTyping(true)
-            setReview(false)
-          }}
-          // Names go back to being outlined once you leave the text, so more can be fixed
-          onBlur={() => people && !voice && text.trim() && setReview(true)}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault()
-              send()
-            }
-          }}
-        />
+        <div className="composer-field">
+          {names.length > 0 && (
+            // The text again, invisible, under the real one: only the names show, outlined
+            <div className="composer-mirror" ref={mirrorRef} aria-hidden>
+              {splitNames(text, names).map((part, i) => (i % 2 ? <mark key={i}>{part}</mark> : part))}
+            </div>
+          )}
+          <textarea
+            ref={taRef}
+            rows={1}
+            value={text}
+            readOnly={voice}
+            placeholder={transcribing ? 'Turning your voice into text…' : voiceError ? voiceMessage(voiceError) : placeholder}
+            aria-label={placeholder}
+            onFocus={() => {
+              setTyping(true)
+              setReview(false)
+            }}
+            // Names go back to being outlined once you leave the text, so more can be fixed
+            onBlur={() => people && !voice && text.trim() && setReview(true)}
+            onChange={(e) => setText(e.target.value)}
+            onScroll={(e) => mirrorRef.current && (mirrorRef.current.scrollTop = e.currentTarget.scrollTop)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault()
+                send()
+              }
+            }}
+          />
+        </div>
       )}
       {voice && loadingVoice && !text && (
         <p className="composer-hint">Getting the voice model ready. This takes a minute the first time, then it is instant.</p>

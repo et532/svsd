@@ -77,7 +77,9 @@ export function detectNames(text: string, people: Person[]): string[] {
   const group = splitPeople(text)
   // A note about several people: all of them, and their first names where said on their own ("Maya is a designer")
   group.forEach((g) => add(g.name))
-  if (!group.length) add(parsePerson(text, people).name)
+  // (a lone first word followed by "with", "at"... is just the start of a sentence: "Dinner with Maya")
+  const lead = parsePerson(text, people).name
+  if (!group.length && lead && !new RegExp(`^\\s*${esc(lead)}\\s+(?:with|at|in|on|for|to|and|of|the|an?)\\b`).test(text)) add(lead)
   for (const p of people) {
     const first = p.name.split(' ')[0]
     if (text.includes(p.name)) add(p.name)
