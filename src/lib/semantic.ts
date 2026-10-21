@@ -2,6 +2,8 @@ import type { Person } from '../data/people'
 import { filler, type AskResult, type Match } from './ask'
 import { readDb, writeDb } from './localDb'
 import { embedTexts } from './ml'
+import { chunksOf } from './chunks'
+import type { Hit } from './rank'
 
 // Search by meaning, fully on this machine: a small embedding model (all-MiniLM-L6-v2, ~25 MB, downloaded once and
 // then cached by the browser) turns text into vectors, so "pickleball" lands near "tennis" and "racquet sports".
@@ -12,13 +14,29 @@ import { embedTexts } from './ml'
 const MIN_SCORE = 0.35 // below this is noise: real matches score 0.45–0.6, one-word chunks like "food" drift to ~0.3
 const CLOSE_TO_BEST = 0.1 // and a result has to be within this of the best one, so a strong match isn't buried in weak ones
 const MAX_RESULTS = 10
+const MOMENT_BONUS = 0.04 // a real moment beats a profile line that is only about as close
 const NEAR_SCORE = 0.3 // under MIN_SCORE but still in the same area: worth showing as "closest, but not quite"
 const mock = new URLSearchParams(window.location.search).has('mock')
 
 // chunk text -> vector. Kept in the browser (IndexedDB) so the next start doesn't re-embed anyone.
 type Vectors = Record<string, number[]>
 let cache: Promise<Vectors> | undefined
-const vectors = () => (cache ??= mock ? Promise.resolve({} as Vectors) : readDb<Vectors>('vectors').then((v) => v ?? {}))
+const vectors = () => (cache ??= mock ? Promise.resolve({} as Vectors) : Promise.all([readDb<Vectors>('vectors'), shipped()]).then(([mine, theirs]) => ({ ...theirs, ...mine })))
+
+// Vectors for the sample people, computed once when the data was built (scripts/seed.ts) and shipped as
+// public/vectors.json (each as signed bytes, base64), so the first search never has to read 700+ sentences.
+async function shipped(): Promise<Vectors> {
+  try {
+    const res = await fetch(`${import.meta.env.BASE_URL}vectors.json`)
+    if (!res.ok) return {}
+    const raw = (await res.json()) as Record<string, string>
+    return Object.fromEntries(
+      Object.entries(raw).map(([text, b64]) => [text, Array.from(Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)), (b) => ((b << 24) >> 24) / 300)]),
+    )
+  } catch {
+    return {}
+  }
+}
 
 // How far the first reading of everyone's moments has got (for the "Reading your moments…" line)
 let progress = { done: 0, total: 0 }
@@ -27,7 +45,7 @@ export const searchProgress = () => progress
 // One request at a time, so a search asked while the warm-up is still running waits for its work instead of
 // repeating it
 let queue: Promise<unknown> = Promise.resolve()
-const embed = (texts: string[]) => {
+export const embed = (texts: string[]) => {
   const next = queue.then(() => embedNow(texts))
   queue = next.catch(() => {})
   return next
@@ -50,24 +68,6 @@ async function embedNow(texts: string[]): Promise<number[][]> {
   return texts.map((t) => have[t])
 }
 
-// A piece of what you know about someone. Pieces from a logged moment carry where they came from ("Coffee near
-// Union Square, Oct 2026"), because what actually happened with someone is the best evidence for a match.
-type Chunk = { text: string; from?: string }
-
-const when = (iso: string) => new Date(iso).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
-const MOMENT_BONUS = 0.04 // a real moment beats a profile line that is only about as close
-const sentences = (t: string) => t.split(/(?<=[.!?])\s+/).map((x) => x.trim()).filter((x) => x.split(/\s+/).length >= 4)
-
-const chunksOf = (p: Person): Chunk[] => {
-  const profile = [p.profession, ...p.story.split(/(?<=[.!?])\s+/), ...p.tags, ...(p.todos ?? []).map((t) => t.text)]
-  // Every moment, including the voice note from when you first met: each sentence, labeled with its moment
-  const moments = (p.moments ?? []).flatMap((m) =>
-    sentences(m.transcript ?? m.text ?? m.title).map((text) => ({ text, from: `${m.title}, ${when(m.date)}` })),
-  )
-  const seen = new Set<string>()
-  return [...profile.map((text) => ({ text: text.trim() })), ...moments].filter((c) => c.text && !seen.has(c.text) && seen.add(c.text))
-}
-
 // Load the model and embed everyone ahead of time (when Find opens), so the answer is quick.
 export function warmUp(people: Person[]) {
   return mock ? Promise.resolve() : embed(people.flatMap(chunksOf).map((c) => c.text)).then(() => {}, () => {})
@@ -80,6 +80,23 @@ const dot = (a: number[], b: number[]) => a.reduce((s, x, i) => s + x * b[i], 0)
 const topic = (query: string) => {
   const words = query.toLowerCase().replace(/[^\p{L}\p{N}\s'’-]/gu, ' ').split(/\s+/).filter((w) => w && !filler.has(w) && !/^(do|does|did|make|makes|can|help|need|want|my|me)$/.test(w))
   return words.join(' ') || query
+}
+
+// The best piece of what you know about each person for a piece of text (already topic-shaped): the
+// candidate step of a search. Everything but the question is already embedded (see shipped()).
+export async function localHits(text: string, people: Person[]): Promise<Hit[]> {
+  const chunks = people.map(chunksOf)
+  const [q, ...all] = await embed([text, ...chunks.flat().map((c) => c.text)])
+  let at = 0
+  return people.flatMap((person, i) => {
+    let best: Hit | undefined
+    for (const chunk of chunks[i]) {
+      const sim = dot(q, all[at++])
+      // A real moment wins a near-tie with a profile line
+      if (!best || sim + (chunk.from ? 0.03 : 0) > best.sim) best = { personId: person.id, text: chunk.text, from: chunk.from, sim: sim + (chunk.from ? 0.03 : 0) }
+    }
+    return best ? [best] : []
+  })
 }
 
 async function rank(query: string, people: Person[]) {

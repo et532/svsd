@@ -35,7 +35,8 @@ export function resolvePlace(text: string): { place: PlaceRec; rest: string } | 
   }
 }
 
-export const metroOf = (p: PlaceRec | undefined) => p?.metro
+// How far from a place still counts as "in the area" (km), for the server-side gate.
+export const metroRadius = (p: PlaceRec) => (p.metro && METROS[p.metro]?.radiusKm) || 40
 
 export function distanceKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
   const rad = Math.PI / 180

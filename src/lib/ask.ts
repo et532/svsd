@@ -1,5 +1,6 @@
 import type { Context, Person } from '../data/people'
 import { firstName, timeSince } from './people'
+import { homePlace, placeOfPerson, resolvePlace, sameMetro } from './places'
 
 // The voice AI search ("Ask"): turns what the user says into an action. It's a rule-based stand-in for a
 // real model, so the prototype works offline with no API key: it understands adding someone, logging a
@@ -16,11 +17,12 @@ export type Action = {
   closes?: { personId: string; todoId: string }
 }
 
-export type Match = { person: Person; why: string; say?: string; via?: string; action?: Action }
+// chip: where they are next to the place asked about ('Bed-Stuy, 3 km from Bushwick')
+export type Match = { person: Person; why: string; say?: string; via?: string; action?: Action; chip?: string }
 
 export type AskResult =
   // generic: found by the plain keyword filters (not a special answer), so meaning-based results can be added
-  | { kind: 'people'; title: string; matches: Match[]; groups?: { label: string; matches: Match[] }[]; generic?: boolean; near?: Match[]; slow?: boolean }
+  | { kind: 'people'; title: string; matches: Match[]; groups?: { label: string; matches: Match[] }[]; generic?: boolean; near?: Match[]; slow?: boolean; note?: string }
   | { kind: 'add' }
   | { kind: 'moment'; person: Person }
   | { kind: 'profile'; person: Person }
@@ -54,7 +56,7 @@ export const demoRequests = [
 ]
 
 // Words that broaden a request ("sports" should find baseball and running).
-const related: Record<string, string[]> = {
+export const related: Record<string, string[]> = {
   sports: ['baseball', 'basketball', 'soccer', 'running', 'tennis', 'climbing', 'hiking', 'marathon', 'run club', 'sports'],
   sport: ['baseball', 'basketball', 'soccer', 'running', 'tennis', 'climbing', 'hiking', 'marathon', 'sports'],
   outdoors: ['hiking', 'climbing', 'running', 'patagonia', 'outdoors'],
@@ -67,6 +69,14 @@ const related: Record<string, string[]> = {
   money: ['investing', 'investor', 'vc'],
   startups: ['founder', 'startup', 'startups'],
   books: ['books', 'reading', 'writer', 'journalist'],
+  fashion: ['fashion', 'style', 'stylist', 'clothing', 'vintage', 'tailor', 'runway', 'apparel', 'thrift', 'wardrobe'],
+  photography: ['photography', 'photographer', 'photo', 'portrait', 'portraits', 'film cameras'],
+  film: ['film', 'movie', 'movies', 'cinema', 'director', 'screening'],
+  fitness: ['fitness', 'gym', 'yoga', 'pilates', 'lifting', 'training'],
+  travel: ['travel', 'trip', 'abroad', 'backpacking'],
+  games: ['games', 'gaming', 'board game', 'game night', 'chess'],
+  taxes: ['taxes', 'tax', 'accountant', 'cpa', 'bookkeeping', 'finance'],
+  hardware: ['hardware', 'electronics', 'robotics', 'embedded', 'mechanical'],
 }
 
 const relationWords: [RegExp, Context, string][] = [
@@ -231,8 +241,7 @@ function mentionedPerson(text: string, people: Person[]): Person | undefined {
 
 // ---- Richer answers: each result says why, what to say, and offers a drafted next step ----
 
-const HOME = ['brooklyn', 'manhattan', 'new york', 'queens'] // "the city" for this user
-const near = (p: Person) => HOME.some((c) => norm(p.livesNow.city).includes(c))
+const near = (p: Person) => sameMetro(homePlace(), placeOfPerson(p)) // "the city" for this user
 const overdue = (p: Person) => (Date.now() - new Date(p.lastContacted).getTime()) / 86_400_000 > 45
 const sentence = (story: string, term: RegExp) => story.split(/(?<=\.)\s+/).find((x) => term.test(norm(x)))?.replace(/\.$/, '')
 const openTodos = (p: Person) => (p.todos ?? []).filter((t) => !t.done)
@@ -275,25 +284,13 @@ function wants(p: Person, term: RegExp): string | undefined {
   return [...openTodos(p).map((t) => t.text), ...p.story.split(/(?<=\.)\s+/)].find((x) => term.test(norm(x)) && /buddy|partner|someone/.test(norm(x)))?.replace(/\.$/, '')
 }
 
-const cityAliases: [RegExp, string[], string][] = [
-  [/\b(sf|san francisco|bay area|the bay)\b/, ['san francisco', 'oakland', 'berkeley'], 'the Bay Area'],
-  [/\b(la|los angeles)\b/, ['los angeles'], 'Los Angeles'],
-  [/\b(london)\b/, ['london'], 'London'],
-  [/\b(austin)\b/, ['austin'], 'Austin'],
-  [/\b(toronto)\b/, ['toronto'], 'Toronto'],
-  [/\b(tokyo)\b/, ['tokyo'], 'Tokyo'],
-  [/\b(boston)\b/, ['boston'], 'Boston'],
-  [/\b(berlin)\b/, ['berlin'], 'Berlin'],
-  [/\b(paris)\b/, ['paris'], 'Paris'],
-]
-
 // "I'm traveling to SF next month. Who can I grab a coffee with?"
 function trip(text: string, people: Person[]): AskResult | null {
   if (!/\b(travel|traveling|travelling|trip|visiting|heading|going|flying|in town|next (week|month))\b/.test(text)) return null
-  const hit = cityAliases.find(([re]) => re.test(text))
-  if (!hit) return null
-  const [, cities, area] = hit
-  const there = people.filter((p) => cities.some((c) => norm(p.livesNow.city).includes(c)))
+  const hit = resolvePlace(text)
+  if (!hit || sameMetro(homePlace(), hit.place)) return null // a trip is somewhere else
+  const area = hit.place.metro === 'bay' ? 'the Bay Area' : hit.place.name
+  const there = people.filter((p) => sameMetro(hit.place, placeOfPerson(p)))
   // Who you owe something to, who you're overdue with
   const promisedBy = (p: Person) => people.find((o) => o.id !== p.id && openTodos(o).some((t) => norm(t.text).includes(norm(firstName(p.name)))))
   const matches = there
@@ -318,7 +315,7 @@ function trip(text: string, people: Person[]): AskResult | null {
           kind: 'coffee',
           label: 'Plan coffee',
           to: person.name,
-          draft: `Hi ${first}! I’m in ${area === 'the Bay Area' ? 'SF' : area} next month and would love to grab a coffee.${owed ? ` I also want to introduce you to ${owed.name}, who I think you’d get along with.` : ''} Any morning free?`,
+          draft: `Hi ${first}! I’m in ${hit.place.metro === 'bay' ? 'SF' : hit.place.name} next month and would love to grab a coffee.${owed ? ` I also want to introduce you to ${owed.name}, who I think you’d get along with.` : ''} Any morning free?`,
           closes: owed && todo ? { personId: owed.id, todoId: todo.id } : undefined,
         },
       }
