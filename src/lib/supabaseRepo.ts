@@ -43,7 +43,7 @@ export const remoteDelete = (id: string) => call<void>(`people?id=eq.${encodeURI
 export async function remoteHits(c: Constraints, people: Person[]): Promise<Hit[] | null> {
   if (!remoteEnabled) return null
   const [vec] = await embed([c.embedText])
-  const words = c.terms.flatMap((t) => t.toLowerCase().split(/[^a-z0-9]+/)).filter((w) => w.length > 2)
+  const words = c.groups.flat().flatMap((t) => t.toLowerCase().split(/[^a-z0-9]+/)).filter((w) => w.length > 2)
   const base = { query_vec: vec, query_text: [...new Set(words)].join(' | '), p_stage: c.stage ?? null }
   const rows = async (gate: object) =>
     rpc<{ person_id: string; chunk_text: string; moment_id: string | null; sim: number }[]>('search_people', { ...base, ...gate })

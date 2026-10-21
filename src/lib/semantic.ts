@@ -4,6 +4,7 @@ import { readDb, writeDb } from './localDb'
 import { embedTexts } from './ml'
 import { chunksOf } from './chunks'
 import type { Hit } from './rank'
+import { bestHits } from './rank/hits'
 
 // Search by meaning, fully on this machine: a small embedding model (all-MiniLM-L6-v2, ~25 MB, downloaded once and
 // then cached by the browser) turns text into vectors, so "pickleball" lands near "tennis" and "racquet sports".
@@ -82,21 +83,12 @@ const topic = (query: string) => {
   return words.join(' ') || query
 }
 
-// The best piece of what you know about each person for a piece of text (already topic-shaped): the
-// candidate step of a search. Everything but the question is already embedded (see shipped()).
+// The candidate step of a search: embed the question, then pick each person's best sentence. Everything but the
+// question is already embedded (see shipped()).
 export async function localHits(text: string, people: Person[]): Promise<Hit[]> {
-  const chunks = people.map(chunksOf)
-  const [q, ...all] = await embed([text, ...chunks.flat().map((c) => c.text)])
-  let at = 0
-  return people.flatMap((person, i) => {
-    let best: Hit | undefined
-    for (const chunk of chunks[i]) {
-      const sim = dot(q, all[at++])
-      // A real moment wins a near-tie with a profile line
-      if (!best || sim + (chunk.from ? 0.03 : 0) > best.sim) best = { personId: person.id, text: chunk.text, from: chunk.from, sim: sim + (chunk.from ? 0.03 : 0) }
-    }
-    return best ? [best] : []
-  })
+  const [q, ...all] = await embed([text, ...people.flatMap(chunksOf).map((c) => c.text)])
+  const vec = new Map(people.flatMap(chunksOf).map((c, i) => [c.text, all[i]]))
+  return bestHits(q, people, (t) => vec.get(t))
 }
 
 async function rank(query: string, people: Person[]) {

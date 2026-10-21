@@ -75,7 +75,7 @@ export const related: Record<string, string[]> = {
   fitness: ['fitness', 'gym', 'yoga', 'pilates', 'lifting', 'training'],
   travel: ['travel', 'trip', 'abroad', 'backpacking'],
   games: ['games', 'gaming', 'board game', 'game night', 'chess'],
-  taxes: ['taxes', 'tax', 'accountant', 'cpa', 'bookkeeping', 'finance'],
+  taxes: ['taxes', 'tax', 'accountant', 'cpa', 'bookkeeping'],
   hardware: ['hardware', 'electronics', 'robotics', 'embedded', 'mechanical'],
 }
 
@@ -125,7 +125,7 @@ export function interpret(input: string, people: Person[]): AskResult {
   // How long it's been
   if (/(havent|have not|hasnt|not)( i| we| you)? (talked|spoken|seen|caught up)|lost touch|(been|in) a while|catch up with|reach out|out of touch/.test(text)) {
     const matches = [...people]
-      .sort((a, b) => a.lastContacted.localeCompare(b.lastContacted))
+      .sort((a, b) => staleness(b) - staleness(a))
       .slice(0, 5)
       .map((person) => ({ person, why: `Last talked ${timeSince(person.lastContacted).toLowerCase()}` }))
     return { kind: 'people', title: 'People you haven’t talked to in a while', matches }
@@ -218,6 +218,9 @@ export function interpret(input: string, people: Person[]): AskResult {
   return { kind: 'people', title, matches, generic: true }
 }
 
+// Who is most worth a message: the longer it has been, and the closer you are, the higher
+const staleness = (p: Person) => (Date.now() - new Date(p.lastContacted).getTime()) * (0.5 + (p.closeness ?? 1))
+
 // What happened with someone that mentions one of the words: the sentence from a logged moment, and when.
 function inMoments(p: Person, terms: string[]): string | undefined {
   const re = new RegExp(`\\b(${terms.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`)
@@ -241,16 +244,13 @@ function mentionedPerson(text: string, people: Person[]): Person | undefined {
 
 // ---- Richer answers: each result says why, what to say, and offers a drafted next step ----
 
-const near = (p: Person) => sameMetro(homePlace(), placeOfPerson(p)) // "the city" for this user
 const overdue = (p: Person) => (Date.now() - new Date(p.lastContacted).getTime()) / 86_400_000 > 45
 const sentence = (story: string, term: RegExp) => story.split(/(?<=\.)\s+/).find((x) => term.test(norm(x)))?.replace(/\.$/, '')
 const openTodos = (p: Person) => (p.todos ?? []).filter((t) => !t.done)
 
-const activities: [RegExp, RegExp, string, string][] = [
-  [/\b(climb|climbing|boulder|bouldering)\b/, /climb|boulder/, 'climbing', 'climbing buddy'],
-  [/\b(run|running|jog)\b/, /\brun|marathon|jog/, 'running', 'running buddy'],
-  [/\b(hike|hiking)\b/, /hik/, 'hiking', 'hiking buddy'],
-]
+// Only climbing is answered this way (the pitch demo: Jordan, then Zara). With 200 people nearly everyone runs or
+// hikes, so those go through the ranking in rank/, which weighs how much each person is into it.
+const activities: [RegExp, RegExp, string, string][] = [[/(climb|climbing|boulder|bouldering)/, /climb|boulder/, 'climbing', 'climbing buddy']]
 
 // "I want a climbing buddy. Who in the city can I reach out to?"
 function buddy(text: string, people: Person[]): AskResult | null {
@@ -258,10 +258,11 @@ function buddy(text: string, people: Person[]): AskResult | null {
   const hit = activities.find(([ask]) => ask.test(text))
   if (!hit) return null
   const [, term, activity, label] = hit
-  const inCity = /\b(city|nearby|near me|around here|local|new york|nyc|brooklyn)\b/.test(text)
+  // In person, so people who live in the area: the place the question names, otherwise home
+  const where = resolvePlace(text)?.place ?? homePlace()
   const said = (p: Person) => [p.story, ...p.tags, ...openTodos(p).map((t) => t.text)].some((x) => term.test(norm(x)))
   const matches = people
-    .filter((p) => said(p) && (!inCity || near(p)))
+    .filter((p) => said(p) && sameMetro(where, placeOfPerson(p)))
     // People who said they want a buddy first, then whoever you talked to most recently
     .sort((a, b) => Number(!!wants(b, term)) - Number(!!wants(a, term)) || b.lastContacted.localeCompare(a.lastContacted))
     .map((person): Match => {
@@ -275,8 +276,8 @@ function buddy(text: string, people: Person[]): AskResult | null {
         action: { kind: 'message', label: 'Draft a message', to: person.name, draft: `Hey ${first}! Last time ${hook}. Want to go ${activity} this week?` },
       }
     })
-  const where = inCity ? ' in the city' : ''
-  return { kind: 'people', title: matches.length ? `${matches.length} ${matches.length === 1 ? 'person' : 'people'} for ${activity}${where}` : `No one into ${activity}${where} yet`, matches }
+  const area = ` in ${where.name}`
+  return { kind: 'people', title: matches.length ? `${matches.length} ${matches.length === 1 ? 'person' : 'people'} for ${activity}${area}` : `No one into ${activity}${area} yet`, matches }
 }
 
 // Something they said about wanting a buddy (from their notes or to-dos), if any.
@@ -292,7 +293,8 @@ function trip(text: string, people: Person[]): AskResult | null {
   const area = hit.place.metro === 'bay' ? 'the Bay Area' : hit.place.name
   const there = people.filter((p) => sameMetro(hit.place, placeOfPerson(p)))
   // Who you owe something to, who you're overdue with
-  const promisedBy = (p: Person) => people.find((o) => o.id !== p.id && openTodos(o).some((t) => norm(t.text).includes(norm(firstName(p.name)))))
+  const named = (text: string, first: string) => new RegExp(`\b${norm(first)}\b`).test(norm(text))
+  const promisedBy = (p: Person) => people.find((o) => o.id !== p.id && openTodos(o).some((t) => named(t.text, firstName(p.name))))
   const matches = there
     .sort((a, b) => Number(!!promisedBy(b)) - Number(!!promisedBy(a)) || a.lastContacted.localeCompare(b.lastContacted))
     .map((person): Match => {
@@ -305,7 +307,7 @@ function trip(text: string, people: Person[]): AskResult | null {
         : overdue(person)
           ? `It’s been a while. Ask about ${sentence(person.story, /./)?.toLowerCase() ?? person.tags[0]}.`
           : `Ask about ${person.tags[0]}.`
-      const todo = owed ? openTodos(owed).find((t) => norm(t.text).includes(norm(first))) : undefined
+      const todo = owed ? openTodos(owed).find((t) => named(t.text, first)) : undefined
       return {
         person,
         why,

@@ -9,7 +9,7 @@ describe('parseQuery', () => {
     expect(c.place?.name).toBe('Bushwick')
     expect(c.named).toBe(true)
     expect(c.theme).toEqual(['fashion'])
-    expect(c.terms).toContain('stylist')
+    expect(c.groups.flat()).toContain('stylist')
     expect(c.contexts.social).toBe(1)
   })
   it('gates an in-person plan to home when no place is named', () => {

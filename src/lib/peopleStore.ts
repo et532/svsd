@@ -7,7 +7,8 @@ import { readDb, writeDb } from './localDb'
 // local backend (and mirrored in localStorage), so they survive a reload. Mock mode (?mock=200) never saves.
 
 const KEY = 'peepl.people.v1'
-const mock = new URLSearchParams(window.location.search).has('mock')
+// (the typeof checks let tests and scripts import this in Node)
+const mock = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('mock')
 
 type Saved = { added: Person[]; changed: Record<string, Partial<Person>> }
 

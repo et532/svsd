@@ -45,14 +45,15 @@ export function writeDb(name: string, value: unknown) {
     }, 250),
   })
 }
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState !== 'hidden') return
-  for (const [name, { value, timer }] of waiting) {
-    window.clearTimeout(timer)
-    void put(name, value)
-  }
-  waiting.clear()
-})
+if (typeof document !== 'undefined')
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'hidden') return
+    for (const [name, { value, timer }] of waiting) {
+      window.clearTimeout(timer)
+      void put(name, value)
+    }
+    waiting.clear()
+  })
 
 // Backup and restore: one JSON file with your people and your name fixes (search vectors are rebuilt on their own).
 const BACKUP = ['people', 'namefixes'] as const

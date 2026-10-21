@@ -1,4 +1,5 @@
 import type { Person } from '../../data/people'
+import { chunksOf } from '../chunks'
 import type { Match } from '../ask'
 import { firstName, timeSince } from '../people'
 import { hierarchyFit, placeChip, placeOfPerson } from '../places'
@@ -9,17 +10,17 @@ import type { Constraints } from '../query'
 //
 // Score = 0.40 theme + 0.20 relationshipFit + 0.15 proximity + 0.10 evidence + 0.10 warmth + 0.05 graph.
 // A feature the question doesn't use (no place, no theme, no kind of relationship) is dropped and the rest are
-// rescaled, so "who knows about taxes" isn't punished for having no neighborhood.
+// rescaled, so "who knows about taxes" isn't punished for having no neighborhood. These weights are the only copy:
+// the SQL (search_people) only finds candidates.
 
 export type Hit = { personId: string; text: string; from?: string; sim: number }
 
 const W = { theme: 0.4, rel: 0.2, near: 0.15, evidence: 0.1, warmth: 0.1, graph: 0.05 }
-const THEME_FLOOR = 0.35 // a theme score below this is not "into it"
-const NEAR_FLOOR = 0.2 // ...but this close is worth showing as "closest, but not quite"
+const NEAR_SIM = 0.45 // a miss this close in meaning is shown as "closest, but not quite"
 const MAX_RESULTS = 10
 const DAY = 86_400_000
 
-export type Ranked = { match: Match; score: number }
+type Ranked = { match: Match; score: number }
 export type Outcome = {
   matches: Match[]
   groups?: { label: string; matches: Match[] }[]
@@ -32,15 +33,41 @@ const clamp = (x: number) => Math.max(0, Math.min(1, x))
 const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[’']/g, '')
 const days = (iso: string, now: number) => (now - new Date(iso).getTime()) / DAY
 
-function keyword(p: Person, hit: Hit | undefined, terms: string[]) {
-  if (!terms.length) return false
-  const hay = norm([p.profession, ...p.tags, hit?.text ?? ''].join(' | '))
-  return terms.some((t) => new RegExp(`\\b${norm(t).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`).test(hay))
+// Everything written about someone, lowercased, for exact-word checks.
+const texts = new WeakMap<Person, string>()
+const textOf = (p: Person) => {
+  let t = texts.get(p)
+  if (t === undefined) {
+    t = norm([p.profession, p.story, ...p.tags, ...(p.todos ?? []).map((x) => x.text), ...(p.moments ?? []).flatMap((m) => [m.title, m.text ?? '', m.transcript ?? ''])].join(' | '))
+    texts.set(p, t)
+  }
+  return t
+}
+const esc = (t: string) => norm(t).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+// Every group of words has to be mentioned (any word of a group will do): "deep sea welding" needs all three, so
+// "deep dish" and "seamstress" don't count.
+const keyword = (p: Person, groups: string[][]) => groups.length > 0 && groups.every((g) => g.some((t) => new RegExp(`\\b${esc(t)}`).test(textOf(p))))
+
+// Close enough in meaning to count without the words appearing: "doctor" ~ "physician" (0.67), "lawyer" ~ "attorney"
+// (0.61), but "portraits" ~ "painter" (0.58) is only a near miss.
+const MEANING_ALONE = 0.64 // (0.7 when the question is two or more ideas: "portrait photographer" shouldn't match a painter)
+const meaning = (hit: Hit | undefined) => hit?.sim ?? 0
+const qualifies = (p: Person, hit: Hit | undefined, c: Constraints) => keyword(p, c.groups) || meaning(hit) >= (c.groups.length > 1 ? 0.7 : MEANING_ALONE)
+// The words appearing and a close meaning together score highest; meaning alone a little lower; a near miss lower still.
+const themeScore = (p: Person, hit: Hit | undefined, c: Constraints) => {
+  if (keyword(p, c.groups)) return 0.7 + 0.3 * clamp((meaning(hit) - 0.4) / 0.3)
+  if (qualifies(p, hit, c)) return 0.55 + 0.3 * clamp((meaning(hit) - 0.64) / 0.1)
+  return 0.5 * clamp((meaning(hit) - 0.3) / 0.35)
 }
 
-function themeScore(p: Person, hit: Hit | undefined, c: Constraints) {
-  const meaning = hit ? clamp((hit.sim - 0.28) / 0.32) : 0
-  return clamp(meaning + (keyword(p, hit, c.terms) ? 0.35 : 0))
+// The sentence that shows why someone fits: the best match if it says the thing itself, otherwise the first sentence
+// (a moment before the profile) that mentions it.
+function evidence(p: Person, hit: Hit, c: Constraints) {
+  const re = new RegExp(`\\b(${c.groups.flat().map(esc).join('|')})`)
+  // A bare job title or tag (one or two words) is a weak reason when a sentence says more
+  if (c.groups.length === 0 || (re.test(norm(hit.text)) && hit.text.split(/\s+/).length > 2)) return hit
+  const chunks = chunksOf(p).filter((ch) => ch.kind !== 'tag' && re.test(norm(ch.text)))
+  return chunks.find((ch) => ch.kind === 'moment') ?? chunks[0] ?? hit
 }
 
 const relFit = (p: Person, c: Constraints) => Math.max(c.contexts[p.context] ?? 0, (p.alsoContext && c.contexts[p.alsoContext]) || 0)
@@ -52,34 +79,38 @@ function warmth(p: Person, now: number) {
 }
 
 const jobOf = (p: Person) => norm(p.profession).replace(/\s+@.*$/, '')
+const relationWord = (p: Person) => ({ family: 'Family', work: 'From work', social: 'Friend', community: 'Community', unsorted: '' })[p.context]
 
 export function rankPeople(c: Constraints, hits: Hit[], people: Person[], now = Date.now()): Outcome {
   const best = new Map<string, Hit>()
   for (const h of hits) if (!best.has(h.personId) || h.sim > best.get(h.personId)!.sim) best.set(h.personId, h)
 
   const target = c.place
+  const themed = c.theme.length > 0
   const fit = (p: Person) => (target ? hierarchyFit(target, placeOfPerson(p)) : 1)
   const inArea = (p: Person) => fit(p) > 0
-  const stageOk = (p: Person) => !c.stage || p.lifeStage === c.stage
-  const themed = c.theme.length > 0
+  const metAt = c.metAt && norm(c.metAt)
+  // Hard filters besides place: the life stage, and where you met
+  const allowed = (p: Person) =>
+    (!c.stage || p.lifeStage === c.stage) &&
+    (!metAt || norm(p.met.context).includes(metAt) || (p.moments ?? []).some((m) => m.firstMeeting && norm(m.title).includes(metAt)))
+  const into = (p: Person) => !themed || qualifies(p, best.get(p.id), c)
   const th = new Map(people.map((p) => [p.id, themed ? themeScore(p, best.get(p.id), c) : 0]))
   // Everyone clearly into the theme, wherever they live: who the connectors might know
-  const experts = people.filter((p) => stageOk(p) && (th.get(p.id) ?? 0) >= THEME_FLOOR)
+  const experts = people.filter((p) => themed && allowed(p) && into(p))
 
   const card = (p: Person): Match => {
     const hit = best.get(p.id)
     const place = placeOfPerson(p)
     const d = days(p.lastContacted, now)
-    const evidence = hit && (keyword(p, hit, c.terms) || th.get(p.id)! >= THEME_FLOOR)
-    const why = evidence
-      ? `${hit.text.replace(/\.$/, '')}${hit.from ? ` (${hit.from})` : ''}`
-      : [relationWord(p), p.profession, `last talked ${timeSince(p.lastContacted).toLowerCase()}`].filter(Boolean).join(' · ')
-    return {
-      person: p,
-      why,
-      chip: target && place ? placeChip(target, place) : undefined,
-      via: d > 180 ? 'Reconnect first' : undefined,
-    }
+    const proof = themed && hit && into(p) ? evidence(p, hit, c) : undefined
+    const why =
+      proof
+        ? p.tags.includes(proof.text)
+          ? `Into ${proof.text}`
+          : `${proof.text.replace(/\.$/, '')}${proof.from ? ` (${proof.from})` : ''}`
+        : [relationWord(p), (c.stage || c.metAt) && `Met at ${p.met.context}`, p.profession, `last talked ${timeSince(p.lastContacted).toLowerCase()}`].filter(Boolean).join(' · ')
+    return { person: p, why, chip: target && place ? placeChip(target, place) : undefined, via: d > 180 ? 'Reconnect first' : undefined }
   }
 
   const score = (p: Person, graph: number) => {
@@ -87,7 +118,7 @@ export function rankPeople(c: Constraints, hits: Hit[], people: Person[], now = 
     const parts: [number, number][] = []
     if (themed) {
       parts.push([W.theme, th.get(p.id)!])
-      parts.push([W.evidence, hit?.from && th.get(p.id)! >= THEME_FLOOR ? 1 : keyword(p, hit, c.terms) ? 0.5 : 0])
+      parts.push([W.evidence, hit?.from && into(p) ? 1 : keyword(p, c.groups) ? 0.5 : 0])
     }
     if (Object.keys(c.contexts).length) parts.push([W.rel, relFit(p, c)])
     if (target) parts.push([W.near, fit(p)])
@@ -99,15 +130,15 @@ export function rankPeople(c: Constraints, hits: Hit[], people: Person[], now = 
   const graphOf = (p: Person) => clamp(p.knows.filter((k) => expertIds.has(k)).length / 3)
 
   // Level 1: everything the question asked for holds
-  const pool = people.filter((p) => inArea(p) && stageOk(p) && (!themed || th.get(p.id)! >= THEME_FLOOR))
-  const level1 = diversify(pool.map((p) => ({ match: card(p), score: score(p, graphOf(p)) })))
+  const level1 = diversify(people.filter((p) => inArea(p) && allowed(p) && into(p)).map((p) => ({ match: card(p), score: score(p, graphOf(p)) })))
   if (level1.length) return { matches: level1, level: 1 }
 
   const where = target?.name ?? 'your area'
   const what = c.theme.join(' / ')
-  // Nothing is both nearby and into it. Offer the people who know someone who is, then the nearby people who would still be good company.
-  if (target && themed) {
-    const nearby = people.filter((p) => inArea(p) && stageOk(p))
+  // Nothing is both nearby and into it. Offer the people who know someone who is, then the nearby people who would
+  // still be good company. (Only for an in-person plan: for "who knows about X" that would be filler.)
+  if (target && themed && c.intent === 'plan') {
+    const nearby = people.filter((p) => inArea(p) && allowed(p))
     const connectors: Match[] = nearby
       .map((p) => ({ p, via: experts.find((e) => p.knows.includes(e.id)) }))
       .filter((x): x is { p: Person; via: Person } => !!x.via)
@@ -129,23 +160,24 @@ export function rankPeople(c: Constraints, hits: Hit[], people: Person[], now = 
   }
 
   // Honest empty: the closest few are shown as "not quite"
-  const near = [...people]
-    .filter((p) => stageOk(p) && (!themed || (best.get(p.id)?.sim ?? 0) >= NEAR_FLOOR + 0.1 || th.get(p.id)! >= NEAR_FLOOR))
-    .sort((a, b) => th.get(b.id)! - th.get(a.id)!)
-    .slice(0, 2)
-    .map(card)
-  return { matches: [], near: themed ? near : [], level: 4, note: target && !people.some(inArea) ? `No one in ${where} yet.` : undefined }
+  const near = themed
+    ? [...people]
+        .filter((p) => allowed(p) && meaning(best.get(p.id)) >= NEAR_SIM)
+        .sort((a, b) => th.get(b.id)! - th.get(a.id)! || meaning(best.get(b.id)) - meaning(best.get(a.id)))
+        .slice(0, 2)
+        .map((p) => ({ ...card(p), why: best.get(p.id)!.text.replace(/\.$/, '') }))
+    : []
+  return { matches: [], near, level: 4, note: target && !people.some(inArea) ? `No one in ${where} yet.` : undefined }
 }
-
-const relationWord = (p: Person) => ({ family: 'Family', work: 'From work', social: 'Friend', community: 'Community', unsorted: '' })[p.context]
 
 // Best first, but a second person with the same job as one already chosen has to be clearly better to take a spot
 function diversify(all: Ranked[], cap = MAX_RESULTS): Match[] {
   const left = [...all].sort((a, b) => b.score - a.score)
   const out: Match[] = []
   const jobs = new Map<string, number>()
+  const adjusted = (r: Ranked) => r.score - 0.06 * (jobs.get(jobOf(r.match.person)) ?? 0)
   while (left.length && out.length < cap) {
-    const next = left.reduce((a, b) => (b.score - 0.06 * (jobs.get(jobOf(b.match.person)) ?? 0) > a.score - 0.06 * (jobs.get(jobOf(a.match.person)) ?? 0) ? b : a))
+    const next = left.reduce((a, b) => (adjusted(b) > adjusted(a) ? b : a))
     left.splice(left.indexOf(next), 1)
     out.push(next.match)
     jobs.set(jobOf(next.match.person), (jobs.get(jobOf(next.match.person)) ?? 0) + 1)

@@ -26,7 +26,7 @@ const activities: Activity[] = [
   { id: 'hiking', label: 'a hike', re: /\b(hike|hiking)\b/, contexts: FRIENDS, theme: ['hiking'] },
   { id: 'pickleball', label: 'pickleball', re: /\b(pickleball|tennis|padel)\b/, contexts: FRIENDS, theme: ['pickleball', 'tennis'] },
   { id: 'workout', label: 'a workout', re: /\b(workout|gym|yoga|pilates)\b/, contexts: FRIENDS, theme: ['fitness'] },
-  { id: 'concert', label: 'a concert', re: /\b(concert|gig|live music|show)\b/, contexts: PARTY, theme: ['music'] },
+  { id: 'concert', label: 'a concert', re: /\b(concert|gig|live music)\b/, contexts: PARTY, theme: ['music'] },
   { id: 'museum', label: 'a gallery', re: /\b(museum|gallery|exhibit|exhibition)\b/, contexts: FRIENDS, theme: ['art'] },
   { id: 'movie', label: 'a movie', re: /\b(movie|movies|cinema|film screening)\b/, contexts: FRIENDS, theme: ['film'] },
 ]
@@ -52,7 +52,7 @@ const askWords = new Set(
   (
     'themed theme vibe invite inviting host hosting over around near nearby moved move moving fun cool good great nice best ' +
     'next month week weekend tonight tomorrow soon free thing things kind sort type totally really maybe ask grab hang come ' +
-    'mine ours join along how'
+    'mine ours join along how quiet chill relaxed easy casual cozy lively small big birthday anniversary celebration holiday'
   ).split(' '),
 )
 
@@ -66,7 +66,8 @@ export type Constraints = {
   stage?: LifeStage
   contexts: Weights // how well each way of knowing someone fits (empty = no preference)
   theme: string[] // words to look for in what you know about them (empty = a plain social plan)
-  terms: string[] // theme words expanded with their synonyms, for exact matches
+  groups: string[][] // exact-match terms: every group has to be mentioned (any synonym in a group will do)
+  metAt?: string // "people I met at Climate Week": where you met them is a filter, not a topic
   embedText: string // what to embed for meaning (empty = nothing to search by meaning)
   explain: string[] // what was understood, for the answer's first line
 }
@@ -100,6 +101,9 @@ export function parseQuery(input: string): Constraints {
       break
     }
 
+  const metAt = rest.match(/\bmet (?:at|through|via|in)\s+(?:the\s+)?(.+?)\s*$/)?.[1]
+  if (metAt) rest = rest.replace(/\bmet (?:at|through|via|in)\s+(?:the\s+)?.+$/, ' ')
+
   const plan = !!activity || /\b(invite|hang out|hang with|come over|join me|go out with|meet ?up|catch up with)\b/.test(clean)
   const knowledge = !plan && /\b(who knows|knows about|know (about|anything|how)|expert|good at|help (me )?with|does my|advice|teach)\b/.test(clean)
   const intent: Constraints['intent'] = plan ? 'plan' : knowledge ? 'knowledge' : 'find'
@@ -110,15 +114,13 @@ export function parseQuery(input: string): Constraints {
     .filter((w) => w.length > 2 && !filler.has(w) && !askWords.has(w) && !/^(for|the|who|how|that|this|than|then|there|not|any|but)$/.test(w))
   const theme = [...new Set([...(activity?.theme ?? []), ...words])]
 
-  // Synonyms ("fashion" -> style, stylist, vintage…) so a stylist counts even if nobody wrote "fashion"
-  const terms = [
-    ...new Set(
-      theme.flatMap((w) => {
-        const stem = w.replace(/(ers|ing|ies|es|s)$/, '')
-        return related[w] ?? [w, stem.length >= 4 ? stem : w]
-      }),
-    ),
-  ]
+  // Synonyms ("fashion" -> style, stylist, vintage…) so a stylist counts even if nobody wrote "fashion". The
+  // activity's own words are alternatives ("pickleball" or "tennis"); the words the person added all have to appear.
+  const expand = (w: string) => {
+    const stem = w.replace(/(ers|ing|ies|es|s)$/, '')
+    return related[w] ?? [w, stem.length >= 4 ? stem : w]
+  }
+  const groups = [...(activity?.theme ? [activity.theme.flatMap(expand)] : []), ...words.map(expand)].map((g) => [...new Set(g)])
 
   // In-person plans are gated to a place: the one named, or home. Knowledge and introductions are not, unless a place is named.
   const place = found?.place ?? (intent === 'plan' ? homePlace() : undefined)
@@ -126,7 +128,9 @@ export function parseQuery(input: string): Constraints {
   if (activity) explain.push(activity.label)
   if (theme.length) explain.push(`about ${theme.join(', ')}`)
   if (stage) explain.push(`from ${stage.replace('-', ' ')}`)
+  if (metAt) explain.push(`met at ${metAt}`)
 
-  const embedText = theme.length ? [...theme, ...terms.filter((t) => !theme.includes(t)).slice(0, 5)].join(', ') : ''
-  return { text: input, intent, activity, place, named: !!found, stage, contexts, theme, terms, embedText, explain }
+  const synonyms = theme.flatMap((w) => related[w] ?? []).filter((t) => !theme.includes(t))
+  const embedText = theme.length ? [...theme, ...synonyms.slice(0, 5)].join(', ') : ''
+  return { text: input, intent, activity, place, named: !!found, stage, metAt, contexts, theme, groups, embedText, explain }
 }
