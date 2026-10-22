@@ -12,9 +12,9 @@ type Task = 'parse' | 'rank' | 'draft' | 'live'
 // After the first "not available" (503 no key, 404 no endpoint) stop asking, so there is no failed request per search
 let off = false
 
-// Whether the server has an AI key at all: one cheap request, remembered. The voice code uses it to skip downloading
-// local speech models (and showing "getting the voice model ready") when OpenAI will do the listening. A network
-// error counts as "not ready" for now without switching the AI off for good.
+// Whether the server has an AI key at all: one cheap request, remembered. Voice in Brave / Firefox needs OpenAI, so it
+// says "type instead" at once when this is false. A network error counts as "not ready" for now without switching the
+// AI off for good.
 let ready: Promise<boolean> | undefined
 export const aiReady = () =>
   (ready ??= fetch('/api/ai/status')
@@ -64,8 +64,8 @@ export function toWav(samples: Float32Array, rate: number): Blob {
   return new Blob([buf], { type: 'audio/wav' })
 }
 
-// The text of a recording, from OpenAI (more accurate than the local Whisper, and it is told who might be named), or
-// null when that isn't available: the caller then uses the local model.
+// The text of a recording, from OpenAI (told who might be named), or null when that isn't available (no key, offline,
+// a recording too long for the server): the caller then keeps the words that streamed in.
 export async function transcribeWithAi(audio: Float32Array, rate: number, names: string[]): Promise<string | null> {
   if (off) return null
   try {

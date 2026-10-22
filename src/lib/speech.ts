@@ -1,12 +1,11 @@
 import { aiReady, startAiLive, transcribeWithAi } from './ai'
-import { startLive } from './live'
-import { preload, transcribeAudio } from './ml'
 
-// Voice-to-text. First choice is the browser's built-in speech recognition (Chrome / Edge / Safari): live words,
-// but Chrome sends the audio to Google. Brave, Firefox and other builds cannot use that service ("network" error,
-// or no API at all), so there the mic is recorded and transcribed on this machine by Whisper (a ~40 MB model,
-// downloaded once, then cached). Whisper is not streaming, so the recording so far is re-transcribed every half second
-// of seconds: the words appear a beat behind you and are corrected as more context arrives.
+// Voice-to-text. First choice is the browser's built-in speech recognition (Chrome / Edge / Safari): live words, but
+// Chrome sends the audio to Google. Brave, Firefox and other builds cannot use that service ("network" error, or no API
+// at all), so there the mic is recorded and OpenAI does the listening (ai.ts): the words stream in about a second behind
+// you, and after Stop the whole recording is transcribed once more for the accurate final text. There are no local speech
+// models any more (user's call 2026-10-22: no download, the AI will work); without OpenAI (no key, offline) those
+// browsers get "type instead".
 
 type Recognition = {
   continuous: boolean
@@ -27,33 +26,30 @@ const Ctor = w.SpeechRecognition ?? w.webkitSpeechRecognition
 
 const BLOCKED = ['not-allowed', 'service-not-allowed', 'audio-capture']
 
+// Brave has the built-in API but blocks the Google service behind it, so it would only fail after a delay
+const recordsMic = !Ctor || 'brave' in navigator
+
 // Starts listening and returns a stop function, or null when there is no way to hear (an insecure page with no mic
 // API at all), so the caller can fall back to the scripted demo.
 // - onText: everything heard so far (the whole text, replacing the last).
 // - onFail: the reason when the mic is blocked or nothing works.
-// - onBusy: true while the last of a local recording is being transcribed after stop (text is coming).
-// - onLoading: true while the local voice model is still getting ready (first use downloads it), so nothing shows yet.
-// Whether the mic is heard by the local models (Brave, Firefox...) rather than the browser's own speech service
-export const usesLocalVoice = !Ctor || 'brave' in navigator
-
+// - onBusy: true while the last of a recording is being transcribed after stop (text is coming).
+// - hints: names that may be said (people you know), to help the transcription spell them right.
 export function listen(
   onText: (text: string) => void,
   onFail: (reason: string) => void,
   onBusy: (busy: boolean) => void,
-  onLoading: (loading: boolean) => void = () => {},
-  // Names that may be said (people you know), to help the transcription get them right
   hints: () => string[] = () => [],
 ): (() => void) | null {
   if (!Ctor && !navigator.mediaDevices?.getUserMedia) return null
-  let stopLocal = () => {}
-  const fallToWhisper = () => (stopLocal = recordLocal(onText, onFail, onBusy, onLoading, hints))
-  // Brave has the built-in API but blocks the Google service behind it, so it would only fail after a delay
-  if (!Ctor || usesLocalVoice) {
-    fallToWhisper()
-    return () => stopLocal()
+  let stopMic = () => {}
+  const fallToMic = () => (stopMic = recordMic(onText, onFail, onBusy, hints))
+  if (recordsMic) {
+    fallToMic()
+    return () => stopMic()
   }
 
-  const rec = new Ctor()
+  const rec = new Ctor!()
   rec.continuous = true
   rec.interimResults = true
   rec.lang = navigator.language || 'en-US'
@@ -70,7 +66,7 @@ export function listen(
     on = false
     rec.abort()
     if (BLOCKED.includes(reason)) onFail(reason)
-    else fallToWhisper() // the speech service is unreachable here: record and transcribe locally instead
+    else fallToMic() // the speech service is unreachable here: record and let OpenAI listen instead
   }
   // Silence ("no-speech") just ends the session and is restarted below; anything else is a real failure.
   rec.onerror = (e) => e.error !== 'no-speech' && e.error !== 'aborted' && fail(e.error)
@@ -92,18 +88,16 @@ export function listen(
   try {
     rec.start()
   } catch {
-    fallToWhisper()
+    fallToMic()
   }
   return () => {
     on = false
     rec.abort()
-    stopLocal()
+    stopMic()
   }
 }
 
-const RATE = 16000 // what Whisper wants
-const TICK_MS = 500 // how often the recording so far is transcribed (a tick is skipped while the last one is still running)
-const MAX_SEGMENT = 25 * RATE // Whisper reads 30 s at a time: past ~25 s the text so far is kept and a new piece starts
+const RATE = 16000 // what the recording is kept at, and what is sent to OpenAI for the final text
 
 const join = (a: Float32Array[]) => {
   const out = new Float32Array(a.reduce((n, c) => n + c.length, 0))
@@ -113,67 +107,30 @@ const join = (a: Float32Array[]) => {
 }
 const rms = (a: Float32Array) => Math.sqrt(a.reduce((s, x) => s + x * x, 0) / (a.length || 1))
 
-// Records the mic as 16 kHz mono. While it runs, Vosk (live.ts) shows each word as it is said; if that model isn't
-// available (still downloading, or offline) Whisper passes over the recording so far fill in instead. When stopped,
-// Whisper transcribes the whole recording for the accurate final text.
-function recordLocal(
-  onText: (t: string) => void,
-  onFail: (reason: string) => void,
-  onBusy: (b: boolean) => void,
-  onLoading: (b: boolean) => void,
-  hints: () => string[],
-) {
+// Records the mic as 16 kHz mono and lets OpenAI listen. While it runs, the words stream in as they are said (ai.ts
+// startAiLive); when stopped, OpenAI transcribes the whole recording for the accurate final text (a Vercel function takes
+// ~2 minutes of speech; a longer one keeps the streamed words). If OpenAI isn't available, voice says so and the
+// caller drops back to typing.
+function recordMic(onText: (t: string) => void, onFail: (reason: string) => void, onBusy: (b: boolean) => void, hints: () => string[]) {
   let stopped = false
   let release = () => {}
-  let chunks: Float32Array[] = []
-  let committed = '' // text of finished 25 s pieces
-  let working: Promise<void> = Promise.resolve()
-  let failed = false
-  let live: ReturnType<typeof startLive> | undefined
-  // Live words from OpenAI (when there is a key): once they start, they replace the quicker, rougher local words. The
-  // connection opens now, at the tap, so it is ready by the time the mic permission is answered (audio is kept until it is).
-  const ailive = startAiLive((t) => {
-    aiHeard = true
-    seen(t)
-  })
-  let aiHeard = false
-  let anyWords = false
-  // "Getting the voice model ready" only when the local model is what we are waiting for: not when OpenAI is listening
-  void aiReady().then((ready) => {
-    if (!ready && !anyWords && !live?.ready) onLoading(true)
-  })
-  const seen = (t: string) => ((anyWords = true), onLoading(false), onText(t))
+  const chunks: Float32Array[] = []
+  let heard = false
 
-  const transcribe = async () => {
-    const audio = join(chunks)
-    // Too short, or silence (Whisper invents words like " you" for silence): nothing to say yet
-    if (audio.length < RATE * 0.8 || rms(audio) < 0.003) return
-    // The final text (after Stop) comes from OpenAI when there is a key, with local Whisper as the fallback; the passes
-    // that stand in while Vosk is unavailable stay local, so nothing is billed every half second
-    const text = (stopped ? await transcribeWithAi(audio, RATE, hints()) : null) ?? (await transcribeAudio(audio))
-    // A pass that finished after the live words took over would only make the text jump back: drop it
-    if (!live?.failed && !stopped) return
-    const clean = text.replace(/\[[^\]]*\]|\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() // drop "[BLANK_AUDIO]" style tags
-    const all = `${committed} ${clean}`.trim()
-    if (all) seen(all)
-    if (audio.length > MAX_SEGMENT) {
-      committed = all
-      chunks = [join(chunks).slice(audio.length)] // keep only what was recorded while transcribing
-    }
+  // The OpenAI connection opens now, at the tap, so it is ready by the time the mic permission is answered (audio is
+  // kept until it is open)
+  const ailive = startAiLive((t) => {
+    heard = true
+    onText(t)
+  })
+  const fail = (reason: string) => {
+    if (stopped) return
+    stopped = true
+    release()
+    ailive.stop()
+    onFail(reason)
   }
-  // One transcription at a time, in order; a tick that finds one still running is skipped
-  const run = () =>
-    (working = working.then(transcribe).catch(() => {
-      if (!failed) onFail('unavailable')
-      failed = true
-    }))
-  let isBusy = false
-  const tick = setInterval(() => {
-    // Whisper passes only stand in when the word-by-word model could not load
-    if (isBusy || stopped || !live?.failed) return
-    isBusy = true
-    run().finally(() => (isBusy = false))
-  }, TICK_MS)
+  void aiReady().then((ready) => ready || fail('unavailable'))
 
   navigator.mediaDevices
     .getUserMedia({ audio: true })
@@ -182,17 +139,9 @@ function recordLocal(
       const source = ctx.createMediaStreamSource(stream)
       // ponytail: ScriptProcessor is deprecated but works in every browser without a separate worklet file
       const tap = ctx.createScriptProcessor(4096, 1, 1)
-      live = startLive(ctx.sampleRate, (t) => !aiHeard && seen(t), () => {
-        onLoading(false)
-        // Whisper (the offline fallback for the final text) is only worth its ~80 MB when OpenAI isn't doing that
-        void aiReady().then((ready) => {
-          if (!ready) preload('whisper').catch(() => {})
-        })
-      })
       tap.onaudioprocess = (e) => {
         const samples = new Float32Array(e.inputBuffer.getChannelData(0))
         chunks.push(samples)
-        live?.feed(new Float32Array(samples))
         ailive.feed(samples, ctx.sampleRate)
       }
       const mute = ctx.createGain()
@@ -207,20 +156,24 @@ function recordLocal(
       }
       if (stopped) release()
     })
-    .catch(() => {
-      clearInterval(tick)
-      onFail('not-allowed')
-    })
+    .catch(() => fail('not-allowed'))
 
   return () => {
     if (stopped) return
     stopped = true
-    clearInterval(tick)
     release()
-    live?.stop()
     ailive.stop()
-    // The last words: queued after any transcription in flight, over everything recorded
+    // The final text: OpenAI reads the whole recording once more. If that fails the streamed words stay; if there are
+    // none either, voice isn't working. (Silence or a tap that was too short has nothing to transcribe.)
+    const audio = join(chunks)
+    if (audio.length < RATE * 0.8 || rms(audio) < 0.003) return
     onBusy(true)
-    run().finally(() => onBusy(false))
+    void transcribeWithAi(audio, RATE, hints())
+      .then((text) => {
+        const clean = text?.replace(/\[[^\]]*\]|\([^)]*\)/g, '').replace(/\s+/g, ' ').trim()
+        if (clean) onText(clean)
+        else if (!heard) onFail('unavailable')
+      })
+      .finally(() => onBusy(false))
   }
 }
