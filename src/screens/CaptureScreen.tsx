@@ -5,6 +5,7 @@ import type { Person } from '../data/people'
 import { momentCandidates, parsePerson, splitPeople, voiceScript, type PersonNote } from '../lib/capture'
 import { Avatar } from '../components/Avatar'
 import { cardBackground } from '../lib/people'
+import { refine, warmUpParser } from '../lib/llmParse'
 
 type Props = {
   people: Person[]
@@ -33,6 +34,9 @@ const monthYear = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', y
 export function CaptureScreen({ people, onClose, onCreate, onCreateMany, onMoment, onOpenProfile, mutualWith }: Props) {
   const [stage, setStage] = useState<Stage>({ kind: 'input' })
 
+  // Start loading the language model as soon as Add opens, so it is ready by the time a note is sent
+  useEffect(warmUpParser, [])
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
     window.addEventListener('keydown', onKey)
@@ -42,11 +46,17 @@ export function CaptureScreen({ people, onClose, onCreate, onCreateMany, onMomen
   // "Creating a new profile…" for a moment, then the profile card appears.
   useEffect(() => {
     if (stage.kind !== 'processing') return
-    const t = setTimeout(
-      () => setStage({ kind: 'preview', sent: stage.sent, people: stage.group.length > 1 ? onCreateMany(stage.sent, stage.group) : [onCreate(stage.sent)] }),
-      1700,
+    let live = true
+    // The language model reads each note while the card shimmers (at least 1.7s, at most its own timeout)
+    const notes = stage.group.length > 1 ? stage.group.map((g) => g.text) : [stage.sent.text]
+    Promise.all([new Promise((r) => setTimeout(r, 1700)), ...notes.map(refine)]).then(
+      () =>
+        live &&
+        setStage({ kind: 'preview', sent: stage.sent, people: stage.group.length > 1 ? onCreateMany(stage.sent, stage.group) : [onCreate(stage.sent)] }),
     )
-    return () => clearTimeout(t)
+    return () => {
+      live = false
+    }
     // onCreate is stable enough for one timer per stage
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stage])

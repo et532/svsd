@@ -19,10 +19,14 @@ export type Draft = Partial<Record<Field, string>> & {
 }
 
 // The company in "Founder at Voltcell" / "works for Acme Labs" (a capitalized name after a role and at / @ / for).
+const ROLES = 'founder co-?founder engineer designer investor researcher manager recruiter chef architect developer teacher nurse doctor lawyer consultant analyst scientist director editor producer photographer musician artist writer coach professor barista baker pilot plumber electrician carpenter accountant therapist illustrator journalist filmmaker translator interpreter dentist entrepreneur pharmacist'
+  .split(' ')
+  .map((r) => `[${r[0].toUpperCase()}${r[0]}]${r.slice(1)}s?`)
+  .join('|')
+const COMPANY = new RegExp(`\\b(?:${ROLES}|CEO|CTO|PM|[Ww]orks?|[Ww]orking)\\s+(?:at|@|for)\\s+(?:the\\s+)?([A-Z][\\w&'-]*(?:\\s+[A-Z][\\w&'-]*)*)`)
+
 export function parseCompany(text: string): string | undefined {
-  return text.match(
-    /\b(?:[Ff]ounders?|[Cc]o-?founders?|[Ee]ngineers?|[Dd]esigners?|[Ii]nvestors?|[Rr]esearchers?|[Mm]anagers?|[Rr]ecruiters?|CEO|CTO|PM|works?|working)\s+(?:at|@|for)\s+([A-Z][\w&'-]*(?:\s+[A-Z][\w&'-]*)*)/,
-  )?.[1]
+  return text.match(COMPANY)?.[1]
 }
 
 // The university or college in a note: "University of Michigan", "Vanderbilt University", or a capitalized name
@@ -92,38 +96,66 @@ export function splitPeople(text: string): PersonNote[] {
   })
 }
 
+// "met Sam", "bumped into Sam", "ran into Sam": how a note says who the person is
+const MEET = '[Mm]et|[Mm]eet|[Mm]eeting|[Bb]umped into|[Rr]an into|[Rr]an across|[Cc]ame across|[Ii]ntroduced to|[Tt]alked to|[Cc]hatted with|[Ss]poke (?:to|with)|[Ww]ith(?: my \\w+)?|[Nn]ext to|(?:[Nn]amed|[Cc]alled)'
+// One or two capitalized words, letters from any language ("Tomás", "Zoë"), after an optional title ("Dr. ")
+const TITLE = '(?:(?:Dr|Mr|Mrs|Ms|Prof)\\.?\\s+)?'
+const PERSON = `${TITLE}(\\p{Lu}[\\p{L}'-]+(?:\\s+\\p{Lu}[\\p{L}'-]+){0,2})`
+const TIME = /\s+(?:last (?:night|week|weekend|month)|yesterday|today|this (?:morning|week|weekend)|tonight)$/i
+const INTO = "(?:is|are|she's|he's|they're|super|really|very|so|also) into|(?<=(?:^|[.!?])\\s*)into|obsessed with|passionate about|a big fan of"
+
 const cut = (v: string) => (v.length <= 44 ? v : v.slice(0, 44).replace(/\s+\S*$/, '') + '…')
+
+// What the local language model (llmParse.ts) understood from a note, by trimmed note text. It is filled in before a
+// profile is made and wins over the regex below wherever it found something.
+export const refined = new Map<string, Draft>()
 
 // Pulls prompt answers out of a typed note about someone new. `people` is used to spot mutuals by name.
 export function parsePerson(text: string, people: Person[]): Draft {
+  const out = parseByRules(text, people)
+  return { ...out, ...refined.get(text.trim()) }
+}
+
+function parseByRules(text: string, people: Person[]): Draft {
   const out: Draft = {}
   const t = text.trim()
   if (!t) return out
   const name =
-    t.match(/\b(?:[Mm]et|[Mm]eet|[Mm]eeting)\s+([A-Z][\w'-]+(?:\s+[A-Z][\w'-]+)?)/) ??
-    t.match(/^(?!(?:Just|Met|I|Today|We)\b)([A-Z][\w'-]+(?:\s+[A-Z][\w'-]+)?)/)
+    t.match(new RegExp(`\\b(?:${MEET})\\s+${PERSON}`, 'u')) ??
+    t.match(new RegExp(`^(?!(?:Just|Met|Bumped|Ran|Came|Talked|Chatted|Spoke|Had|Went|Grabbed|Spent|Dinner|Lunch|Coffee|I|Today|We)\\b)${PERSON}`, 'u'))
   if (name) out.name = name[1]
   out.company = parseCompany(t)
   const firstSentence = t.split(/[.!?]/)[0]
+  // "designer at Kiln": a capitalized name after "at" is the company, not where you met
+  const notCompany = (m: RegExpMatchArray | null) => (m && out.company && m[1].startsWith(out.company) ? null : m)
   const met =
     // "met Sam Rivera at a pickleball meetup": a name between "met" and "at" must still count; a capitalized
-    // place later on ("designer at Kiln") is only the fallback
-    t.match(/\bmet (?:[A-Z][\w'-]+(?:\s+[A-Z][\w'-]+)?\s+)?(?:at|in|through|during|via) ([^.,]+)/i) ??
-    t.match(/\bat ([A-Z][^.,]+)/) ??
-    firstSentence.match(/\bat (?:an? |the )?([^.,]+)/i)
-  if (met) out.met = met[1].trim().replace(/^(?:an?|the)\s+/i, '')
-  const does = t.match(/\b((?:(?:product|project|program|engineering|marketing|operations|account|sales|general) manager|(?:software|hardware|mechanical|electrical|data|machine learning|research) (?:engineer|scientist)|(?:(?!an?\b|the\b)[a-z]+ )?(?:architect|chef|teacher|nurse|doctor|lawyer|developer|musician|photographer|filmmaker|professor|consultant|analyst|scientist|director|editor|producer|journalist|therapist|illustrator|accountant|barista|baker|carpenter|plumber|electrician|pilot)|founder|co-?founder|engineer|designer|investor|student|researcher|artist|writer|recruiter|PM|manager|climbing coach|coach)\b)[^.,]*/i)
-  if (does) out.does = cut(does[0].trim())
-  const rem = t.match(/\b(climbs?|loves?|likes?|enjoys?|plays?|runs(?! club)|has an?|collects?|training)\b[^.,]*/i)
+    // place later on is only the fallback
+    t.match(new RegExp(`\\b(?:${MEET}) (?:${PERSON}\\s+)?(?:at|in|through|during|via) ([^.,]+)`, 'iu')) ??
+    notCompany(t.match(/\bat ([A-Z][^.,]+)/)) ??
+    firstSentence.match(/\bat (?:an? |the )?([^.,]+)/i) ??
+    // "Sam from the climbing gym"
+    t.match(/\bfrom (?:the |my )?([a-z][^.,]*)/) ??
+    // "Went to a wedding and sat next to…"
+    t.match(/\b(?:went to|attended) (?:an? |the |my )?([^.,]+?)(?= and |[.,]|$)/i)
+  // the place is the last group (the name pattern inside the first regex has one of its own)
+  if (met) out.met = met[met.length - 1].trim().replace(TIME, '').replace(/(?<=\S)\s+(?:through|via|who|that|where)\s+.*/i, '').replace(/^(?:an?|the)\s+(?:friend's\s+)?/i, '')
+  const does = t.match(/\b((?:(?:product|project|program|engineering|marketing|operations|account|sales|general) manager|(?:software|hardware|mechanical|electrical|data|machine learning|research) (?:engineer|scientist)|(?:(?!an?\b|the\b)[a-z]+ )?(?:architect|chef|teacher|nurse|doctor|lawyer|developer|musician|photographer|filmmaker|professor|consultant|analyst|scientist|director|editor|producer|journalist|therapist|illustrator|accountant|barista|baker|carpenter|plumber|electrician|pilot|translator|interpreter|dentist|entrepreneur|pharmacist)|founder|co-?founder|engineer|designer|investor|student|researcher|artist|writer|recruiter|PM|manager|climbing coach|coach(?:es)?)\b)[^.,]*/i)
+  // "barista at Blue Bottle and a big fan of jazz": only the job
+  if (does) out.does = cut(does[0].split(/\s+and\s+/)[0].trim())
+  else if (/\bteach(?:es|ing)\b/i.test(t)) out.does = 'teacher'
+  // "coaches tennis in Miami" -> "tennis coach"
+  out.does = out.does?.replace(/^coaches\s+(\w+)\b.*/i, '$1 coach')
+  const rem = t.match(new RegExp(`\\b(${INTO}|climbs?|loves?|likes?|enjoys?|plays?|runs(?! club)|has an?|collects?|training)\\b[^.,]*`, 'i'))
   // Only the one thing they like: "loves trail running and wants to train…" stops before "and"
   if (rem) out.remember = cut(rem[0].split(/\s+(?:and|but)\s+/)[0].trim())
   const goal = t.match(/\b(?:wants to|is trying to|hopes to|plans to) ([^.,]+)/i)
   if (goal) out.goal = cut(`Wants to ${goal[1].trim()}`)
   const fol = t.match(/\b(owe|intro|follow up|send|asked me|ask about)\b[^.]*/i)
   if (fol) out.follow = cut(fol[0].trim())
-  const from = t.match(/\b[Ff]rom ([A-Z][a-z]+(?: [A-Z][a-z]+)?)(?!'s)/)
+  const from = t.match(/\b(?:[Ff]rom|[Gg]rew up in|[Gg]rown up in|[Bb]orn in|[Rr]aised in) ([A-Z][a-z]+(?: [A-Z][a-z]+)?)(?!'s)/)
   if (from) out.from = from[1]
-  const lives = t.match(/(?:lives?|based|living|works?|working|coach|designer|engineer|manager|writer|artist) in ([A-Z][a-z]+(?: [A-Z][a-z]+)?)/)
+  const lives = t.match(/(?:lives?|based|living|works?|working|coach|designer|engineer|manager|writer|artist|chef|lawyer|doctor|nurse|teacher|architect|developer|photographer|consultant|analyst|scientist|director|editor|producer|musician|translator|dentist|entrepreneur) in ([A-Z][a-z]+(?: [A-Z][a-z]+)?)/) ?? t.match(/\b(?:[Nn]ow in|(?:just )?moved to|moving to) ([A-Z][a-z]+(?: [A-Z][a-z]+)?)/)
   if (lives) out.lives = lives[1]
 
   // Mutuals: anyone already in your people whose full or first name appears (not the new person).
@@ -209,7 +241,8 @@ function slug(name: string) {
 
 // "Loves pottery" -> "pottery"; "Climbs Tuesdays" -> "climbs".
 function interest(remember?: string) {
-  const words = remember?.toLowerCase().split(/\s+/) ?? []
+  // "super into ceramics" / "obsessed with ceramics" read as "loves ceramics"
+  const words = remember?.toLowerCase().replace(new RegExp(`^(?:${INTO})\\b`), 'loves').split(/\s+/) ?? []
   if (!/^(loves?|likes?|enjoys?|plays?|collects?|has|into)$/.test(words[0] ?? '')) return words[0]
   // "loves trail running on weekends" -> "trail running"
   const rest = words.slice(1).filter((w) => !/^(an?|the|my|every)$/.test(w))

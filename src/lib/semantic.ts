@@ -133,12 +133,16 @@ export async function findPeople(query: string, people: Person[], rules: AskResu
   const exact = (rules.kind === 'people' ? [...rules.matches] : []).sort((a, b) => order.get(a.person.id)! - order.get(b.person.id)!)
   const seen = new Set(exact.map((m) => m.person.id))
   // Plenty of exact matches already (say, "friends in New York"): adding looser ones would only be noise
-  const more = exact.length >= 5 ? [] : (closest.kind === 'people' ? closest.matches : []).filter((m) => !seen.has(m.person.id))
+  const loose = closest.kind === 'people' ? closest.matches.filter((m) => !seen.has(m.person.id)) : []
+  // Several things had to hold and nobody has them all: the meaning search scores one best sentence, so whoever fits
+  // just one part ("pickleball") would look like a match. Offer them as "not quite" instead.
+  const partial = exact.length === 0 && rules.kind === 'people' && (rules.criteria ?? 0) >= 2
+  const more = exact.length >= 5 || partial ? [] : loose
   const matches = [...exact, ...more].slice(0, MAX_RESULTS)
   const title = matches.length
     ? `${matches.length} ${matches.length === 1 ? 'person' : 'people'} for “${query}”`
     : `No one matches “${query}” yet`
   // With no real match at all, keep the nearest few the search found, so the screen can offer them as "not quite"
-  const near = matches.length ? undefined : closest.kind === 'people' ? closest.near : undefined
+  const near = matches.length ? undefined : partial ? loose.slice(0, 2) : closest.kind === 'people' ? closest.near : undefined
   return { kind: 'people', title, matches, near }
 }

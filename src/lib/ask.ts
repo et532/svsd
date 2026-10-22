@@ -22,7 +22,7 @@ export type Match = { person: Person; why: string; say?: string; via?: string; a
 
 export type AskResult =
   // generic: found by the plain keyword filters (not a special answer), so meaning-based results can be added
-  | { kind: 'people'; title: string; matches: Match[]; groups?: { label: string; matches: Match[] }[]; generic?: boolean; near?: Match[]; slow?: boolean; note?: string }
+  | { kind: 'people'; title: string; matches: Match[]; groups?: { label: string; matches: Match[] }[]; generic?: boolean; criteria?: number; near?: Match[]; slow?: boolean; note?: string }
   | { kind: 'add' }
   | { kind: 'moment'; person: Person }
   | { kind: 'profile'; person: Person }
@@ -216,7 +216,9 @@ export function interpret(input: string, people: Person[]): AskResult {
     matches.length === 0
       ? `No one matches “${about}” yet`
       : `${matches.length} ${matches.length === 1 ? 'person' : 'people'} · ${about}`
-  return { kind: 'people', title, matches, generic: true }
+  // criteria: how many things all had to hold ("software engineer who plays pickleball" = 3), so a looser search
+  // doesn't present someone who fits only one of them as a match
+  return { kind: 'people', title, matches, generic: true, criteria: filters.length }
 }
 
 // Who is most worth a message: the longer it has been, and the closer you are, the higher
