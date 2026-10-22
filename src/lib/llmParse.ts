@@ -22,6 +22,8 @@ export async function refine(text: string): Promise<void> {
     const v = k === 'met' ? get(k).replace(/^(?:at|in|through)\s+/i, '').replace(/^(?:an?|the)\s+/i, '') : get(k)
     if (v) out[k] = cut(v)
   }
+  // An interest ("rock climbing") reads like the regex's ("Loves rock climbing"), which tags and to-dos expect
+  if (out.remember && !/^(?:loves?|likes?|enjoys?|into|plays?|climbs?|runs?|collects?|obsessed|passionate)\b/i.test(out.remember)) out.remember = cut(`Loves ${out.remember}`)
   const goal = get('goal')
   if (goal) out.goal = cut(/^wants? to/i.test(goal) ? goal : `Wants to ${goal}`)
   refined.set(t, out)

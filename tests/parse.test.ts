@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { draftToPerson, parseFrom, parseLives, parsePerson, voiceScript } from '../src/lib/capture'
+import { dedupeTodos, draftToPerson, parseFrom, parseLives, parsePerson, voiceScript } from '../src/lib/capture'
 
 const parse = (t: string) => parsePerson(t, [])
 
@@ -55,6 +55,12 @@ describe('parsePerson', () => {
     expect(parse(note)).toMatchObject({ name: 'Sally Gallagher', company: 'Cork', lives: 'Brooklyn' })
     expect([parseFrom("She's from Bogotá and lives in São Paulo now."), parseLives("She's from Bogotá and lives in São Paulo now.")]).toEqual(['Bogotá', 'São Paulo'])
     expect(parseFrom("she's from Cork's")).toBeUndefined() // a possessive is not a place
+  })
+
+  it('says each to-do once (a follow-up and a goal that are the same sentence)', () => {
+    expect(dedupeTodos(['catch up and grab coffee', 'Wants to catch up and grab coffee', 'Loves rock climbing'])).toEqual(['Catch up and grab coffee', 'Loves rock climbing'])
+    expect(dedupeTodos([undefined, 'send her the darkroom link', 'Send her the darkroom link.'])).toEqual(['Send her the darkroom link'])
+    expect(dedupeTodos(['Open a gym', 'Learn to surf'])).toEqual(['Open a gym', 'Learn to surf'])
   })
 
   it('does not take "into" in "bumped into" for an interest', () => {

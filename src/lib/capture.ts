@@ -285,6 +285,27 @@ function professionOf(draft: Draft) {
   return draft.company ? `${title} @ ${draft.company}` : title
 }
 
+// The to-dos of a new profile, each said once: a follow-up and a goal that are the same sentence ("catch up and grab
+// coffee" / "Wants to catch up and grab coffee") become one, and each starts with a capital.
+export function dedupeTodos(texts: (string | undefined)[]): string[] {
+  const key = (t: string) =>
+    t
+      .toLowerCase()
+      .replace(/^(?:i\s+)?(?:wants?\s+to|should|need\s+to|to)\s+/, '')
+      .replace(/[^\p{L}\p{N} ]/gu, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+  const kept: { text: string; key: string }[] = []
+  for (const t of texts) {
+    const text = t?.trim()
+    if (!text) continue
+    const k = key(text)
+    if (!k || kept.some((o) => o.key.includes(k) || k.includes(o.key))) continue
+    kept.push({ text: text[0].toUpperCase() + text.slice(1), key: k })
+  }
+  return kept.map((o) => o.text)
+}
+
 // Turns a finished capture into a new person.
 export function draftToPerson(draft: Draft, how: { voice: boolean; text: string; seconds: number }, taken: Set<string>): Person {
   const name = draft.name?.trim() || 'New person'
@@ -296,7 +317,7 @@ export function draftToPerson(draft: Draft, how: { voice: boolean; text: string;
   const tags = demo
     ? scriptedTags
     : [...new Set([roleOf(draft)?.toLowerCase(), interest(draft.remember), activity(draft.met)].filter((x): x is string => !!x))]
-  const todos = [draft.follow, draft.goal, draft.remember].filter((x): x is string => !!x).map((text) => ({ id: uid(), text, done: false }))
+  const todos = dedupeTodos([draft.follow, draft.goal, draft.remember]).map((text) => ({ id: uid(), text, done: false }))
   return {
     id,
     name,
