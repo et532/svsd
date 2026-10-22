@@ -20,6 +20,10 @@ describe('golden queries (real embeddings, 500 people)', () => {
     expect(r.ids).toEqual(expect.arrayContaining(['dmitri-sokolov', 'chloe-bernard', 'jules-amato']))
     expect(r.ids).not.toContain('dani-moreno') // fashionable but in LA
   })
+  it('chatty phrasing ("talk to", "right now") does not hide the match', async () => {
+    const r = await run('i would like to talk to a software engineer who lives in san francisco right now')
+    expect(r.ids).toContain('ty-nakamura')
+  })
   it('in-person plans never return out-of-area people', async () => {
     for (const q of ['someone to play pickleball with', 'someone to go for a run with', 'a birthday dinner in Astoria', 'coffee in Brooklyn'])
       expect((await run(q)).ids.every(inNyc), q).toBe(true)

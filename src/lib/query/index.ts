@@ -52,7 +52,7 @@ const askWords = new Set(
   (
     'themed theme vibe invite inviting host hosting over around near nearby moved move moving fun cool good great nice best ' +
     'next month week weekend tonight tomorrow soon free thing things kind sort type totally really maybe ask grab hang come ' +
-    'mine ours join along how night evening afternoon morning day time quiet chill relaxed easy casual cozy lively small big birthday anniversary celebration holiday'
+    'talk talking speak chat right now currently mine ours join along how night evening afternoon morning day time quiet chill relaxed easy casual cozy lively small big birthday anniversary celebration holiday'
   ).split(' '),
 )
 

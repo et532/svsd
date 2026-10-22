@@ -1,6 +1,7 @@
 import { makeMockPeople } from './mockPeople'
 import { linkAll, seed } from './seed'
 import { nycSeeds } from './nyc'
+import { pickDiverse } from '../lib/diverse'
 
 export type Place = {
   city: string
@@ -102,11 +103,14 @@ const jordanLee: Person =
   }
 
 // 500 sample people with stories, to-dos and moments (see nyc/); every link is made two-way.
-// In the app only 200 of them are shown (the original 50, which the demo answers rely on, plus every 3rd of the rest) so
-// the mindmap stays fast; links to people left out are dropped. Open /?all for all 500. Scripts and tests get all 500.
+// In the app only 200 of them are shown, picked to be as different from each other as possible (see pickDiverse), so a
+// question finds a couple of people, not ten. Links to people left out are dropped. Open /?all for all 500. Scripts and
+// tests get all 500. `keep` are the people the demo answers rely on.
 const inApp = typeof window !== 'undefined' && !new URLSearchParams(window.location.search).has('all')
-const shown = inApp ? nycSeeds.filter((_, i) => i < 50 || i % 3 === 0) : nycSeeds
-const basePeople: Person[] = linkAll([...shown.map(seed), jordanLee])
+const keep = new Set(['ty-nakamura', 'zara-ahmed', 'aisha-khan', 'ana-ruiz', 'jordan-smith', 'maya-chen', 'daniel-okafor', 'dana-reyes'])
+const allSeeded = nycSeeds.map(seed)
+const shown = inApp ? pickDiverse(allSeeded, 200, keep) : allSeeded
+const basePeople: Person[] = linkAll([...shown, jordanLee])
 
 // ?mock=200 swaps in that many fabricated people (see mockPeople.ts) to stress-test the mindmap.
 const mockCount = Math.min(500, Number(new URLSearchParams(typeof window === 'undefined' ? '' : window.location.search).get('mock')) || 0)
