@@ -4,11 +4,15 @@ import { aiPlugin } from './server/ai'
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
-  // OPENAI_API_KEY (and optionally OPENAI_MODEL) come from .env.local; they are read here on the server and never
-  // reach the browser bundle
+  // OPENAI_API_KEY (and optionally OPENAI_MODEL / OPENAI_TRANSCRIBE_MODEL / OPENAI_LIVE_MODEL) come from .env.local;
+  // they are read here on the server and never reach the browser bundle. (Deployed, api/ai/[task].ts reads them from
+  // the Vercel project's environment variables.)
   const env = loadEnv(mode, process.cwd(), '')
   return {
-    plugins: [react(), aiPlugin(env.OPENAI_API_KEY, env.OPENAI_MODEL || undefined, env.OPENAI_TRANSCRIBE_MODEL || undefined, env.OPENAI_LIVE_MODEL || undefined)],
+    plugins: [
+      react(),
+      aiPlugin({ key: env.OPENAI_API_KEY, model: env.OPENAI_MODEL, transcribeModel: env.OPENAI_TRANSCRIBE_MODEL, liveModel: env.OPENAI_LIVE_MODEL }),
+    ],
     // The model worker (src/lib/ml.worker.ts) is an ES module
     worker: { format: 'es' },
     server: {

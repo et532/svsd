@@ -64,7 +64,7 @@ describe('golden queries (real embeddings, 500 people)', () => {
   })
   it('relaxation: no fashion person nearby falls back to good company', async () => {
     // Take out everyone who mentions fashion anywhere in what is written about them
-    const fashiony = /fashion|vintage|styl|tailor|costume|textile|runway|apparel|thrift|wardrobe|clothing|sneaker|hat|perfume|interior/i
+    const fashiony = /fashion|vintage|styl|tailor|costume|textile|runway|apparel|thrift|wardrobe|clothing|sneaker|perfume|interior/i
     const all = (p: (typeof samplePeople)[number]) => [p.profession, p.story, ...p.tags, ...(p.moments ?? []).map((m) => `${m.title} ${m.text ?? ''} ${m.transcript ?? ''}`)].join(' ')
     const { answer } = await import('../src/lib/rank/search')
     const { hitsFor } = await import('../scripts/nodeSearch')
