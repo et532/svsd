@@ -13,6 +13,8 @@ export type Action = {
   label: string
   to: string // who the draft goes to
   draft: string
+  // What the message should say, when the AI writes it (src/lib/ai.ts); `draft` is the fallback text
+  goal?: string
   // Sending it ticks off this follow-up (a to-do on someone's profile), closing the loop.
   closes?: { personId: string; todoId: string }
 }

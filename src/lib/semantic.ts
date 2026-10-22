@@ -106,14 +106,20 @@ async function rank(query: string, people: Person[]) {
   return scored.sort((a, b) => b.score - a.score)
 }
 
+// A moment reads as what happened, with when; a profile line as itself
+const toMatch = ({ person, chunk }: { person: Person; chunk: { text: string; from?: string } }): Match => ({
+  person,
+  why: chunk.from ? `${chunk.text.replace(/\.$/, '')} (${chunk.from})` : person.tags.includes(chunk.text) ? `Into ${chunk.text}` : chunk.text.replace(/\.$/, ''),
+})
+
+// The n people closest in meaning, however close: candidates for the AI to judge (src/lib/ai.ts)
+export async function closestMatches(query: string, people: Person[], n: number): Promise<Match[]> {
+  return (await rank(query, people)).slice(0, n).map(toMatch)
+}
+
 export async function semanticSearch(query: string, people: Person[]): Promise<AskResult> {
   const scored = await rank(query, people)
   const floor = Math.max(MIN_SCORE, scored[0].score - CLOSE_TO_BEST)
-  // A moment reads as what happened, with when; a profile line as itself
-  const toMatch = ({ person, chunk }: (typeof scored)[number]): Match => ({
-    person,
-    why: chunk.from ? `${chunk.text.replace(/\.$/, '')} (${chunk.from})` : person.tags.includes(chunk.text) ? `Into ${chunk.text}` : chunk.text.replace(/\.$/, ''),
-  })
   const matches: Match[] = scored.filter((s) => s.score >= floor).slice(0, MAX_RESULTS).map(toMatch)
   const title = matches.length
     ? `${matches.length} ${matches.length === 1 ? 'person' : 'people'} closest to “${query}”`

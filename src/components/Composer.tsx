@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Person } from '../data/people'
-import { parseCompany, parseSchool } from '../lib/capture'
+import { parseCompany, parseFrom, parseLives, parseSchool } from '../lib/capture'
 import { applyFixes, detectNames, replaceName, resolveName, saveFix, splitNames } from '../lib/nameFixes'
 import { MicIcon, SendIcon, StopIcon } from './Icons'
 import { listen } from '../lib/speech'
@@ -43,19 +43,26 @@ export function Composer({ placeholder, script, start, waitForOpen = false, peop
   // The local voice model is still getting ready (first use downloads it): nothing can show until it is
   const [loadingVoice, setLoadingVoice] = useState(false)
   const taRef = useRef<HTMLTextAreaElement>(null)
+  const noteRef = useRef<HTMLDivElement>(null)
   // Remembered name fixes are applied to the words as they appear
   const fixNames = !!people
   // Names and the company in the note, outlined for fixing
   // (always, as you type or talk; only after the voice stops can you tap one to fix it)
   const company = useMemo(() => (people ? parseCompany(text) : undefined), [people, text])
   const school = useMemo(() => (people ? parseSchool(text) : undefined), [people, text])
+  // Where they are from / live, outlined too: a misheard city is fixed the same way as a name
+  const places = useMemo(() => (people ? [parseFrom(text), parseLives(text)].filter((x): x is string => !!x) : []), [people, text])
   const names = useMemo(() => {
     const n = people ? detectNames(text, people) : []
-    for (const o of [company, school]) if (o && !n.includes(o)) n.push(o)
+    for (const o of [company, school, ...places]) if (o && !n.includes(o)) n.push(o)
     return n
-  }, [people, text, company, school])
+  }, [people, text, company, school, places])
   const showNames = review && !voice && names.length > 0
   const mirrorRef = useRef<HTMLDivElement>(null)
+  // The people most likely to be named, newest first, so the transcription can spell them right (a ref, so a change in
+  // people never restarts a recording)
+  const nameHints = useRef<string[]>([])
+  nameHints.current = people ? [...people].sort((a, b) => b.lastContacted.localeCompare(a.lastContacted)).slice(0, 60).map((p) => p.name) : []
 
   useEffect(() => {
     if (!voice) return
@@ -71,6 +78,7 @@ export function Composer({ placeholder, script, start, waitForOpen = false, peop
       },
       setTranscribing,
       setLoadingVoice,
+      () => nameHints.current,
     )
     if (stopListening)
       return () => {
@@ -95,7 +103,16 @@ export function Composer({ placeholder, script, start, waitForOpen = false, peop
     if (!ta) return
     ta.style.height = 'auto'
     ta.style.height = `${ta.scrollHeight}px`
+    // The box stops growing at its max height (css); while you talk it follows the newest words, with the outlines too
+    if (voice) {
+      ta.scrollTop = ta.scrollHeight
+      if (mirrorRef.current) mirrorRef.current.scrollTop = ta.scrollTop
+    }
   }, [text, voice, typing, showNames])
+  // After Stop the note opens at its end, where you left off
+  useEffect(() => {
+    if (showNames && noteRef.current) noteRef.current.scrollTop = noteRef.current.scrollHeight
+  }, [showNames])
   useEffect(() => {
     if (!typing || voice || showNames) return
     const ta = taRef.current
@@ -141,8 +158,8 @@ export function Composer({ placeholder, script, start, waitForOpen = false, peop
     const words = name.split(' ')
     words[word] = typed
     const full = typed.includes(' ') ? typed : words.join(' ')
-    // A company or school is never linked to a person
-    const meant = name === company || name === school ? full : resolveName(full, people)
+    // A company, school or place is never linked to a person
+    const meant = name === company || name === school || places.includes(name) ? full : resolveName(full, people)
     if (meant === name) return
     const was = fixed.find(([, m]) => m === name)?.[0] ?? name
     saveFix(was, meant)
@@ -160,7 +177,7 @@ export function Composer({ placeholder, script, start, waitForOpen = false, peop
     >
       {showNames ? (
         // The note with each name word outlined; tap one to retype it, tap anywhere else to edit the text
-        <div className="composer-note" onClick={() => setReview(false)}>
+        <div className="composer-note" ref={noteRef} onClick={() => setReview(false)}>
           {splitNames(text, names).map((part, i) =>
             i % 2 === 0 ? (
               part
@@ -191,7 +208,21 @@ export function Composer({ placeholder, script, start, waitForOpen = false, peop
           {names.length > 0 && (
             // The text again, invisible, under the real one: only the names show, outlined
             <div className="composer-mirror" ref={mirrorRef} aria-hidden>
-              {splitNames(text, names).map((part, i) => (i % 2 ? <mark key={i}>{part}</mark> : part))}
+              {splitNames(text, names).map((part, i) =>
+                i % 2 ? (
+                  // each word of a name on its own, as in the fixable note after Stop
+                  <span key={i}>
+                    {part.split(' ').map((w, j) => (
+                      <span key={j}>
+                        {j > 0 && ' '}
+                        <mark>{w}</mark>
+                      </span>
+                    ))}
+                  </span>
+                ) : (
+                  part
+                ),
+              )}
             </div>
           )}
           <textarea

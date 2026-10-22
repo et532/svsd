@@ -5,7 +5,7 @@ import type { Person } from '../data/people'
 import { momentCandidates, parsePerson, splitPeople, voiceScript, type PersonNote } from '../lib/capture'
 import { Avatar } from '../components/Avatar'
 import { cardBackground } from '../lib/people'
-import { refine, warmUpParser } from '../lib/llmParse'
+import { refine } from '../lib/llmParse'
 
 type Props = {
   people: Person[]
@@ -33,9 +33,6 @@ const monthYear = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', y
 // a note about someone you know becomes a moment (asking which one when two share a name).
 export function CaptureScreen({ people, onClose, onCreate, onCreateMany, onMoment, onOpenProfile, mutualWith }: Props) {
   const [stage, setStage] = useState<Stage>({ kind: 'input' })
-
-  // Start loading the language model as soon as Add opens, so it is ready by the time a note is sent
-  useEffect(warmUpParser, [])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()

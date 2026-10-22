@@ -20,7 +20,8 @@ function load(): Record<string, string> {
 let fixes = load()
 
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-const word = (name: string) => new RegExp(`\\b${esc(name)}\\b`, 'gi')
+// The name as a whole word, for any alphabet ("Tomás": a plain \b would not see the end of the á)
+const word = (name: string) => new RegExp(`(?<![\\p{L}\\p{N}_])${esc(name)}(?![\\p{L}\\p{N}_])`, 'giu')
 
 export function replaceName(text: string, from: string, to: string) {
   return text.replace(word(from), to)
@@ -93,7 +94,7 @@ export function detectNames(text: string, people: Person[]): string[] {
 // The note cut around its names: plain text at even indexes, a name at odd ones.
 export function splitNames(text: string, names: string[]): string[] {
   const longestFirst = [...names].sort((a, b) => b.length - a.length)
-  return text.split(new RegExp(`\\b(${longestFirst.map(esc).join('|')})\\b`, 'gi'))
+  return text.split(new RegExp(`(?<![\\p{L}\\p{N}_])(${longestFirst.map(esc).join('|')})(?![\\p{L}\\p{N}_])`, 'giu'))
 }
 
 // Links a correction to someone you know: a first name that only one person has becomes their full name.

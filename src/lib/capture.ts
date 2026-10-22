@@ -104,6 +104,22 @@ const PERSON = `${TITLE}(\\p{Lu}[\\p{L}'-]+(?:\\s+\\p{Lu}[\\p{L}'-]+){0,2})`
 const TIME = /\s+(?:last (?:night|week|weekend|month)|yesterday|today|this (?:morning|week|weekend)|tonight)$/i
 const INTO = "(?:is|are|she's|he's|they're|super|really|very|so|also) into|(?<=(?:^|[.!?])\\s*)into|obsessed with|passionate about|a big fan of"
 
+// Where someone is from / lives now ("from Cork", "grew up in Austin", "lives in Brooklyn", "now in Queens"): the Add
+// box outlines these too, so a misheard city can be fixed like a name
+// One or two capitalized words, letters from any alphabet ("Bogotá", "São Paulo")
+const CITY = '\\p{Lu}[\\p{Ll}\\p{M}]+(?: \\p{Lu}[\\p{Ll}\\p{M}]+)?(?![\\p{L}\\p{M}])'
+
+export function parseFrom(text: string): string | undefined {
+  return text.match(new RegExp(`\\b(?:[Ff]rom|[Gg]rew up in|[Gg]rown up in|[Bb]orn in|[Rr]aised in) (${CITY})(?!'s)`, 'u'))?.[1]
+}
+
+export function parseLives(text: string): string | undefined {
+  const m =
+    text.match(new RegExp(`(?:lives?|based|living|works?|working|coach|designer|engineer|manager|writer|artist|chef|lawyer|doctor|nurse|teacher|architect|developer|photographer|consultant|analyst|scientist|director|editor|producer|musician|translator|dentist|entrepreneur) in (${CITY})`, 'u')) ??
+    text.match(new RegExp(`\\b(?:[Nn]ow in|(?:just )?moved to|moving to) (${CITY})`, 'u'))
+  return m?.[1]
+}
+
 const cut = (v: string) => (v.length <= 44 ? v : v.slice(0, 44).replace(/\s+\S*$/, '') + '…')
 
 // What the local language model (llmParse.ts) understood from a note, by trimmed note text. It is filled in before a
@@ -121,7 +137,8 @@ function parseByRules(text: string, people: Person[]): Draft {
   const t = text.trim()
   if (!t) return out
   const name =
-    t.match(new RegExp(`\\b(?:${MEET})\\s+${PERSON}`, 'u')) ??
+    // ("met a Sally Gallagher": an article before the name is fine)
+    t.match(new RegExp(`\\b(?:${MEET})\\s+(?:(?:an?|the)\\s+)?${PERSON}`, 'u')) ??
     t.match(new RegExp(`^(?!(?:Just|Met|Bumped|Ran|Came|Talked|Chatted|Spoke|Had|Went|Grabbed|Spent|Dinner|Lunch|Coffee|I|Today|We)\\b)${PERSON}`, 'u'))
   if (name) out.name = name[1]
   out.company = parseCompany(t)
@@ -131,7 +148,7 @@ function parseByRules(text: string, people: Person[]): Draft {
   const met =
     // "met Sam Rivera at a pickleball meetup": a name between "met" and "at" must still count; a capitalized
     // place later on is only the fallback
-    t.match(new RegExp(`\\b(?:${MEET}) (?:${PERSON}\\s+)?(?:at|in|through|during|via) ([^.,]+)`, 'iu')) ??
+    t.match(new RegExp(`\\b(?:${MEET}) (?:(?:an?|the) )?(?:${PERSON}\\s+)?(?:at|in|through|during|via) ([^.,]+)`, 'iu')) ??
     notCompany(t.match(/\bat ([A-Z][^.,]+)/)) ??
     firstSentence.match(/\bat (?:an? |the )?([^.,]+)/i) ??
     // "Sam from the climbing gym"
@@ -153,10 +170,8 @@ function parseByRules(text: string, people: Person[]): Draft {
   if (goal) out.goal = cut(`Wants to ${goal[1].trim()}`)
   const fol = t.match(/\b(owe|intro|follow up|send|asked me|ask about)\b[^.]*/i)
   if (fol) out.follow = cut(fol[0].trim())
-  const from = t.match(/\b(?:[Ff]rom|[Gg]rew up in|[Gg]rown up in|[Bb]orn in|[Rr]aised in) ([A-Z][a-z]+(?: [A-Z][a-z]+)?)(?!'s)/)
-  if (from) out.from = from[1]
-  const lives = t.match(/(?:lives?|based|living|works?|working|coach|designer|engineer|manager|writer|artist|chef|lawyer|doctor|nurse|teacher|architect|developer|photographer|consultant|analyst|scientist|director|editor|producer|musician|translator|dentist|entrepreneur) in ([A-Z][a-z]+(?: [A-Z][a-z]+)?)/) ?? t.match(/\b(?:[Nn]ow in|(?:just )?moved to|moving to) ([A-Z][a-z]+(?: [A-Z][a-z]+)?)/)
-  if (lives) out.lives = lives[1]
+  out.from = parseFrom(t)
+  out.lives = parseLives(t)
 
   // Mutuals: anyone already in your people whose full or first name appears (not the new person).
   const newFirst = out.name?.split(' ')[0]

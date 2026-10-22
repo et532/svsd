@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { draftToPerson, parsePerson, voiceScript } from '../src/lib/capture'
+import { draftToPerson, parseFrom, parseLives, parsePerson, voiceScript } from '../src/lib/capture'
 
 const parse = (t: string) => parsePerson(t, [])
 
@@ -48,6 +48,13 @@ describe('parsePerson', () => {
   ]
   it.each(cases)('%s', (note, want) => {
     expect(parse(note)).toMatchObject(want)
+  })
+
+  it('finds a name after "met a" and the cities that are said (they get outlined too)', () => {
+    const note = "I just came back from a climbing gym and I met a Sally Gallagher. She's a founder at Cork and she lives in Brooklyn now."
+    expect(parse(note)).toMatchObject({ name: 'Sally Gallagher', company: 'Cork', lives: 'Brooklyn' })
+    expect([parseFrom("She's from Bogotá and lives in São Paulo now."), parseLives("She's from Bogotá and lives in São Paulo now.")]).toEqual(['Bogotá', 'São Paulo'])
+    expect(parseFrom("she's from Cork's")).toBeUndefined() // a possessive is not a place
   })
 
   it('does not take "into" in "bumped into" for an interest', () => {

@@ -4,6 +4,7 @@ import { ChevronRightIcon, CloseIcon, GamepadIcon, PartyIcon, PinIcon } from '..
 import type { Person } from '../data/people'
 import { interpret, storyRequest, type Action, type AskResult, type Match } from '../lib/ask'
 import { updatePerson } from '../lib/peopleStore'
+import { draftMessage, rankWithAi } from '../lib/ai'
 import { findPeople, searchProgress, warmUp } from '../lib/semantic'
 import { Avatar } from '../components/Avatar'
 import type { Tab } from '../components/TopControls'
@@ -59,7 +60,10 @@ export function AskScreen({ people, tab, start, onClose, onOpenProfile, onAdd, o
       const rules = interpret(asking, people)
       // A plain "find people like this" (or nothing found): add the closest people by meaning to what the rules found
       if (!(rules.kind === 'none' || (rules.kind === 'people' && (rules.generic || rules.matches.length === 0)))) return rules
-      const meaning = findPeople(asking, people, rules).catch(() => rules)
+      // Then the AI (if there is a key) checks who really fits every part of the question; without it, this is skipped
+      const meaning = findPeople(asking, people, rules)
+        .then((found) => rankWithAi(asking, found, people))
+        .catch(() => rules)
       // The very first search has to read every moment, which can take a while: after a few seconds show what the
       // rules found, say so, and swap in the full answer when it is ready
       const quick = await Promise.race([meaning, new Promise<null>((r) => window.setTimeout(() => r(null), SLOW_MS))])
@@ -212,6 +216,7 @@ function Answer({ result, tab, count, onOpenProfile, onShow, onAdd, onSent }: An
 function ResultCard({ match, onOpenProfile, onSent }: { match: Match; onOpenProfile: (id: string) => void; onSent: (a: Action) => void }) {
   const { person: p, why, via, action } = match
   const [text, setText] = useState<string | null>(null) // the draft, once opened inline
+  const [writing, setWriting] = useState(false) // the AI is still writing it
   return (
     <div className="result-card">
       <button className="result-head" onClick={() => onOpenProfile(p.id)}>
@@ -226,13 +231,23 @@ function ResultCard({ match, onOpenProfile, onSent }: { match: Match; onOpenProf
         {via && <span className="ask-via">{via}</span>}
         <p>{why}</p>
         {action && text === null && (
-          <button className="result-action" onClick={() => setText(action.draft)}>
+          <button
+            className="result-action"
+            onClick={() => {
+              setText('')
+              setWriting(true)
+              void draftMessage(p, action).then((draft) => {
+                setText(draft)
+                setWriting(false)
+              })
+            }}
+          >
             {action.label}
           </button>
         )}
         {action && text !== null && (
           <div className="result-draft">
-            <textarea value={text} onChange={(e) => setText(e.target.value)} rows={3} aria-label="Message" />
+            <textarea value={text} onChange={(e) => setText(e.target.value)} rows={3} aria-label="Message" readOnly={writing} placeholder={writing ? 'Writing…' : undefined} />
             <div className="result-draft-actions">
               <button
                 className="pill-button ghost"

@@ -1,3 +1,4 @@
+import { startAiLive, transcribeWithAi } from './ai'
 import { startLive } from './live'
 import { preload, transcribeAudio } from './ml'
 
@@ -40,10 +41,12 @@ export function listen(
   onFail: (reason: string) => void,
   onBusy: (busy: boolean) => void,
   onLoading: (loading: boolean) => void = () => {},
+  // Names that may be said (people you know), to help the transcription get them right
+  hints: () => string[] = () => [],
 ): (() => void) | null {
   if (!Ctor && !navigator.mediaDevices?.getUserMedia) return null
   let stopLocal = () => {}
-  const fallToWhisper = () => (stopLocal = recordLocal(onText, onFail, onBusy, onLoading))
+  const fallToWhisper = () => (stopLocal = recordLocal(onText, onFail, onBusy, onLoading, hints))
   // Brave has the built-in API but blocks the Google service behind it, so it would only fail after a delay
   if (!Ctor || usesLocalVoice) {
     fallToWhisper()
@@ -118,6 +121,7 @@ function recordLocal(
   onFail: (reason: string) => void,
   onBusy: (b: boolean) => void,
   onLoading: (b: boolean) => void,
+  hints: () => string[],
 ) {
   let stopped = false
   let release = () => {}
@@ -126,6 +130,9 @@ function recordLocal(
   let working: Promise<void> = Promise.resolve()
   let failed = false
   let live: ReturnType<typeof startLive> | undefined
+  // Live words from OpenAI (when there is a key): once they start, they replace the quicker, rougher local words
+  let ailive: ReturnType<typeof startAiLive> | undefined
+  let aiHeard = false
   onLoading(true)
   // The word-by-word model downloads first; Whisper (for the final text) only after it, so they don't compete
   const seen = (t: string) => (onLoading(false), onText(t))
@@ -134,7 +141,9 @@ function recordLocal(
     const audio = join(chunks)
     // Too short, or silence (Whisper invents words like " you" for silence): nothing to say yet
     if (audio.length < RATE * 0.8 || rms(audio) < 0.003) return
-    const text = await transcribeAudio(audio)
+    // The final text (after Stop) comes from OpenAI when there is a key, with local Whisper as the fallback; the passes
+    // that stand in while Vosk is unavailable stay local, so nothing is billed every half second
+    const text = (stopped ? await transcribeWithAi(audio, RATE, hints()) : null) ?? (await transcribeAudio(audio))
     // A pass that finished after the live words took over would only make the text jump back: drop it
     if (!live?.failed && !stopped) return
     const clean = text.replace(/\[[^\]]*\]|\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() // drop "[BLANK_AUDIO]" style tags
@@ -166,14 +175,19 @@ function recordLocal(
       const source = ctx.createMediaStreamSource(stream)
       // ponytail: ScriptProcessor is deprecated but works in every browser without a separate worklet file
       const tap = ctx.createScriptProcessor(4096, 1, 1)
-      live = startLive(ctx.sampleRate, seen, () => {
+      live = startLive(ctx.sampleRate, (t) => !aiHeard && seen(t), () => {
         onLoading(false)
         preload('whisper').catch(() => {})
       })
+      ailive = startAiLive((t) => {
+        aiHeard = true
+        seen(t)
+      }, ctx.sampleRate)
       tap.onaudioprocess = (e) => {
         const samples = new Float32Array(e.inputBuffer.getChannelData(0))
         chunks.push(samples)
         live?.feed(new Float32Array(samples))
+        ailive?.feed(samples)
       }
       const mute = ctx.createGain()
       mute.gain.value = 0 // the processor only runs while connected to the output
@@ -198,6 +212,7 @@ function recordLocal(
     clearInterval(tick)
     release()
     live?.stop()
+    ailive?.stop()
     // The last words: queued after any transcription in flight, over everything recorded
     onBusy(true)
     run().finally(() => onBusy(false))

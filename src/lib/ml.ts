@@ -39,5 +39,4 @@ function call<T>(request: Body): Promise<T> {
 export const embedTexts = (texts: string[]) => call<number[][]>({ kind: 'embed', texts })
 export const transcribeAudio = (audio: Float32Array) => call<string>({ kind: 'transcribe', audio })
 // Start downloading a model before it is needed
-export const preload = (model: 'whisper' | 'embed' | 'llm') => call<true>({ kind: 'preload', model })
-export const runParse = (messages: { role: string; content: string }[]) => call<string>({ kind: 'parse', messages })
+export const preload = (model: 'whisper' | 'embed') => call<true>({ kind: 'preload', model })
