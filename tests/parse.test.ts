@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { dedupeTodos, draftToPerson, parseFrom, parseLives, parsePerson, voiceScript } from '../src/lib/capture'
+import type { Person } from '../src/data/people'
+import { dedupeTodos, draftToPerson, momentCandidates, parseFrom, parseLives, parsePerson, voiceScript } from '../src/lib/capture'
 
 const parse = (t: string) => parsePerson(t, [])
 
@@ -55,6 +56,19 @@ describe('parsePerson', () => {
     expect(parse(note)).toMatchObject({ name: 'Sally Gallagher', company: 'Cork', lives: 'Brooklyn' })
     expect([parseFrom("She's from Bogotá and lives in São Paulo now."), parseLives("She's from Bogotá and lives in São Paulo now.")]).toEqual(['Bogotá', 'São Paulo'])
     expect(parseFrom("she's from Cork's")).toBeUndefined() // a possessive is not a place
+  })
+
+  it('does not mistake a new person for someone you know who shares a first name', () => {
+    const people = [{ name: 'Priya Menon' }, { name: 'Sofía Reyes' }, { name: 'Jordan Smith' }, { name: 'Jordan Lee' }] as Person[]
+    const names = (t: string) => momentCandidates(t, people).map((p) => p.name)
+    expect(names('Ran into a Priya Venkat at a pottery studio. She is a data scientist at Spotify.')).toEqual([]) // new
+    expect(names('Bumped into Sofía Alvarez at the gym.')).toEqual([]) // a different Sofía, accents and all
+    expect(names('Caught up with Priya over coffee.')).toEqual(['Priya Menon'])
+    expect(names('Grabbed coffee with Priya Menon.')).toEqual(['Priya Menon'])
+    expect(names('Coffee with Priya Tuesday, we talked about her research.')).toEqual(['Priya Menon']) // "Tuesday" is no surname
+    expect(names('Caught up with Sofía yesterday.')).toEqual(['Sofía Reyes'])
+    expect(names('Caught up with Jordan over lunch.')).toEqual(['Jordan Smith', 'Jordan Lee']) // two Jordans: you pick
+    expect(names('Met Priya Venkat at a pottery studio.')).toEqual([]) // no moment words at all
   })
 
   it('says each to-do once (a follow-up and a goal that are the same sentence)', () => {

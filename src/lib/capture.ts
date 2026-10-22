@@ -57,11 +57,23 @@ export const momentScript = (first: string) =>
 // A note about someone you already know (rather than someone new): "caught up with Jordan over coffee".
 const momentWords = /\b(caught up|catch up|grabbed|hung out|hang out|talked|chatted|ran into|bumped into|saw|had (?:coffee|lunch|dinner)|over coffee)\b/i
 
-// Who a note is about, when it reads like a moment: everyone whose first (or full) name appears in it.
+// A capitalized word right after a first name that is not a last name: "Priya Tuesday", "Maya and", "Sam Today"
+const NOT_A_SURNAME =
+  /^(?:I|I'm|I've|And|The|A|An|At|In|On|For|About|From|To|With|Then|But|So|Today|Yesterday|Tonight|Tomorrow|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|January|February|March|April|May|June|July|August|September|October|November|December)$/
+
+// Who a note is about, when it reads like a moment: everyone whose full name, or first name alone, appears in it. A
+// first name followed by a different last name is someone else ("Ran into a Priya Venkat" is not about Priya Menon).
 // [] means it reads as someone new. Several (two Jordans) means the user has to pick.
 export function momentCandidates(text: string, people: Person[]): Person[] {
   if (!momentWords.test(text)) return []
-  return people.filter((p) => text.includes(p.name) || new RegExp(`\\b${p.name.split(' ')[0]}\\b`).test(text))
+  return people.filter((p) => {
+    if (text.includes(p.name)) return true
+    const parts = p.name.split(' ')
+    const first = parts[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    if (!new RegExp(`(?<![\\p{L}])${first}(?![\\p{L}])`, 'u').test(text)) return false
+    const next = text.match(new RegExp(`(?<![\\p{L}])${first}\\s+(\\p{Lu}[\\p{L}'-]*)`, 'u'))?.[1]
+    return !next || next === parts[parts.length - 1] || NOT_A_SURNAME.test(next)
+  })
 }
 
 // A note about several new people: "Dinner with Maya Chen and Theo Park. Maya is a designer at Kiln. Theo coaches

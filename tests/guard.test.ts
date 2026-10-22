@@ -26,7 +26,7 @@ describe('AI endpoint guards', () => {
   })
 })
 
-// The page asks this once at startup, to know whether to download local speech models or let OpenAI do the listening
+// The page asks this once at startup, to know whether OpenAI is set up (voice in Brave / Firefox needs it)
 describe('AI status', () => {
   const ask = async (key: string | undefined) => {
     const server = createServer((req, res) => void handleAi(req, res, { key }))
