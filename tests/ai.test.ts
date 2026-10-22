@@ -9,10 +9,11 @@ describe('AI is optional', () => {
   it('falls back to the template draft on 503, and stops asking after the first 503', async () => {
     // semantic.ts (imported by ai.ts) reads the page's URL when it loads
     vi.stubGlobal('window', { location: { search: '' } })
-    const { ai, draftMessage, transcribeWithAi, startAiLive } = await import('../src/lib/ai')
+    const { ai, aiReady, draftMessage, transcribeWithAi, startAiLive } = await import('../src/lib/ai')
     const fetchMock = vi.fn(async () => new Response('{}', { status: 503, headers: { 'content-type': 'application/json' } }))
     vi.stubGlobal('fetch', fetchMock)
     const action: Action = { kind: 'message', label: 'Draft a message', to: 'Dana Reyes', draft: 'Hey Dana! Want to play this week?' }
+    expect(await aiReady()).toBe(false) // so the local speech models are the ones to load
     expect(await draftMessage(samplePeople[0], action)).toBe(action.draft)
     expect(await ai('rank', {})).toBeNull()
     expect(await transcribeWithAi(new Float32Array(16000), 16000, [])).toBeNull()
@@ -22,7 +23,7 @@ describe('AI is optional', () => {
     live.feed(new Float32Array(4096))
     live.stop()
     expect(heard).not.toHaveBeenCalled()
-    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(fetchMock).toHaveBeenCalledTimes(1) // one 503 (the status check), then it stopped asking
   })
 })
 

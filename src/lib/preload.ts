@@ -1,3 +1,4 @@
+import { aiReady } from './ai'
 import { loadLive } from './live'
 import { preload } from './ml'
 import { getPeople } from './peopleStore'
@@ -13,8 +14,13 @@ export function preloadModels() {
     // All three at once: voice is the thing the user reaches for first, so it no longer waits behind search
     void warmUp(getPeople())
     if (usesLocalVoice) {
-      void loadLive().catch(() => {})
-      void preload('whisper').catch(() => {})
+      // The quick local words load at once: they show first, and carry on if OpenAI isn't there
+      const live = loadLive().catch(() => {})
+      // Whisper (~80 MB) only matters when OpenAI can't do the listening, so it isn't downloaded when it can, and when it
+      // is, it waits for the live-words model instead of competing with it
+      void aiReady().then((ready) => {
+        if (!ready) void live.then(() => preload('whisper')).catch(() => {})
+      })
     }
   }
   // Right after the first render, not after a delay

@@ -190,6 +190,9 @@ export async function handleAi(req: IncomingMessage, res: ServerResponse, env: A
   }
   const url = new URL(req.url ?? '/', 'http://localhost')
   const name = url.pathname.split('/').filter(Boolean).pop() ?? ''
+  // Is the AI set up here at all? (one cheap answer, no OpenAI call: the page uses it to skip downloading local speech
+  // models it would never need)
+  if (name === 'status') return send(200, { ready: !!env.key })
   const task = TASKS[name]
   if (!task && name !== 'transcribe' && name !== 'live') return send(404, { error: 'Unknown task' })
   if (req.method !== 'POST') return send(405, { error: 'POST only' }, { allow: 'POST' })

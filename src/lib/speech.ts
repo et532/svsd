@@ -1,4 +1,4 @@
-import { startAiLive, transcribeWithAi } from './ai'
+import { aiReady, startAiLive, transcribeWithAi } from './ai'
 import { startLive } from './live'
 import { preload, transcribeAudio } from './ml'
 
@@ -130,12 +130,19 @@ function recordLocal(
   let working: Promise<void> = Promise.resolve()
   let failed = false
   let live: ReturnType<typeof startLive> | undefined
-  // Live words from OpenAI (when there is a key): once they start, they replace the quicker, rougher local words
-  let ailive: ReturnType<typeof startAiLive> | undefined
+  // Live words from OpenAI (when there is a key): once they start, they replace the quicker, rougher local words. The
+  // connection opens now, at the tap, so it is ready by the time the mic permission is answered (audio is kept until it is).
+  const ailive = startAiLive((t) => {
+    aiHeard = true
+    seen(t)
+  })
   let aiHeard = false
-  onLoading(true)
-  // The word-by-word model downloads first; Whisper (for the final text) only after it, so they don't compete
-  const seen = (t: string) => (onLoading(false), onText(t))
+  let anyWords = false
+  // "Getting the voice model ready" only when the local model is what we are waiting for: not when OpenAI is listening
+  void aiReady().then((ready) => {
+    if (!ready && !anyWords && !live?.ready) onLoading(true)
+  })
+  const seen = (t: string) => ((anyWords = true), onLoading(false), onText(t))
 
   const transcribe = async () => {
     const audio = join(chunks)
@@ -177,17 +184,16 @@ function recordLocal(
       const tap = ctx.createScriptProcessor(4096, 1, 1)
       live = startLive(ctx.sampleRate, (t) => !aiHeard && seen(t), () => {
         onLoading(false)
-        preload('whisper').catch(() => {})
+        // Whisper (the offline fallback for the final text) is only worth its ~80 MB when OpenAI isn't doing that
+        void aiReady().then((ready) => {
+          if (!ready) preload('whisper').catch(() => {})
+        })
       })
-      ailive = startAiLive((t) => {
-        aiHeard = true
-        seen(t)
-      }, ctx.sampleRate)
       tap.onaudioprocess = (e) => {
         const samples = new Float32Array(e.inputBuffer.getChannelData(0))
         chunks.push(samples)
         live?.feed(new Float32Array(samples))
-        ailive?.feed(samples)
+        ailive.feed(samples, ctx.sampleRate)
       }
       const mute = ctx.createGain()
       mute.gain.value = 0 // the processor only runs while connected to the output
@@ -212,7 +218,7 @@ function recordLocal(
     clearInterval(tick)
     release()
     live?.stop()
-    ailive?.stop()
+    ailive.stop()
     // The last words: queued after any transcription in flight, over everything recorded
     onBusy(true)
     run().finally(() => onBusy(false))

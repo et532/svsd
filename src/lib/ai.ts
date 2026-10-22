@@ -12,6 +12,19 @@ type Task = 'parse' | 'rank' | 'draft' | 'live'
 // After the first "not available" (503 no key, 404 no endpoint) stop asking, so there is no failed request per search
 let off = false
 
+// Whether the server has an AI key at all: one cheap request, remembered. The voice code uses it to skip downloading
+// local speech models (and showing "getting the voice model ready") when OpenAI will do the listening. A network
+// error counts as "not ready" for now without switching the AI off for good.
+let ready: Promise<boolean> | undefined
+export const aiReady = () =>
+  (ready ??= fetch('/api/ai/status')
+    .then(async (r) => {
+      const ok = r.ok && ((await r.json()) as { ready?: boolean }).ready === true
+      if (!ok) off = true
+      return ok
+    })
+    .catch(() => false))
+
 export async function ai<T>(task: Task, body: unknown, ms = 10000): Promise<T | null> {
   if (off) return null
   try {
@@ -88,8 +101,9 @@ export function pcm24(samples: Float32Array, rate = 16000): string {
 // Live words while the user talks, streamed from OpenAI (about a second behind the speaker, far more accurate than the
 // small local model). Feed it the recorder's audio; `onText` gets everything heard so far. Quietly does nothing when AI
 // isn't available (no key, offline), and the caller keeps using its local words. Audio fed before the connection is
-// open is kept and sent as soon as it is.
-export function startAiLive(onText: (text: string) => void, rate = 16000): { feed(samples: Float32Array): void; stop(): void } {
+// open is kept and sent as soon as it is, so it can be started the moment the mic button is tapped (before the
+// browser's permission prompt is answered); each chunk says what rate it was recorded at.
+export function startAiLive(onText: (text: string) => void): { feed(samples: Float32Array, rate?: number): void; stop(): void } {
   let ws: WebSocket | undefined
   let over = false // stopped, or the AI isn't available: stop collecting audio
   const queue: string[] = []
@@ -121,7 +135,7 @@ export function startAiLive(onText: (text: string) => void, rate = 16000): { fee
   })
 
   return {
-    feed(samples) {
+    feed(samples, rate = 16000) {
       if (over) return
       const audio = pcm24(samples, rate)
       if (ws?.readyState === WebSocket.OPEN) send(ws, audio)
