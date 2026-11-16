@@ -1,0 +1,45 @@
+name: Peepl
+options:
+  bundleIdPrefix: com.vincelin
+  deploymentTarget:
+    iOS: "26.0"
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+targets:
+  Peepl:
+    type: application
+    platform: iOS
+    sources: [Peepl]
+    info:
+      path: Peepl/Info.plist
+      properties:
+        PeeplAPIBase: $(PEEPL_API_BASE)
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.vincelin.peepl
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Peepl
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
+        TARGETED_DEVICE_FAMILY: "1"
+        PEEPL_API_BASE: https://peepl-steel.vercel.app
+  PeeplTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [PeeplTests]
+    dependencies:
+      - target: Peepl
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.vincelin.peepl.tests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/Peepl.app/Peepl
+        BUNDLE_LOADER: $(TEST_HOST)
+schemes:
+  Peepl:
+    build:
+      targets:
+        Peepl: all
+    test:
+      targets: [PeeplTests]

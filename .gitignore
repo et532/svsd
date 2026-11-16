@@ -25,3 +25,6 @@ dist-ssr
 
 .vercel
 .env*
+
+ios/Peepl.xcodeproj
+ios/build
