@@ -1,7 +1,38 @@
 import UIKit
 
+enum GroupBy: String, CaseIterable {
+    case none = "None", city = "City", met = "Met at", job = "Job"
+    func value(_ k: GroupKeys) -> String {
+        switch self { case .none: ""; case .city: k.city; case .met: k.met; case .job: k.job }
+    }
+}
+struct GroupKeys { var city = "", met = "", job = "" }
+/// A background orb on screen: center, size, blur (at the 400 base size, as the web) and opacity.
+struct OrbState: Equatable { var x, y, w, h, blur, op: Double }
+
 /// Per-frame mindmap state. A plain class on purpose: the Canvas reads it every frame without SwiftUI observing it.
 final class MindmapModel {
+    /// One model for the app, so layout, view and group-by survive a trip to the Connections tab.
+    static let shared = MindmapModel()
+
+    // src/lib/aura.ts
+    static let aura: [(color: String, x: Double, y: Double, w: Double, h: Double)] = [
+        ("d6347f", 86, 102, 414, 414), ("e8c22e", 322, 294, 386, 386),
+        ("2f4fd0", 49, 487, 442, 586), ("ec5a32", 269.5, 701.5, 325, 325),
+    ]
+    static let orbBase = 400.0, groupBlur = 130.0, blendSeconds = 1.1
+
+    /// An orb's own spot in the background; orbs past the four are spares for extra groups (invisible at home).
+    static func orbHome(_ i: Int, _ w: Double, _ h: Double) -> OrbState {
+        let o = aura[i % aura.count], s = w / 393
+        return OrbState(x: o.x * s, y: o.y * h / 852, w: o.w * s, h: o.h * s, blur: 150 * orbBase / ((o.w * o.h).squareRoot() * s), op: i < aura.count ? 1 : 0)
+    }
+    static func ease(_ t: Double) -> Double { t < 0.5 ? 4 * t * t * t : 1 - pow(-2 * t + 2, 3) / 2 }
+    static func mix(_ a: OrbState, _ b: OrbState, _ t: Double) -> OrbState {
+        OrbState(x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, w: a.w + (b.w - a.w) * t,
+                 h: a.h + (b.h - a.h) * t, blur: a.blur + (b.blur - a.blur) * t, op: a.op + (b.op - a.op) * t)
+    }
+
     var graph = ForceGraph(ids: [], pairs: [])
     var radii: [String: Double] = [:]
     var x = 0.0, y = 0.0, k = 1.0      // view: offset from the screen center, scale
@@ -24,14 +55,24 @@ final class MindmapModel {
     private var panV = (x: 0.0, y: 0.0, t: 0.0)
     private var prevView = (x: 0.0, y: 0.0, k: 1.0), prevT = 0.0
     var reduceMotion = UIAccessibility.isReduceMotionEnabled
+    // group by, background orbs and the group name labels
+    private(set) var groupBy = GroupBy.none
+    private var keys: [String: GroupKeys] = [:]
+    var focus: String?                          // the isolated group
+    private(set) var orbCur: [OrbState] = [], orbFrom: [OrbState] = []
+    private(set) var groupFor: [String?] = []   // which group each orb wraps
+    private(set) var ovals: [String: MindmapMath.Oval] = [:]
+    private var blendStart: TimeInterval?, blendDur = 0.0
+    private(set) var blending = false
+    private var lastSize = CGSize(width: 393, height: 852)
 
     // FPS meter (-mindmapFPS YES)
     private let meter = UserDefaults.standard.bool(forKey: "mindmapFPS")
     private var last: TimeInterval = 0, second: TimeInterval = 0, frames = 0, worst = 0.0, drawMs = 0.0
 
     /// Rebuild only when the set of people changes; old positions are kept.
-    func sync(ids: [String], pairs: [(String, String)], scores: [(id: String, score: Int)], initials: [String: String] = [:]) {
-        self.initials = initials
+    func sync(ids: [String], pairs: [(String, String)], scores: [(id: String, score: Int)], initials: [String: String] = [:], groupKeys: [String: GroupKeys] = [:]) {
+        self.initials = initials; keys = groupKeys
         let sig = ids.joined(separator: ",") + "|" + pairs.map { "\($0.0)-\($0.1)" }.joined(separator: ",")
         radii = MindmapMath.radii(scores)
         guard sig != signature else { return }
@@ -40,11 +81,12 @@ final class MindmapModel {
         for n in graph.nodes { prev[n.id] = (n.x, n.y) }
         graph = ForceGraph(ids: ids, pairs: pairs, prev: prev)
         fitted = false
-        selected = nil; depth = [:]
+        selected = nil; depth = [:]; focus = nil
+        regroup()
         dots = graph.nodes.map { let r = radii[$0.id] ?? 12; return Dot(f: MindmapMath.floatOf($0.id, r: r), d: MindmapMath.depthOf($0.id, r: r)) }
     }
 
-    var settled: Bool { graph.alpha <= 0.01 && fitted && anim == nil && !gliding && !floating }
+    var settled: Bool { graph.alpha <= 0.01 && fitted && anim == nil && !gliding && !floating && !blending }
 
     func frame(now: TimeInterval, size: CGSize) {
         let dt = prevT > 0 ? min(0.05, now - prevT) : 0
@@ -64,6 +106,8 @@ final class MindmapModel {
         }
         if gliding { glide(dt, size) }
         stepFloat(dt)
+        lastSize = size
+        stepOrbs(now: now, size: size)
         guard meter else { return }
         if last > 0 { worst = max(worst, (now - last) * 1000) }
         last = now; frames += 1
@@ -73,6 +117,73 @@ final class MindmapModel {
             second = now; frames = 0; worst = 0; drawMs = 0
         }
     }
+
+    /// The Filters choice: regroup, auto-fit again, clear selection and focus, and blend the orbs to their groups.
+    func setGroupBy(_ g: GroupBy) {
+        groupBy = g
+        touched = false; anim = nil; gliding = false
+        select(nil); focus = nil
+        regroup()
+    }
+
+    /// Group the people (singletons go to "Other"), hand each group the nearest free orb, and start the blend.
+    private func regroup() {
+        if groupBy == .none { graph.setGroups({ _ in "" }, last: nil) } else {
+            let g = MindmapMath.groups(graph.nodes.map { ($0.id, groupBy.value(keys[$0.id] ?? GroupKeys())) })
+            graph.setGroups({ g.groupOf[$0] ?? "" }, last: MindmapMath.other)
+        }
+        let w = lastSize.width, h = lastSize.height
+        var order: [String] = [], sum: [String: (x: Double, y: Double, n: Double)] = [:]
+        for n in graph.nodes where !n.group.isEmpty {
+            if sum[n.group] == nil { order.append(n.group) }
+            var c = sum[n.group] ?? (0, 0, 0); c.x += n.x; c.y += n.y; c.n += 1; sum[n.group] = c
+        }
+        let had = !orbCur.isEmpty
+        let count = max(Self.aura.count, order.count)
+        while orbCur.count < count { orbCur.append(Self.orbHome(orbCur.count, w, h)) }
+        var free = Array(0..<count)
+        groupFor = [String?](repeating: nil, count: max(count, orbCur.count))
+        for (_, g) in order.enumerated().sorted(by: { (sum[$0.element]!.n, -Double($0.offset)) > (sum[$1.element]!.n, -Double($1.offset)) }) {
+            let c = sum[g]!, gx = w / 2 + x + c.x / c.n * k, gy = h / 2 + y + c.y / c.n * k
+            let d = { (i: Int) -> Double in let o = Self.orbHome(i, w, h); return hypot(o.x - gx, o.y - gy) }
+            let best = free.indices.min { d(free[$0]) < d(free[$1]) }!
+            groupFor[free.remove(at: best)] = g
+        }
+        orbFrom = orbCur
+        blendStart = nil
+        blendDur = had && !reduceMotion ? Self.blendSeconds : 0
+        blending = blendDur > 0
+    }
+
+    private func stepOrbs(now: TimeInterval, size: CGSize) {
+        let w = size.width, h = size.height
+        ovals = groupBy == .none ? [:] : MindmapMath.groupOvals(graph.nodes, radii: radii)
+        if blendDur > 0 && blendStart == nil { blendStart = now }
+        let t = blendDur > 0 ? min(1, (now - (blendStart ?? now)) / blendDur) : 1
+        blending = t < 1
+        for i in orbCur.indices {
+            let home = Self.orbHome(i, w, h)
+            var target = groupBy == .none ? home : OrbState(x: home.x, y: home.y, w: home.w * 0.6, h: home.h * 0.6, blur: home.blur, op: 0)
+            if let g = groupFor[i], let b = ovals[g] {
+                target = OrbState(x: w / 2 + x + b.cx * k, y: h / 2 + y + b.cy * k, w: b.w * k, h: b.h * k,
+                                  blur: Self.groupBlur, op: focus != nil && focus != g ? 0.3 : 1)
+            }
+            orbCur[i] = t < 1 && i < orbFrom.count ? Self.mix(orbFrom[i], target, Self.ease(t)) : target
+        }
+    }
+
+    /// A group's name is drawn at its oval's center; this is the same box for drawing and hit testing.
+    func labelRect(_ g: String, size: CGSize) -> CGRect? {
+        guard let o = ovals[g] else { return nil }
+        let w = Double(g.count) * 7.4 + 20, h = 28.0
+        return CGRect(x: size.width / 2 + x + o.cx * k - w / 2, y: size.height / 2 + y + o.cy * k - h / 2, width: w, height: h)
+    }
+
+    func labelHit(_ p: CGPoint, size: CGSize) -> String? {
+        ovals.keys.sorted().first { labelRect($0, size: size)?.contains(p) == true }
+    }
+
+    func toggleFocus(_ g: String) { focus = focus == g ? nil : g; select(nil) }
 
     /// Leave each dot behind by its share of how far the view carried it this frame, then let its spring pull it back.
     private func stepFloat(_ dt: Double) {
@@ -199,6 +310,7 @@ final class MindmapModel {
         for i in graph.nodes.indices.reversed() {
             let n = graph.nodes[i]
             if selected != nil && depth[n.id] == nil { continue }
+            if let f = focus, n.group != f { continue }
             let c = drawnPosition(i, size: size), dr = MindmapMath.disc(radii[n.id] ?? 8) * k
             if hypot(p.x - c.x, p.y - c.y) <= dr { return n.id }
         }
@@ -246,7 +358,9 @@ final class MindmapModel {
         defer { touching = false; if let g = grab { graph.nodes[g].pinned = false }; grab = nil }
         if touching, !pinched, grab == nil, travel > 4, CACurrentMediaTime() - panV.t < 0.08 { startGlide(vx: panV.x, vy: panV.y) }
         guard touching, !pinched, travel <= 4 else { return .none }
+        if let g = labelHit(p, size: size) { toggleFocus(g); return .some(nil) }
         let id = hit(p, size: size)
+        focus = nil
         select(id)
         if let id { flyTo(id, size: size) }
         return .some(id)

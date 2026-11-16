@@ -78,4 +78,61 @@ final class MindmapModelTests: XCTestCase {
         XCTAssertEqual(p.x, size.width / 2 + m.x + n.x * m.k, accuracy: 0.001)
         XCTAssertEqual(p.y, size.height / 2 + m.y + n.y * m.k, accuracy: 0.001)
     }
+
+    // 3 + 3 + 2 people in cities; g and h are alone
+    func grouped() -> MindmapModel {
+        let m = MindmapModel()
+        m.reduceMotion = false
+        let ids = ["a", "b", "c", "d", "e", "f", "g", "h"]
+        let city = ["a": "X", "b": "X", "c": "X", "d": "Y", "e": "Y", "f": "Y", "g": "Z", "h": "W"]
+        m.sync(ids: ids, pairs: [("a", "b"), ("d", "e"), ("c", "f")], scores: ids.map { ($0, 1) },
+               groupKeys: city.mapValues { GroupKeys(city: $0) })
+        m.setGroupBy(.city)
+        return m
+    }
+
+    func testCityGroupingPutsSingletonsInOtherAndPullsGroupsTogether() {
+        let m = grouped()
+        for i in 0..<300 { m.frame(now: Double(i) / 60, size: size) }
+        let g = Dictionary(uniqueKeysWithValues: m.graph.nodes.map { ($0.id, $0) })
+        XCTAssertEqual(g["g"]?.group, MindmapMath.other); XCTAssertEqual(g["h"]?.group, MindmapMath.other)
+        XCTAssertEqual(g["a"]?.group, "X")
+        func d(_ a: String, _ b: String) -> Double { hypot(g[a]!.x - g[b]!.x, g[a]!.y - g[b]!.y) }
+        XCTAssertLessThan(d("a", "b"), d("a", "d")); XCTAssertLessThan(d("d", "e"), d("b", "e"))
+        XCTAssertLessThan(d("a", "c"), d("a", "e"))
+    }
+
+    func testEveryGroupGetsADistinctOrb() {
+        let m = grouped()
+        let used = m.groupFor.compactMap { $0 }
+        XCTAssertEqual(Set(used), ["X", "Y", MindmapMath.other]); XCTAssertEqual(used.count, 3)
+    }
+
+    func testOrbBlendReachesItsTargetAfterAboutOnePointOneSeconds() {
+        let m = grouped()
+        XCTAssertTrue(m.blending)
+        for i in 0..<30 { m.frame(now: Double(i) / 60, size: size) }
+        XCTAssertTrue(m.blending)
+        XCTAssertFalse(m.settled)
+        for i in 30..<120 { m.frame(now: Double(i) / 60, size: size) }
+        XCTAssertFalse(m.blending)
+        let i = m.groupFor.firstIndex(of: "X")!, o = m.ovals["X"]!
+        XCTAssertEqual(m.orbCur[i].w, o.w * m.k, accuracy: 0.001)
+        XCTAssertEqual(m.orbCur[i].x, size.width / 2 + m.x + o.cx * m.k, accuracy: 0.001)
+        XCTAssertEqual(m.orbCur[i].op, 1)
+        let spare = m.groupFor.firstIndex(of: nil)!
+        XCTAssertEqual(m.orbCur[spare].op, 0)
+    }
+
+    func testLabelHitReturnsTheGroupAtItsCenterAndFocusIsolates() {
+        let m = grouped()
+        for i in 0..<30 { m.frame(now: Double(i) / 60, size: size) }
+        let r = m.labelRect("X", size: size)!
+        XCTAssertEqual(m.labelHit(CGPoint(x: r.midX, y: r.midY), size: size), "X")
+        XCTAssertNil(m.labelHit(CGPoint(x: -5000, y: -5000), size: size))
+        m.toggleFocus("X")
+        XCTAssertEqual(m.focus, "X")
+        m.toggleFocus("X")
+        XCTAssertNil(m.focus)
+    }
 }
