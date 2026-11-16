@@ -82,7 +82,7 @@ Tasks (small briefs; ios-core and ios-ui in parallel where files differ):
 
 Acceptance: typing "Met Sam Rivera at a pickleball meetup, designer at Kiln, loves trail running" creates a profile with job, company, met, tag and a to-do, visible in the list after relaunch; all ported parse tests pass.
 
-### M2: Mindmap (parallel with M3 and M4 after M1)
+### M2: Mindmap (built on branch `m2-mindmap`, not merged yet; 49 tests pass, verified 2026-11-16; open: 2-4 s freeze on tab switch (suspect the 500-row list), 3x zoom spring-back only unit-tested, group-by City is a dense knot with 500 people, no real-device check)
 Goal: the signature screen: Obsidian-style people graph.
 Scope: `ForceGraph.swift` (hand-rolled simulation, links from `knows`, group pull, `GROUP_SPACING` 330 and related constants), `MindmapView.swift` using SwiftUI `Canvas` inside `TimelineView`, three disc tiers by moments + closeness, initials fade-in at `INITIALS_AT` 0.27, pan / pinch / tap-to-focus pill, rubber-band zoom limits, float + parallax + momentum, Group by (None / City / Met at / Job) with the moving aura orbs and an "Other" group.
 Risk: highest of all milestones. Build in this order and verify each on-device-like Simulator pass: layout math (unit tests with fixed seed) -> static render -> gestures -> float/momentum -> groups/auras. Target 60 fps with 200 people; keep per-dot blurs and blend modes off (see the web app's disc note in `CLAUDE.md`).
