@@ -87,15 +87,15 @@ struct MindmapView: View {
         let t0 = CACurrentMediaTime()
         model.frame(now: now, size: sz)
         if model.settled { DispatchQueue.main.async { paused = true } }
-        let m = model, k = m.k, cx = sz.width / 2 + m.x, cy = sz.height / 2 + m.y
+        let m = model, k = m.k
         let nodes = m.graph.nodes
         let pad = 130.0 * k
-        func pt(_ n: ForceGraph.Node) -> CGPoint { CGPoint(x: cx + n.x * k, y: cy + n.y * k) }
+        let pos = nodes.indices.map { m.drawnPosition($0, size: sz) }
         let screen = CGRect(origin: .zero, size: sz).insetBy(dx: -pad, dy: -pad)
 
         let sel = m.selected != nil
         for l in m.graph.links {
-            let a = nodes[l.a], b = nodes[l.b], pa = pt(a), pb = pt(b)
+            let a = nodes[l.a], b = nodes[l.b], pa = pos[l.a], pb = pos[l.b]
             guard screen.contains(pa) || screen.contains(pb) else { continue }
             var path = Path(); path.move(to: pa); path.addLine(to: pb)
             // hook for M2-5: both ends in the same non-empty group draws solid
@@ -106,8 +106,8 @@ struct MindmapView: View {
         }
 
         let ini = MindmapMath.initialsOpacity(k: k, fitK: m.fitK)
-        for n in nodes {
-            let p = pt(n)
+        for (i, n) in nodes.enumerated() {
+            let p = pos[i]
             guard screen.contains(p) else { continue }
             let r = m.radii[n.id] ?? 8
             let d = m.depth[n.id]

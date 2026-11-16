@@ -1,4 +1,4 @@
-import Foundation
+import UIKit
 
 /// Per-frame mindmap state. A plain class on purpose: the Canvas reads it every frame without SwiftUI observing it.
 final class MindmapModel {
@@ -16,6 +16,14 @@ final class MindmapModel {
     private(set) var pinched = false
     private var signature = ""
     private var fitted = false
+    // float / parallax (per dot, indexed like graph.nodes) and momentum
+    struct Dot { var ux = 0.0, uy = 0.0, vx = 0.0, vy = 0.0, f = 0.0, d = 0.0 }
+    var dots: [Dot] = []
+    private var floating = false, gliding = false
+    private var glideV = (x: 0.0, y: 0.0)
+    private var panV = (x: 0.0, y: 0.0, t: 0.0)
+    private var prevView = (x: 0.0, y: 0.0, k: 1.0), prevT = 0.0
+    var reduceMotion = UIAccessibility.isReduceMotionEnabled
 
     // FPS meter (-mindmapFPS YES)
     private let meter = UserDefaults.standard.bool(forKey: "mindmapFPS")
@@ -33,11 +41,14 @@ final class MindmapModel {
         graph = ForceGraph(ids: ids, pairs: pairs, prev: prev)
         fitted = false
         selected = nil; depth = [:]
+        dots = graph.nodes.map { let r = radii[$0.id] ?? 12; return Dot(f: MindmapMath.floatOf($0.id, r: r), d: MindmapMath.depthOf($0.id, r: r)) }
     }
 
-    var settled: Bool { graph.alpha <= 0.01 && fitted && anim == nil }
+    var settled: Bool { graph.alpha <= 0.01 && fitted && anim == nil && !gliding && !floating }
 
     func frame(now: TimeInterval, size: CGSize) {
+        let dt = prevT > 0 ? min(0.05, now - prevT) : 0
+        prevT = now
         if graph.alpha > 0.01 { graph.step() }
         let f = MindmapMath.fit(graph.nodes, width: size.width, height: size.height)
         fitK = f.k
@@ -51,6 +62,8 @@ final class MindmapModel {
                 if abs(a.k - k) <= 0.002 && abs(a.x - x) <= 0.5 && abs(a.y - y) <= 0.5 { anim = nil }
             }
         }
+        if gliding { glide(dt, size) }
+        stepFloat(dt)
         guard meter else { return }
         if last > 0 { worst = max(worst, (now - last) * 1000) }
         last = now; frames += 1
@@ -58,6 +71,69 @@ final class MindmapModel {
         if now - second >= 1 {
             print(String(format: "mindmap fps=%d worst=%.1f draw=%.2f", frames, worst, drawMs / Double(max(frames, 1))))
             second = now; frames = 0; worst = 0; drawMs = 0
+        }
+    }
+
+    /// Leave each dot behind by its share of how far the view carried it this frame, then let its spring pull it back.
+    private func stepFloat(_ dt: Double) {
+        let carried = touched && !reduceMotion
+        var restless = false
+        for i in dots.indices {
+            if carried {
+                dots[i].ux -= (x - prevView.x + graph.nodes[i].x * (k - prevView.k)) * dots[i].f
+                dots[i].uy -= (y - prevView.y + graph.nodes[i].y * (k - prevView.k)) * dots[i].f
+            }
+            var s = dots[i]
+            s.vx += (-MindmapMath.floatK * s.ux - MindmapMath.floatC * s.vx) * dt
+            s.vy += (-MindmapMath.floatK * s.uy - MindmapMath.floatC * s.vy) * dt
+            s.ux += s.vx * dt; s.uy += s.vy * dt
+            let u = hypot(s.ux, s.uy), cap = MindmapMath.floatMax * 3
+            if u > cap { s.ux *= cap / u; s.uy *= cap / u }
+            if u > 0.05 || abs(s.vx) + abs(s.vy) > 0.5 { restless = true } else { s.ux = 0; s.uy = 0; s.vx = 0; s.vy = 0 }
+            dots[i] = s
+        }
+        floating = restless
+        prevView = (x, y, k)
+    }
+
+    /// Where a dot is drawn on screen: its spot pushed out from the screen center by its depth, plus its float eased into floatMax.
+    func drawnPosition(_ i: Int, size: CGSize) -> CGPoint {
+        let n = graph.nodes[i], s = dots[i]
+        let p = reduceMotion ? 0 : s.d * MindmapMath.parallax
+        let u = reduceMotion ? 0 : hypot(s.ux, s.uy)
+        let soft = u > 0.01 ? MindmapMath.floatMax * tanh(u / MindmapMath.floatMax) / u : 1
+        return CGPoint(x: size.width / 2 + (x + n.x * k) * (1 + p) + s.ux * soft,
+                       y: size.height / 2 + (y + n.y * k) * (1 + p) + s.uy * soft)
+    }
+
+    /// How far the view may go: the people must still cover at least a quarter of the screen each way.
+    private func panRange(_ size: CGSize) -> (x0: Double, x1: Double, y0: Double, y1: Double)? {
+        guard let x0 = graph.nodes.map(\.x).min(), let x1 = graph.nodes.map(\.x).max(),
+              let y0 = graph.nodes.map(\.y).min(), let y1 = graph.nodes.map(\.y).max() else { return nil }
+        let w = size.width / 4, h = size.height / 4
+        return (-w - x1 * k, w - x0 * k, -h - y1 * k, h - y0 * k)
+    }
+
+    /// Keep a released pan moving, slowing like an iOS scroll; past the edge of the people it brakes, then springs back.
+    func startGlide(vx: Double, vy: Double) {
+        let speed = hypot(vx, vy)
+        guard speed >= 120, !reduceMotion else { return }
+        let cap = min(1, 3000 / speed)
+        glideV = (vx * cap, vy * cap); gliding = true; anim = nil
+    }
+
+    private func glide(_ dt: Double, _ size: CGSize) {
+        let decay = exp(-dt / MindmapMath.glideTau)
+        x += glideV.x * MindmapMath.glideTau * (1 - decay)
+        y += glideV.y * MindmapMath.glideTau * (1 - decay)
+        glideV.x *= decay; glideV.y *= decay
+        let r = panRange(size), brake = exp(-dt / 0.06)
+        if let r, x < r.x0 || x > r.x1 { glideV.x *= brake }
+        if let r, y < r.y0 || y > r.y1 { glideV.y *= brake }
+        guard hypot(glideV.x, glideV.y) <= 10 else { return }
+        gliding = false
+        if let r, x < r.x0 || x > r.x1 || y < r.y0 || y > r.y1 {
+            animateTo((min(r.x1, max(r.x0, x)), min(r.y1, max(r.y0, y)), k), rate: 0.12)
         }
     }
 
@@ -102,7 +178,7 @@ final class MindmapModel {
         x = px - (px - x) / k * nk
         y = py - (py - y) / k * nk
         k = nk
-        touched = true; anim = nil
+        touched = true; anim = nil; gliding = false
     }
 
     /// Let go of a pinch: spring back if it went too far.
@@ -116,17 +192,14 @@ final class MindmapModel {
         }
     }
 
-    func pan(_ dx: Double, _ dy: Double) { x += dx; y += dy; touched = true; anim = nil }
-
-    private func screen(_ n: ForceGraph.Node, _ size: CGSize) -> CGPoint {
-        CGPoint(x: size.width / 2 + x + n.x * k, y: size.height / 2 + y + n.y * k)
-    }
+    func pan(_ dx: Double, _ dy: Double) { x += dx; y += dy; touched = true; anim = nil; gliding = false }
 
     /// Topmost node whose disc contains p; faded nodes can't be hit while someone is selected.
     func hit(_ p: CGPoint, size: CGSize) -> String? {
-        for n in graph.nodes.reversed() {
+        for i in graph.nodes.indices.reversed() {
+            let n = graph.nodes[i]
             if selected != nil && depth[n.id] == nil { continue }
-            let c = screen(n, size), dr = MindmapMath.disc(radii[n.id] ?? 8) * k
+            let c = drawnPosition(i, size: size), dr = MindmapMath.disc(radii[n.id] ?? 8) * k
             if hypot(p.x - c.x, p.y - c.y) <= dr { return n.id }
         }
         return nil
@@ -143,26 +216,35 @@ final class MindmapModel {
     /// Where a person is drawn on screen, and their disc radius, for the name pill.
     func place(_ id: String, size: CGSize) -> (p: CGPoint, r: Double)? {
         guard let i = graph.index[id] else { return nil }
-        return (screen(graph.nodes[i], size), MindmapMath.disc(radii[id] ?? 8) * k)
+        return (drawnPosition(i, size: size), MindmapMath.disc(radii[id] ?? 8) * k)
     }
 
     // MARK: touch (one finger: tap, pan or node drag; pinch is separate)
 
     func touchMoved(_ p: CGPoint, size: CGSize) {
         if !touching {
-            touching = true; pinched = false; travel = 0; lastTouch = p; anim = nil
+            touching = true; pinched = false; travel = 0; lastTouch = p; anim = nil; gliding = false
+            panV = (0, 0, CACurrentMediaTime())
             if let id = hit(p, size: size), k >= MindmapMath.grabZoom, let i = graph.index[id] { grab = i; graph.nodes[i].pinned = true }
             return
         }
         guard !pinched else { lastTouch = p; return }
         travel += hypot(p.x - lastTouch.x, p.y - lastTouch.y)
-        if let g = grab { moveNode(graph.nodes[g].id, to: p, size: size) } else if travel > 4 { pan(p.x - lastTouch.x, p.y - lastTouch.y) }
+        if let g = grab { moveNode(graph.nodes[g].id, to: p, size: size) } else if travel > 4 {
+            let now = CACurrentMediaTime(), dt = now - panV.t
+            if dt > 0.001 {
+                let keep = dt > 0.1 ? 0 : 0.6   // smooth jittery samples, forget a pause
+                panV = (panV.x * keep + (p.x - lastTouch.x) / dt * (1 - keep), panV.y * keep + (p.y - lastTouch.y) / dt * (1 - keep), now)
+            }
+            pan(p.x - lastTouch.x, p.y - lastTouch.y)
+        }
         lastTouch = p
     }
 
     /// Returns the id to select (nil clears) when the touch was a tap, else .none.
     func touchEnded(_ p: CGPoint, size: CGSize) -> String?? {
         defer { touching = false; if let g = grab { graph.nodes[g].pinned = false }; grab = nil }
+        if touching, !pinched, grab == nil, travel > 4, CACurrentMediaTime() - panV.t < 0.08 { startGlide(vx: panV.x, vy: panV.y) }
         guard touching, !pinched, travel <= 4 else { return .none }
         let id = hit(p, size: size)
         select(id)

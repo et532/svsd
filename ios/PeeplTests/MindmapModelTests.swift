@@ -48,4 +48,34 @@ final class MindmapModelTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(m.k, 0.35); XCTAssertLessThanOrEqual(m.k, 1.4)
         XCTAssertTrue(m.settled)
     }
+
+    func testGlideTravelsAboutSpeedTimesTau() {
+        let m = make()
+        for i in m.graph.nodes.indices { m.graph.nodes[i].x = Double(i) * 1000 - 2000 }   // wide enough that the edge doesn't brake it
+        m.touched = true
+        let x0 = m.x
+        m.startGlide(vx: 1000, vy: 0)
+        var n = 0
+        while !m.settled && n < 1000 { m.frame(now: 20 + Double(n) / 60, size: size); n += 1 }
+        XCTAssertTrue(m.settled)
+        XCTAssertEqual(m.x - x0, 1000 * MindmapMath.glideTau, accuracy: 42)
+    }
+
+    func testFloatReturnsToZeroAfterPan() {
+        let m = make()
+        m.reduceMotion = false
+        m.pan(200, 0); m.frame(now: 30, size: size)
+        XCTAssertGreaterThan(abs(m.dots[0].ux), 0)
+        XCTAssertFalse(m.settled)
+        for i in 1...180 { m.frame(now: 30 + Double(i) / 60, size: size) }
+        XCTAssertTrue(m.dots.allSatisfy { $0.ux == 0 && $0.uy == 0 })
+    }
+
+    func testDrawnPositionIsPlainWithoutFloatOrDepth() {
+        let m = make()
+        for i in m.dots.indices { m.dots[i].d = 0 }
+        let n = m.graph.nodes[1], p = m.drawnPosition(1, size: size)
+        XCTAssertEqual(p.x, size.width / 2 + m.x + n.x * m.k, accuracy: 0.001)
+        XCTAssertEqual(p.y, size.height / 2 + m.y + n.y * m.k, accuracy: 0.001)
+    }
 }
