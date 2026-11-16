@@ -34,8 +34,7 @@ struct RootView: View {
             Theme.bg.ignoresSafeArea()
             switch tab {
             case .mindmap:
-                (Text("Mindmap is ").font(.system(size: 32, weight: .light)) + Text("coming soon").font(.system(size: 32, weight: .semibold)))
-                    .tracking(-1.28).foregroundStyle(Theme.ink).multilineTextAlignment(.center).padding(24)
+                MindmapView()
             case .connections:
                 ConnectionsView()
             }
