@@ -22,6 +22,8 @@ targets:
         INFOPLIST_KEY_CFBundleDisplayName: Peepl
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
+        INFOPLIST_KEY_NSMicrophoneUsageDescription: "Peepl listens when you tap the mic so you can talk instead of type."
+        INFOPLIST_KEY_NSSpeechRecognitionUsageDescription: "Peepl turns what you say into a note, on your iPhone when it can."
         TARGETED_DEVICE_FAMILY: "1"
         PEEPL_API_BASE: https://peepl-steel.vercel.app
   PeeplTests:
