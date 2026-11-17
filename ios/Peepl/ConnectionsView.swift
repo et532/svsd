@@ -18,6 +18,7 @@ struct ConnectionsView: View {
                         .foregroundStyle(Theme.ink)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.bottom, 12)
+                    if allPeople.isEmpty { EmptyPeople().padding(.top, 120) }
                     ForEach(people) { p in
                         Button { nav.push(.profile(p.id)) } label: { Row(person: p) }.buttonStyle(.plain)
                     }
@@ -38,7 +39,7 @@ private struct Row: View {
             Avatar(id: person.id, size: 40)
             VStack(alignment: .leading, spacing: 2) {
                 Text(person.name).font(.system(size: 16, weight: .medium)).foregroundStyle(Theme.ink)
-                Text("\(person.profession) · \(person.livesNow.city)")
+                Text(person.subtitle)
                     .font(.system(size: 13)).foregroundStyle(Theme.inkMuted).lineLimit(1)
             }
             Spacer(minLength: 8)
@@ -47,5 +48,23 @@ private struct Row: View {
         .padding(.horizontal, 16)
         .frame(height: 70)
         .glass(20)
+    }
+}
+
+/// Nobody yet (a new user, or everyone deleted): say so and offer the Add flow.
+struct EmptyPeople: View {
+    @Environment(Nav.self) private var nav
+    var body: some View {
+        VStack(spacing: 10) {
+            Text("No one here yet").font(.system(size: 20, weight: .medium)).foregroundStyle(Theme.ink)
+            Text("Add the first person you want to remember:\nwho they are, where you met, their story.")
+                .font(.system(size: 14)).foregroundStyle(Theme.inkMuted).multilineTextAlignment(.center)
+            Button { nav.push(.add(mutualOf: nil)) } label: {
+                Text("Add someone").font(.system(size: 15, weight: .medium)).foregroundStyle(.white)
+                    .padding(.horizontal, 18).frame(height: 44).background(Theme.night, in: .capsule)
+            }
+            .buttonStyle(.plain).padding(.top, 6)
+        }
+        .frame(maxWidth: .infinity)
     }
 }

@@ -118,6 +118,7 @@ struct AddView: View {
 
     private func send(_ text: String) {
         note = text
+        if mutualOf != nil { return startNew() } // from a profile's "Add" mutual: always someone new
         switch AddPath.decide(text, people: people) {
         case .moment(let p): saveMoment(p)
         case .choose(let c): phase = .choosing(c)
@@ -126,7 +127,7 @@ struct AddView: View {
     }
 
     private func saveMoment(_ p: Person) {
-        PeopleStore.addMoment(to: p, note: note, in: context)
+        nav.fresh = PeopleStore.addMoment(to: p, note: note, in: context).id // their profile opens with it expanded
         nav.say("New moment saved")
         nav.replaceTop(.profile(p.id))
     }

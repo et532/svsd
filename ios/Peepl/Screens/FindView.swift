@@ -3,6 +3,7 @@ import SwiftData
 
 /// "Search for someone by…": ask a question; Peepl finds the people, says why, and can draft the message (web AskScreen).
 struct FindView: View {
+    var voice = false // opened from the ask bar's mic: start listening
     @Environment(Nav.self) private var nav
     @Environment(\.modelContext) private var context
     @Query private var people: [Person]
@@ -60,7 +61,7 @@ struct FindView: View {
             }
         }
         .safeAreaInset(edge: .bottom) {
-            Composer(placeholder: "Ask me about people", autofocus: preset == nil, onSend: { ask($0) }).padding(.horizontal, 16).padding(.bottom, 8)
+            Composer(placeholder: "Ask me about people", autofocus: preset == nil, onSend: { ask($0) }, startVoice: voice).padding(.horizontal, 16).padding(.bottom, 8)
         }
         .task { if let q = preset, asked == nil, pending == nil { ask(q) } }
     }
@@ -98,6 +99,7 @@ struct FindView: View {
             wide("Show \(a.matches.count == 1 ? "them" : "all \(a.matches.count)") \(nav.tab == .mindmap ? "on the mindmap" : "in your list")") {
                 nav.showFilter = PeopleFilter(ids: a.matches.map(\.id),
                                               label: a.title.replacingOccurrences(of: #"^\d+ (people|person) · "#, with: "", options: .regularExpression))
+                nav.focus = nil
                 nav.pop()
             }
         }

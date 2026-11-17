@@ -61,6 +61,8 @@ struct Place: Codable, Hashable {
     }
 
     var firstName: String { name.split(separator: " ").first.map(String.init) ?? name }
+    /// "job · city", without the parts a new person doesn't have yet.
+    var subtitle: String { [profession, livesNow.city].filter { !$0.isEmpty && $0 != "Unknown" }.joined(separator: " · ") }
     var initials: String {
         let p = name.split(separator: " ")
         return ((p.first?.first.map(String.init) ?? "") + (p.count > 1 ? String(p.last!.first!) : "")).uppercased()

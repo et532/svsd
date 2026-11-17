@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 
 enum Layer: Hashable, Identifiable {
-    case add(mutualOf: String?), find, profile(String /* person id */)
+    case add(mutualOf: String?), find(voice: Bool = false), profile(String /* person id */)
     var id: Self { self }
 }
 
@@ -13,12 +13,24 @@ struct PeopleFilter: Equatable { var ids: [String]; var label: String }
     var layers: [Layer] = []
     var showFilter: PeopleFilter?
     var tab: Tab = .connections // here so Find can say "in your list" / "on the mindmap"
+    /// A profile's "View connections": who the mindmap focuses, with a "← Name" pill back to them.
+    var focus: (id: String, name: String)?
+    /// A moment that was just logged from Add: their profile opens with it expanded.
+    var fresh: String?
     var toast: String?
     private var toastTask: Task<Void, Never>?
 
     func push(_ l: Layer) { layers.append(l) }
     func pop() { _ = layers.popLast() }
     func replaceTop(_ l: Layer) { if layers.isEmpty { layers.append(l) } else { layers[layers.count - 1] = l } }
+    func viewConnections(_ p: Person) { layers = []; tab = .mindmap; focus = (p.id, p.firstName) }
+    /// A person is being deleted: nothing may still point at them.
+    func forget(_ id: String) {
+        layers.removeAll { $0 == .profile(id) }
+        if focus?.id == id { focus = nil }
+        showFilter?.ids.removeAll { $0 == id }
+        if showFilter?.ids.isEmpty == true { showFilter = nil }
+    }
     func say(_ text: String) {
         toast = text
         toastTask?.cancel()
@@ -42,7 +54,7 @@ struct RootView: View {
             case .connections:
                 ConnectionsView()
             }
-            VStack { TopControls(tab: Bindable(nav).tab).frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 16); Spacer() }
+            VStack { TopControls(tab: Binding(get: { nav.tab }, set: { nav.focus = nil; nav.tab = $0 })).frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 16); Spacer() }
             VStack { Spacer(); AskBar() }
             ForEach(nav.layers) { layer in
                 LayerHost(layer: layer)
@@ -71,7 +83,7 @@ struct RootView: View {
         .task {
             Seed.loadIfEmpty(context)
             #if DEBUG
-            if UserDefaults.standard.string(forKey: "findQuery") != nil { nav.push(.find) } // see FindView.preset
+            if UserDefaults.standard.string(forKey: "findQuery") != nil { nav.push(.find()) } // see FindView.preset
             #endif
         }
     }
@@ -94,9 +106,11 @@ private struct LayerHost: View {
             case .profile(let id):
                 if let p = try? context.fetch(FetchDescriptor<Person>(predicate: #Predicate { $0.id == id })).first {
                     ProfileView(person: p)
+                } else {
+                    Color.clear.onAppear { nav.layers.removeAll { $0 == layer } } // they were deleted: no dead end
                 }
             case .add(let mutualOf): AddView(mutualOf: mutualOf)
-            case .find: FindView()
+            case .find(let voice): FindView(voice: voice)
             }
             if !layer.isProfile {
                 Button { nav.pop() } label: {

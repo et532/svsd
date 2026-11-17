@@ -10,6 +10,16 @@ final class PeopleStoreTests: XCTestCase {
         PeopleStore.createPerson(Capture.parsePerson(note, people: []), note: note, in: ctx)
     }
 
+    func testSubtitleDropsWhatANewPersonLacks() throws {
+        let ctx = ModelContext(try makeContainer())
+        let p = make(ctx).person
+        XCTAssertFalse(p.subtitle.contains("Unknown"))
+        p.profession = "Unknown"; p.livesNow.city = ""
+        XCTAssertEqual(p.subtitle, "")
+        p.profession = "Designer"; XCTAssertEqual(p.subtitle, "Designer")
+        p.livesNow.city = "Queens"; XCTAssertEqual(p.subtitle, "Designer · Queens")
+    }
+
     func testCreatePerson() throws {
         let ctx = ModelContext(try makeContainer())
         let (p, existed) = make(ctx)

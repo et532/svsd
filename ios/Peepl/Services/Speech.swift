@@ -108,6 +108,7 @@ final class ScriptedRecognizer: SpeechRecognizer {
 enum Speech {
     static func make() -> SpeechRecognizer {
         if let s = UserDefaults.standard.string(forKey: "PeeplVoiceScript") { return ScriptedRecognizer(script: s) }
+        if UserDefaults.standard.bool(forKey: "PeeplVoiceDenied") { return ScriptedRecognizer(script: "", allowed: false) } // UI tests
         return AppleSpeechRecognizer()
     }
 }

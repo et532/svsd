@@ -8,6 +8,9 @@ struct ProfileView: View {
     @Query private var everyone: [Person]
     @State private var scrolled: CGFloat = 0
     @State private var openMoment: String?
+    @State private var addingTag = false
+    @State private var addingTodo = false
+    @State private var confirmDelete = false
 
     private var blob: Blob { Blobs.blob(for: person.id) }
     private var moments: [Moment] { person.moments.sorted { $0.date > $1.date } }
@@ -29,33 +32,73 @@ struct ProfileView: View {
                     hero
                     VStack(alignment: .leading, spacing: 24) {
                         summary
-                        if !person.todos.isEmpty { todos }
+                        todos
                         where_
-                        if !mutuals.isEmpty { mutualsRow }
+                        mutualsRow
                         momentsList
                     }
                     .padding(.horizontal, 16).padding(.top, 20).padding(.bottom, 100)
                 }
             }
+            .scrollDismissesKeyboard(.immediately) // leaving an inline field saves it
             .ignoresSafeArea(edges: .top) // hero runs under the status bar
             .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y + $0.contentInsets.top } action: { _, y in scrolled = y }
             topBar
         }
         .safeAreaInset(edge: .bottom) {
-            Composer(placeholder: "Add a moment") { text in
-                let m = PeopleStore.addMoment(to: person, note: text, in: context)
-                openMoment = m.id
-                nav.say("New moment saved")
+            if !addingTag && !addingTodo { // the inline field has the keyboard
+                Composer(placeholder: "Add a moment", onSend: { text in
+                    let m = PeopleStore.addMoment(to: person, note: text, in: context)
+                    openMoment = m.id
+                    nav.say("New moment saved")
+                }, people: everyone)
+                .padding(.horizontal, 16).padding(.bottom, 8)
             }
-            .padding(.horizontal, 16).padding(.bottom, 8)
+        }
+        .onAppear {
+            if let f = nav.fresh, person.moments.contains(where: { $0.id == f }) { openMoment = f; nav.fresh = nil }
+        }
+        .confirmationDialog("Delete \(person.name)?", isPresented: $confirmDelete, titleVisibility: .visible) {
+            Button("Delete person", role: .destructive) {
+                let p = person, ctx = context
+                nav.forget(p.id)
+                nav.say("\(p.firstName) deleted")
+                // once the profile has slid away: a view must never read a deleted person
+                Task { try? await Task.sleep(for: .milliseconds(450)); PeopleStore.delete([p], in: ctx) }
+            }
+        } message: {
+            Text("Their moments and to-dos go too, and they leave other people's mutuals. This can't be undone.")
         }
     }
 
-    private func monthYear(_ iso: String) -> String {
+    /// Web dateLabel: "Today" or "Oct 22".
+    private func dayLabel(_ iso: String) -> String {
+        if String(iso.prefix(10)) == Capture.today() { return "Today" }
         let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; f.locale = Locale(identifier: "en_US_POSIX")
         guard let d = f.date(from: String(iso.prefix(10))) else { return iso }
-        f.dateFormat = "MMM yyyy"
+        f.dateFormat = "MMM d"
         return f.string(from: d)
+    }
+
+    /// Tags other people have that this person doesn't, most common first.
+    private var tagIdeas: [String] {
+        var count: [String: Int] = [:]
+        for x in everyone { for t in x.tags where !person.tags.contains(t) { count[t, default: 0] += 1 } }
+        return count.sorted { $0.value != $1.value ? $0.value > $1.value : $0.key < $1.key }.prefix(4).map(\.key)
+    }
+
+    private func addTag(_ text: String?) {
+        addingTag = false
+        guard let tag = text?.lowercased(), !person.tags.contains(tag) else { return }
+        person.tags.append(tag)
+        try? context.save()
+    }
+
+    private func addTodo(_ text: String?) {
+        addingTodo = false
+        guard let text else { return }
+        person.todos.append(Todo(id: Capture.uid(), text: text))
+        try? context.save()
     }
 
     private var aura: some View {
@@ -71,7 +114,7 @@ struct ProfileView: View {
         VStack(spacing: 6) {
             Avatar(id: person.id, size: 60).padding(.bottom, 6)
             Text(person.name).font(.system(size: 20, weight: .medium)).foregroundStyle(.white)
-            Text("\(person.profession) · \(person.livesNow.city)").font(.system(size: 13)).foregroundStyle(.white.opacity(0.85))
+            Text(person.subtitle).font(.system(size: 13)).foregroundStyle(.white.opacity(0.85))
             Text(metDate).font(.system(size: 13)).foregroundStyle(Color(hex: "cccccc"))
         }
         .multilineTextAlignment(.center)
@@ -96,7 +139,7 @@ struct ProfileView: View {
             HStack {
                 circleButton("chevron.left", label: "Back") { nav.pop() }
                 Spacer()
-                circleButton("ellipsis", label: "More") { nav.say("Coming soon") }
+                circleButton("ellipsis", label: "More") { confirmDelete = true }
             }
             .padding(.horizontal, 16)
         }
@@ -111,14 +154,29 @@ struct ProfileView: View {
         .buttonStyle(.plain).accessibilityLabel(label)
     }
 
+    private func chip(_ t: String, ghost: Bool = false) -> some View {
+        Text(t).font(.system(size: 12, weight: .medium)).foregroundStyle(Theme.inkMuted)
+            .padding(.horizontal, 10).padding(.vertical, 5)
+            .background(ghost ? Color.clear : Theme.pressed, in: .capsule)
+            .overlay { if ghost { Capsule().stroke(Theme.inkMuted.opacity(0.3), lineWidth: 1) } }
+    }
+
     private var summary: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(person.story).font(.system(size: 15)).foregroundStyle(Theme.ink)
-            if !person.tags.isEmpty {
+            FlowLayout(spacing: 6) {
+                ForEach(person.tags, id: \.self) { chip($0) }
+                if addingTag {
+                    InlineField(placeholder: "New tag", size: 12, onDone: addTag).frame(width: 110)
+                        .padding(.horizontal, 10).padding(.vertical, 5).overlay(Capsule().stroke(Theme.ink, lineWidth: 1))
+                } else {
+                    Button { addingTag = true } label: { chip("+ tag", ghost: true) }.buttonStyle(.plain).accessibilityLabel("Add tag")
+                }
+            }
+            if addingTag, !tagIdeas.isEmpty {
                 FlowLayout(spacing: 6) {
-                    ForEach(person.tags, id: \.self) { t in
-                        Text(t).font(.system(size: 12, weight: .medium)).foregroundStyle(Theme.inkMuted)
-                            .padding(.horizontal, 10).padding(.vertical, 5).background(Theme.pressed, in: .capsule)
+                    ForEach(tagIdeas, id: \.self) { t in
+                        Button { addTag(t) } label: { chip(t, ghost: true) }.buttonStyle(.plain)
                     }
                 }
             }
@@ -137,6 +195,20 @@ struct ProfileView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .opacity(t.done ? 0.5 : 1).padding(14).glass(16)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(t.text).accessibilityValue(t.done ? "Done" : "To do")
+            }
+            if addingTodo {
+                InlineField(placeholder: "Something to do with \(person.firstName)", size: 15, onDone: addTodo).padding(14).glass(16)
+            } else {
+                Button { addingTodo = true } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "plus").font(.system(size: 12, weight: .semibold))
+                        Text("Add something to do").font(.system(size: 14))
+                        Spacer()
+                    }
+                    .foregroundStyle(Theme.inkMuted).padding(14).glass(16)
                 }
                 .buttonStyle(.plain)
             }
@@ -164,19 +236,37 @@ struct ProfileView: View {
 
     private var mutualsRow: some View {
         VStack(alignment: .leading, spacing: 8) {
-            header("Mutuals")
+            HStack {
+                header("Mutuals")
+                Spacer()
+                Button("View connections") { nav.viewConnections(person) }
+                    .font(.system(size: 13, weight: .medium)).foregroundStyle(Theme.inkMuted).buttonStyle(.plain)
+            }
             ScrollView(.horizontal) {
-                HStack(spacing: 16) {
+                HStack(alignment: .top, spacing: 16) {
+                    Button { nav.push(.add(mutualOf: person.id)) } label: {
+                        VStack(spacing: 4) {
+                            Image(systemName: "plus").font(.system(size: 18)).foregroundStyle(Theme.inkMuted).frame(width: 48, height: 48)
+                                .overlay(Circle().stroke(Theme.inkMuted.opacity(0.5), style: StrokeStyle(lineWidth: 1.5, dash: [4, 3])))
+                            Text("Add").font(.system(size: 12)).foregroundStyle(Theme.ink)
+                        }
+                        .contentShape(.rect)
+                    }
+                    .buttonStyle(.plain).accessibilityLabel("Add mutual")
                     ForEach(mutuals) { m in
                         Button { nav.push(.profile(m.id)) } label: {
                             VStack(spacing: 4) {
                                 Avatar(id: m.id, size: 48)
                                 Text(m.firstName).font(.system(size: 12)).foregroundStyle(Theme.ink)
+                                if let note = person.mutualNotes[m.id] {
+                                    Text(note).font(.system(size: 10)).foregroundStyle(Theme.inkMuted).lineLimit(2).frame(maxWidth: 72)
+                                }
                             }
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.plain).accessibilityLabel(m.name)
                     }
                 }
+                .padding(.vertical, 2)
             }
             .scrollIndicators(.hidden)
         }
@@ -187,22 +277,29 @@ struct ProfileView: View {
             header("Moments")
             ForEach(moments) { m in
                 let open = openMoment == m.id
-                Button { openMoment = open ? nil : m.id } label: {
-                    VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 10) {
+                    Button { openMoment = open ? nil : m.id } label: {
                         HStack {
-                            Text(m.firstMeeting ? "First meeting" : m.title).font(.system(size: 15, weight: .medium))
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(dayLabel(m.date)).font(.system(size: 12)).foregroundStyle(Theme.inkMuted)
+                                Text(m.title).font(.system(size: 15, weight: .medium)).foregroundStyle(Theme.ink).multilineTextAlignment(.leading)
+                            }
                             Spacer()
-                            Text(monthYear(m.date)).font(.system(size: 12)).foregroundStyle(Theme.inkMuted)
+                            Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.inkMuted)
+                                .rotationEffect(.degrees(open ? 90 : 0))
                         }
-                        .foregroundStyle(Theme.ink)
-                        if open, let body = m.text ?? m.transcript {
-                            Text(body).font(.system(size: 14)).foregroundStyle(Theme.inkMuted)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        }
+                        .contentShape(.rect)
                     }
-                    .padding(14).glass(16)
+                    .buttonStyle(.plain).accessibilityValue(open ? "Open" : "Closed")
+                    if open {
+                        if let text = m.text, text != m.title {
+                            Text(text).font(.system(size: 14)).foregroundStyle(Theme.inkMuted).frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        if let t = m.transcript { VoiceNote(transcript: t, seconds: m.seconds) }
+                    }
                 }
-                .buttonStyle(.plain)
+                .padding(14).glass(16)
+                .overlay { if open { RoundedRectangle(cornerRadius: 16).stroke(Color(hex: "4f7cff"), lineWidth: 1.5) } }
             }
         }
     }
@@ -229,5 +326,83 @@ private struct FlowLayout: Layout {
             pts.append(CGPoint(x: x, y: y)); x += sz.width + spacing; row = max(row, sz.height)
         }
         return (CGSize(width: w, height: y + row), pts)
+    }
+}
+
+/// One-line field for adding a tag / to-do in place: Return saves, leaving it saves if there's text.
+private struct InlineField: View {
+    let placeholder: String
+    let size: CGFloat
+    let onDone: (String?) -> Void
+    @State private var text = ""
+    @State private var done = false
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        TextField(placeholder, text: $text).font(.system(size: size)).foregroundStyle(Theme.ink)
+            .focused($focused).submitLabel(.done)
+            .onAppear { focused = true }
+            .onSubmit(finish)
+            .onChange(of: focused) { _, on in if !on { finish() } }
+            .onChange(of: text) { _, t in if t.count > 80 { text = String(t.prefix(80)) } }
+    }
+
+    private func finish() {
+        guard !done else { return }
+        done = true
+        let t = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        onDone(t.isEmpty ? nil : t)
+    }
+}
+
+/// A moment's note. A voice note "plays": the transcript fills in along a waveform (no audio is kept, as on the web).
+private struct VoiceNote: View {
+    let transcript: String
+    let seconds: Int?
+    @State private var at = 0 // bars played
+    @State private var playing = false
+    private static let wave = (0..<40).map { 4 + Double(($0 * 7) % 11) * 1.6 }
+
+    var body: some View {
+        if let seconds, seconds > 0 {
+            let words = transcript.split(separator: " ")
+            let said = at >= Self.wave.count ? words.count : at * words.count / Self.wave.count
+            VStack(alignment: .leading, spacing: 10) {
+                (Text(words.prefix(said).joined(separator: " ") + (said > 0 ? " " : "")).foregroundStyle(Theme.ink)
+                    + Text(words.dropFirst(said).joined(separator: " ")).foregroundStyle(at == 0 ? Theme.ink : Theme.inkMuted.opacity(0.5)))
+                    .font(.system(size: 14)).frame(maxWidth: .infinity, alignment: .leading)
+                HStack(spacing: 10) {
+                    Button {
+                        if !playing, at >= Self.wave.count { at = 0 }
+                        playing.toggle()
+                    } label: {
+                        Image(systemName: playing ? "pause.fill" : "play.fill").font(.system(size: 12)).foregroundStyle(.white)
+                            .frame(width: 32, height: 32).background(Theme.night, in: .circle)
+                    }
+                    .buttonStyle(.plain).accessibilityLabel(playing ? "Pause voice note" : "Play voice note")
+                    HStack(spacing: 2) {
+                        ForEach(Self.wave.indices, id: \.self) { i in
+                            Capsule().fill(i < at ? Theme.ink : Theme.inkMuted.opacity(0.3)).frame(width: 2.5, height: Self.wave[i])
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading).accessibilityHidden(true)
+                    Text("\(seconds / 60):\(String(format: "%02d", seconds % 60))").font(.system(size: 12)).foregroundStyle(Theme.inkMuted)
+                }
+            }
+            .task(id: playing) {
+                while playing, at < Self.wave.count {
+                    try? await Task.sleep(for: .milliseconds(140))
+                    if Task.isCancelled { return }
+                    at += 1
+                }
+                playing = false
+            }
+        } else {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Typed note").font(.system(size: 12)).foregroundStyle(Theme.inkMuted)
+                Text("“\(transcript)”").font(.system(size: 14)).foregroundStyle(Theme.ink)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
     }
 }

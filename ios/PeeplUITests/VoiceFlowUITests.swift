@@ -15,7 +15,7 @@ final class VoiceFlowUITests: XCTestCase {
         let app = XCUIApplication()
         // the empty fixes argument hides the Jorden -> Jordan fix an earlier run saved, which would rewrite the script
         app.launchArguments = ["-PeeplVoiceScript", "Just met Jorden Lee at a climbing gym. Founder at Voltcell, studied at MIT, lives in Brooklyn.",
-                               "-peepl.nameFixes.v1", "{}"]
+                               "-peepl.nameFixes.v1", "{}", "-PeeplInMemory", "YES", "-PeeplAPIBase", "http://127.0.0.1:9"]
         app.launch()
         app.buttons["Add person"].tap()
         app.buttons["Voice"].tap()
@@ -34,6 +34,7 @@ final class VoiceFlowUITests: XCTestCase {
 
     func testSeveralPeople() {
         let app = XCUIApplication()
+        app.launchArguments = ["-PeeplInMemory", "YES", "-PeeplAPIBase", "http://127.0.0.1:9"]
         app.launch()
         app.buttons["Add person"].tap()
         let field = app.textFields.firstMatch

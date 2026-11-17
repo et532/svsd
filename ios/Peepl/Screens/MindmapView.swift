@@ -5,7 +5,8 @@ struct MindmapView: View {
     @Environment(Nav.self) private var nav
     @Query(sort: \Person.id) private var allPeople: [Person]
     private var people: [Person] {
-        guard let f = nav.showFilter else { return allPeople }
+        // "View connections" shows everyone, so the person's links are all there
+        guard nav.focus == nil, let f = nav.showFilter else { return allPeople }
         let ids = Set(f.ids); return allPeople.filter { ids.contains($0.id) }
     }
     private let model = MindmapModel.shared
@@ -23,6 +24,19 @@ struct MindmapView: View {
                    groupKeys: Dictionary(uniqueKeysWithValues: people.map { ($0.id, GroupKeys(city: $0.livesNow.city, met: $0.met.city, job: $0.profession)) }))
         selectedId = model.selected
         paused = false
+        focusNav()
+    }
+
+    /// A profile's "View connections": select them like a tap, after a beat so a rebuilt graph has spread out first.
+    private func focusNav() {
+        guard let id = nav.focus?.id else { return }
+        model.focus = nil; model.select(id); selectedId = id; paused = false
+        Task {
+            try? await Task.sleep(for: .milliseconds(500))
+            // a map opened for the first time is still spreading out: wait (3 s at most) or the view lands beside them
+            for _ in 0..<25 where model.graph.alpha > 0.05 { paused = false; try? await Task.sleep(for: .milliseconds(100)) }
+            if nav.focus?.id == id { model.flyTo(id, size: size); paused = false }
+        }
     }
 
     var body: some View {
@@ -38,7 +52,7 @@ struct MindmapView: View {
             ZStack {
                 Color(hex: "ededed")
                 if people.isEmpty {
-                    Text("No one to show.").foregroundStyle(Theme.inkMuted)
+                    EmptyPeople()
                 } else {
                     TimelineView(.animation(paused: paused)) { tl in
                         ZStack {
@@ -60,6 +74,7 @@ struct MindmapView: View {
             .onAppear { size = geo.size; sync() }
             .onChange(of: geo.size) { _, n in size = n; paused = false }
             .onChange(of: people.map(\.id) + people.flatMap(\.knows)) { sync() }
+            .onChange(of: nav.focus?.id) { focusNav() }
         }
         .ignoresSafeArea()
     }

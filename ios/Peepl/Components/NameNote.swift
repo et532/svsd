@@ -28,7 +28,8 @@ struct NameNote: View {
     let onPlain: () -> Void
     var interactive = true
 
-    private struct Word: Identifiable { let id: Int; let text: String; let name: String?; let index: Int; var gap = true }
+    /// `tail`: what is glued to a name ("," in "Voltcell,"); one view with it, so it can't wrap alone onto the next line.
+    private struct Word: Identifiable { let id: Int; let text: String; let name: String?; let index: Int; var tail = "" }
     @State private var editing: Int?
     @State private var typed = ""
     @FocusState private var typing: Bool
@@ -37,25 +38,24 @@ struct NameNote: View {
         let names = NameFixes.outlines(text, people: people)
         var out: [Word] = []
         for (i, seg) in NameFixes.splitNames(text, names: names).enumerated() {
-            for (j, w) in seg.split(whereSeparator: \.isWhitespace).enumerated() {
-                out.append(Word(id: out.count, text: String(w), name: i % 2 == 1 ? seg : nil, index: j))
+            var parts = seg.split(whereSeparator: \.isWhitespace).map(String.init)
+            if i % 2 == 0, !out.isEmpty, let f = seg.first, !f.isWhitespace { out[out.count - 1].tail = parts.removeFirst() }
+            for (j, w) in parts.enumerated() {
+                out.append(Word(id: out.count, text: w, name: i % 2 == 1 ? seg : nil, index: j))
             }
         }
-        // no space before punctuation that follows a name ("Voltcell,")
-        for i in out.indices.dropLast() where out[i + 1].text.first.map({ $0.isPunctuation }) == true { out[i].gap = false }
         return out
     }
 
     var body: some View {
         Flow {
             ForEach(words) { w in
-                Group {
-                    if let name = w.name { nameWord(w, name) } else {
-                        Text(w.text).font(.system(size: 16)).foregroundStyle(Theme.ink).padding(.vertical, 1)
-                            .contentShape(.rect).onTapGesture { if interactive { onPlain() } }
-                    }
+                HStack(spacing: 0) {
+                    if let name = w.name { nameWord(w, name) }
+                    Text(w.name == nil ? w.text : w.tail).font(.system(size: 16)).foregroundStyle(Theme.ink).padding(.vertical, 1)
+                        .contentShape(.rect).onTapGesture { if interactive { onPlain() } }
                 }
-                .padding(.trailing, w.gap ? 4 : 0)
+                .padding(.trailing, 4)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 10).padding(.leading, 6)
@@ -91,5 +91,42 @@ struct NameNote: View {
         editing = nil
         guard !t.isEmpty, t != w.text else { return }
         text = NameFixes.rename(text, name: name, word: w.index, typed: t, people: people, fixed: &fixed)
+    }
+}
+
+/// Marks a word as part of a name, for `NameOutlines`.
+private struct OutlinedWord: TextAttribute {}
+
+/// Strokes a rounded outline around every marked word and draws no text.
+private struct OutlineRenderer: TextRenderer {
+    func draw(layout: Text.Layout, in ctx: inout GraphicsContext) {
+        for line in layout {
+            for run in line where run[OutlinedWord.self] != nil {
+                ctx.stroke(Path(roundedRect: run.typographicBounds.rect.insetBy(dx: -2.5, dy: 0), cornerRadius: 6),
+                           with: .color(Theme.ink.opacity(0.25)), lineWidth: 1)
+            }
+        }
+    }
+}
+
+/// The outlines alone, laid out like the text itself: sits under the field while you type (the web's invisible mirror).
+struct NameOutlines: View {
+    let text: String
+    let people: [any Named]
+
+    var body: some View {
+        let segs = NameFixes.splitNames(text, names: NameFixes.outlines(text, people: people))
+        let names = segs.enumerated().filter { $0.offset % 2 == 1 }.map(\.element)
+        segs.enumerated().reduce(Text("")) { all, seg in
+            guard seg.offset % 2 == 1 else { return all + Text(seg.element) }
+            // each word of a name is outlined on its own
+            return seg.element.split(separator: " ", omittingEmptySubsequences: false).enumerated().reduce(all) {
+                $0 + Text($1.offset > 0 ? " " : "") + Text($1.element).customAttribute(OutlinedWord())
+            }
+        }
+        .font(.system(size: 16)).foregroundStyle(.clear)
+        .textRenderer(OutlineRenderer())
+        .accessibilityElement().accessibilityLabel(names.isEmpty ? "" : "Names found: " + names.joined(separator: ", "))
+        .accessibilityHidden(names.isEmpty)
     }
 }
