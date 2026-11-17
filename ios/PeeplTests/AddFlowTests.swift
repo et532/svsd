@@ -1,4 +1,5 @@
 import XCTest
+import SwiftData
 @testable import Peepl
 
 final class AddFlowTests: XCTestCase {
@@ -15,5 +16,18 @@ final class AddFlowTests: XCTestCase {
     }
     func testNewPerson() {
         guard case .newPerson = AddPath.decide("Met Sam Rivera at a pickleball meetup", people: people) else { return XCTFail() }
+    }
+
+    func testListWording() {
+        XCTAssertEqual(AddMany.list(["Maya", "Theo"]), "Maya and Theo")
+        XCTAssertEqual(AddMany.list(["A", "B", "C"]), "A, B and C")
+    }
+    @MainActor func testTwoPersonNoteCreatesLinkedPeople() async throws {
+        let ctx = ModelContext(try makeContainer())
+        let notes = Capture.splitPeople("Dinner with Maya Chen and Theo Park. Maya is a designer at Kiln. Met at dinner.")
+        XCTAssertEqual(notes.count, 2)
+        let made = await AddMany.create(notes, people: [], in: ctx)
+        XCTAssertEqual(made.count, 2)
+        XCTAssertTrue(made[0].knows.contains(made[1].id) && made[1].knows.contains(made[0].id))
     }
 }
