@@ -38,6 +38,17 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         TEST_HOST: $(BUILT_PRODUCTS_DIR)/Peepl.app/Peepl
         BUNDLE_LOADER: $(TEST_HOST)
+  PeeplUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [PeeplUITests]
+    dependencies:
+      - target: Peepl
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.vincelin.peepl.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: Peepl
 schemes:
   Peepl:
     build:
@@ -45,3 +56,9 @@ schemes:
         Peepl: all
     test:
       targets: [PeeplTests]
+  PeeplUI: # UI tests drive the Simulator (slow); run on purpose: -scheme PeeplUI
+    build:
+      targets:
+        Peepl: all
+    test:
+      targets: [PeeplUITests]

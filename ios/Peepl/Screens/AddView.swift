@@ -160,7 +160,7 @@ private struct ResultCard: View {
     var body: some View {
         let b = Blobs.blob(for: person.id)
         let city = person.livesNow.city == "Unknown" ? "" : person.livesNow.city
-        let sub = [person.profession, city].filter { !$0.isEmpty }.joined(separator: " · ")
+        let sub = [person.profession, city].filter { !$0.isEmpty && $0 != "Unknown" }.joined(separator: " · ")
         HStack(spacing: 14) {
             Avatar(id: person.id, size: 60)
             VStack(alignment: .leading, spacing: 3) {
