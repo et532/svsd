@@ -88,14 +88,14 @@ Scope: `ForceGraph.swift` (hand-rolled simulation, links from `knows`, group pul
 Risk: highest of all milestones. Build in this order and verify each on-device-like Simulator pass: layout math (unit tests with fixed seed) -> static render -> gestures -> float/momentum -> groups/auras. Target 60 fps with 200 people; keep per-dot blurs and blend modes off (see the web app's disc note in `CLAUDE.md`).
 Acceptance: 200 people render and pan smoothly in the Simulator; tapping a person dims others and shows the pill; group-by City shows labeled auras.
 
-### M3: Find
+### M3: Find (merged into main 2026-11-16; 85 tests passed on the branch; knows 30/30, recall@10 111/116, three demo answers in `testDemoAnswers`; embeddings = MiniLM forward pass in Swift with the shipped vectors; open: nothing needing a tap was driven in the UI (draft / Copy / Share, Show all, filter pill, no-match state), real rank / draft endpoints only stubbed, `AIClient.rank` leaves grouped answers unchanged (not in the web spec, untested), the web's "Still reading your moments" state is skipped, Find's aura duplicates AddView's)
 Goal: ask a question, get people with the real reason.
 Scope: port rule-based Find (`ask.ts`, `query/`, `rank/`), moment-sentence matching with "(Met at X, Mon YYYY)" reasons, "No results / Closest, but not quite / Add someone new", then meaning search, then AI `rank` and `draft` (draft opens inline, Copy / Share via the iOS share sheet), plus "Show all N on the mindmap / list" filter pill.
 Open technical choice (Fable decides after a spike, logged in `DECISIONS.md`): query embeddings via **(a)** a bundled Core ML conversion of all-MiniLM-L6-v2 so existing `public/vectors.json` stays valid, or **(b)** Apple `NLEmbedding` / `NLContextualEmbedding` and recompute vectors on first launch. Default: try (a) first. The spike's acceptance is that the demo answers hold (below).
 Demo answers that must keep working (from `CLAUDE.md`): climbing -> Jordan then Zara (no other climbers); SF trip uses people in SF / Oakland / Berkeley; hardware intro needs only Ana (direct) and Aisha (connector).
 Acceptance: `queries.test.ts` / `golden.test.ts` ported and passing; those three demo answers verified.
 
-### M4: Voice
+### M4: Voice (merged into main 2026-11-16; main with M2 + M3 + M4 runs 105 unit tests on scheme `Peepl` and 3 UI tests on scheme `PeeplUI`, all passing; open: names outlined for voice only, not while typing; a comma after an outlined name can wrap alone; the denied message is a placeholder, hidden once text is typed; the profile mic has no outlines; not verified: real microphone, Apple's recognizer path, the speech-permission alert, the profile mic in the Simulator)
 Goal: talk instead of type.
 Scope: `Services/Speech.swift` with `SFSpeechRecognizer` (on-device when available) and live partial words in the Composer; waveform while recording; names, company, school and places outlined and tappable to fix (`NameFixes.swift`, saved fixes applied to later transcripts, `resolveName` for unique first names); multi-person notes split into several profiles linked as mutuals (`splitPeople`). Info.plist: `NSMicrophoneUsageDescription`, `NSSpeechRecognitionUsageDescription`. Permission-denied falls back to typing with a message.
 No OpenAI audio upload on iOS (the web app's `transcribe` / `live` endpoints are not used).
