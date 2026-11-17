@@ -22,6 +22,8 @@ targets:
         INFOPLIST_KEY_CFBundleDisplayName: Peepl
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
+        INFOPLIST_KEY_NSMicrophoneUsageDescription: "Peepl listens when you tap the mic so you can talk instead of type."
+        INFOPLIST_KEY_NSSpeechRecognitionUsageDescription: "Peepl turns what you say into a note, on your iPhone when it can."
         TARGETED_DEVICE_FAMILY: "1"
         PEEPL_API_BASE: https://peepl-steel.vercel.app
   PeeplTests:
@@ -36,6 +38,17 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         TEST_HOST: $(BUILT_PRODUCTS_DIR)/Peepl.app/Peepl
         BUNDLE_LOADER: $(TEST_HOST)
+  PeeplUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [PeeplUITests]
+    dependencies:
+      - target: Peepl
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.vincelin.peepl.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: Peepl
 schemes:
   Peepl:
     build:
@@ -43,3 +56,9 @@ schemes:
         Peepl: all
     test:
       targets: [PeeplTests]
+  PeeplUI: # UI tests drive the Simulator (slow); run on purpose: -scheme PeeplUI
+    build:
+      targets:
+        Peepl: all
+    test:
+      targets: [PeeplUITests]

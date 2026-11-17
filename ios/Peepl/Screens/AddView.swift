@@ -1,6 +1,26 @@
 import SwiftUI
 import SwiftData
 
+enum AddMany {
+    /// Web `list()`: "A", "A and B", "A, B and C".
+    static func list(_ n: [String]) -> String {
+        n.count < 2 ? (n.first ?? "") : n.dropLast().joined(separator: ", ") + " and " + n.last!
+    }
+
+    /// One profile per person note (same parse as a single note), all linked to each other both ways.
+    @MainActor static func create(_ notes: [PersonNote], people: [Person], in context: ModelContext,
+                                  aiFor: (String) async -> Draft? = { _ in nil }) async -> [Person] {
+        var made: [Person] = []
+        for n in notes {
+            let d = Capture.parsePerson(n.text, people: people).merged(with: await aiFor(n.text))
+            made.append(PeopleStore.createPerson(d, note: n.text, in: context).person)
+        }
+        for p in made { for q in made where q.id != p.id && !p.knows.contains(q.id) { p.knows.append(q.id) } }
+        try? context.save()
+        return made
+    }
+}
+
 /// Which way a sent note goes: a moment with someone you know, a choice between same-named people, or a new person.
 enum AddPath<P> {
     case moment(P), choose([P]), newPerson
@@ -17,7 +37,7 @@ struct AddView: View {
     @Environment(\.modelContext) private var context
     @Query private var people: [Person]
 
-    private enum Phase { case idle, choosing([Person]), creating(String), done(Person) }
+    private enum Phase { case idle, choosing([Person]), creating(String), done(Person), doneMany([Person]) }
     @State private var phase = Phase.idle
     @State private var note = ""
 
@@ -46,11 +66,24 @@ struct AddView: View {
                         }.buttonStyle(.plain)
                     case .creating:
                         bubble
-                        title("Creating a new profile for \(Capture.parsePerson(note, people: people).name ?? "them")…")
-                        Shimmer().frame(height: 96).clipShape(.rect(cornerRadius: 24))
+                        let notes = mutualOf == nil ? Capture.splitPeople(note) : []
+                        if notes.count > 1 {
+                            title("Creating \(notes.count) new profiles for \(AddMany.list(notes.map(\.name)))…")
+                            ForEach(notes, id: \.name) { _ in Shimmer().frame(height: 96).clipShape(.rect(cornerRadius: 24)) }
+                        } else {
+                            title("Creating a new profile for \(Capture.parsePerson(note, people: people).name ?? "them")…")
+                            Shimmer().frame(height: 96).clipShape(.rect(cornerRadius: 24))
+                        }
                     case .done(let p):
                         bubble
                         Button { nav.replaceTop(.profile(p.id)) } label: { ResultCard(person: p) }.buttonStyle(.plain)
+                    case .doneMany(let ps):
+                        bubble
+                        ForEach(ps) { p in
+                            Button { nav.replaceTop(.profile(p.id)) } label: { ResultCard(person: p) }.buttonStyle(.plain)
+                        }
+                        Text("\(AddMany.list(ps.map(\.firstName))) were met together, so they're linked as mutuals.")
+                            .font(.system(size: 13)).foregroundStyle(Theme.inkMuted)
                     }
                 }
                 .padding(.horizontal, 20).padding(.top, 80).padding(.bottom, 24)
@@ -58,7 +91,7 @@ struct AddView: View {
             }
         }
         .safeAreaInset(edge: .bottom) {
-            Composer(placeholder: "Who did you meet?", autofocus: true, onSend: send).padding(.horizontal, 16).padding(.bottom, 8)
+            Composer(placeholder: "Who did you meet?", autofocus: true, onSend: send, people: people).padding(.horizontal, 16).padding(.bottom, 8)
         }
     }
 
@@ -101,6 +134,11 @@ struct AddView: View {
     private func startNew() {
         let text = note
         phase = .creating(text)
+        let notes = mutualOf == nil ? Capture.splitPeople(text) : []
+        if notes.count > 1 {
+            Task { phase = .doneMany(await AddMany.create(notes, people: people, in: context, aiFor: { await AIClient.parse($0) })) }
+            return
+        }
         Task {
             let ai = await AIClient.parse(text)
             let d = Capture.parsePerson(text, people: people).merged(with: ai)
@@ -122,7 +160,7 @@ private struct ResultCard: View {
     var body: some View {
         let b = Blobs.blob(for: person.id)
         let city = person.livesNow.city == "Unknown" ? "" : person.livesNow.city
-        let sub = [person.profession, city].filter { !$0.isEmpty }.joined(separator: " · ")
+        let sub = [person.profession, city].filter { !$0.isEmpty && $0 != "Unknown" }.joined(separator: " · ")
         HStack(spacing: 14) {
             Avatar(id: person.id, size: 60)
             VStack(alignment: .leading, spacing: 3) {
