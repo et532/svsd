@@ -54,3 +54,72 @@ enum AIClient {
         return d
     }
 }
+
+// MARK: Find (web ai.ts rankWithAi / draftMessage)
+extension AIClient {
+    private static func clip(_ s: String?, _ n: Int) -> String {
+        guard let s else { return "" }
+        if s.count <= n { return s }
+        var t = String(s.prefix(n))
+        if let r = t.range(of: #"\s+\S*$"#, options: .regularExpression) { t.removeSubrange(r) }
+        return t + "…"
+    }
+
+    /// What the model may know about someone: their profile, never their id.
+    private static func facts(_ p: PersonInfo) -> [String: Any] {
+        ["job": p.profession, "lives": p.livesNow.city, "from": p.from.city, "met": p.met.context ?? "", "tags": p.tags,
+         "story": clip(p.story, 240), "recent": p.moments.prefix(2).map { clip($0.transcript ?? $0.text ?? $0.title, 120) }]
+    }
+
+    /// POST /api/ai/<task>; nil on any failure. 503 / 404 turn the AI off for the session.
+    private static func post(_ task: String, _ body: [String: Any], timeout: TimeInterval) async -> [String: Any]? {
+        guard !off, let url = URL(string: base + "/api/ai/" + task) else { return nil }
+        var req = URLRequest(url: url, timeoutInterval: timeout)
+        req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "content-type")
+        req.httpBody = try? JSONSerialization.data(withJSONObject: body)
+        guard let (data, resp) = try? await session.data(for: req), let http = resp as? HTTPURLResponse else { return nil }
+        if http.statusCode == 503 || http.statusCode == 404 { off = true; return nil }
+        guard (200..<300).contains(http.statusCode) else { return nil }
+        return try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+    }
+
+    static func rank(_ query: String, result: AskResult, people: [PersonInfo], embedder: Embedder) async -> AskResult {
+        // A relaxed answer (groups + note) already explains itself; the AI's flat list would drop that.
+        guard case .people(let a) = result, a.groups == nil else { return result }
+        var seen = Set(a.matches.map(\.person.id))
+        var pool: [Match] = []
+        for m in (a.near ?? []) + (await Semantic.closestMatches(query, people: people, n: 12, embedder: embedder))
+        where pool.count < 12 && seen.insert(m.person.id).inserted { pool.append(m) }
+        guard !pool.isEmpty,
+              let out = await post("rank", ["query": query, "candidates": pool.enumerated().map { ["i": $0.offset].merging(facts($0.element.person)) { a, _ in a } }], timeout: 10),
+              let results = out["results"] as? [[String: Any]] else { return result }
+
+        var verdict: [Int: (fits: Bool, why: String)] = [:]
+        for r in results { if let i = r["i"] as? Int { verdict[i] = (r["fits"] as? Bool ?? false, r["why"] as? String ?? "") } }
+        var fit: [Match] = [], notQuite: [Match] = []
+        for (i, var m) in pool.enumerated() {
+            if let v = verdict[i], v.fits { if !v.why.isEmpty { m.why = v.why }; fit.append(m) } else { notQuite.append(m) }
+        }
+        let matches = (a.matches + fit).prefix(10).map { m -> Match in
+            var m = m
+            if m.action == nil {
+                let first = m.person.firstName
+                m.action = Action(kind: .message, label: "Draft a message", to: m.person.name, draft: "",
+                    goal: "The user was looking for: “\(query)”, and \(first) is the person who fits (\(m.why)). Write to \(first) and ask for exactly that.")
+            }
+            return m
+        }
+        return .people(PeopleAnswer(
+            title: matches.isEmpty ? "No one matches “\(query)” yet" : "\(matches.count) \(matches.count == 1 ? "person" : "people") for “\(query)”",
+            matches: Array(matches), near: matches.isEmpty ? Array(notQuite.prefix(2)) : nil))
+    }
+
+    static func draft(_ person: PersonInfo, action: Action) async -> String {
+        let first = person.firstName
+        var p = facts(person); p["name"] = first
+        let out = await post("draft", ["person": p, "kind": action.kind.rawValue, "goal": action.goal ?? action.draft], timeout: 15)
+        let text = (out?["text"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return !text.isEmpty ? text : !action.draft.isEmpty ? action.draft : "Hey \(first)! Hope you’re doing well. Want to catch up soon?"
+    }
+}

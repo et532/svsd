@@ -5,6 +5,25 @@ struct AskBar: View {
     @Environment(Nav.self) private var nav
 
     var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            if let f = nav.showFilter {
+                HStack(spacing: 8) {
+                    Text("\(f.label) · \(f.ids.count)").font(.system(size: 14, weight: .medium)).foregroundStyle(Theme.ink)
+                    Button { nav.showFilter = nil } label: {
+                        Image(systemName: "xmark").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.ink)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Clear filter")
+                }
+                .padding(.horizontal, 16).frame(height: 36)
+                .glassEffect(.regular, in: .capsule)
+            }
+            bar
+        }
+        .padding(.horizontal, 16)
+    }
+
+    private var bar: some View {
         HStack(spacing: 10) {
             Button { nav.push(.find) } label: {
                 HStack {
@@ -25,6 +44,5 @@ struct AskBar: View {
             .buttonStyle(.plain)
             .accessibilityLabel("Add person")
         }
-        .padding(.horizontal, 16)
     }
 }

@@ -3,7 +3,11 @@ import SwiftData
 
 struct ConnectionsView: View {
     @Environment(Nav.self) private var nav
-    @Query(sort: \Person.name) private var people: [Person]
+    @Query(sort: \Person.name) private var allPeople: [Person]
+    private var people: [Person] {
+        guard let f = nav.showFilter else { return allPeople }
+        let ids = Set(f.ids); return allPeople.filter { ids.contains($0.id) }
+    }
 
     var body: some View {
         ScrollView {
