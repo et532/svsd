@@ -52,6 +52,7 @@ final class M5FlowUITests: XCTestCase {
         let app = launch(["-findQuery", "open Jordan Lee"]) // Find -> "Opening Jordan Lee…" -> profile
         XCTAssertTrue(app.buttons["More"].waitForExistence(timeout: 30))
 
+        shot("M5-profile-top")
         // a to-do ticks off, and stays ticked
         let todo = app.buttons["Intro to someone in hardware"]
         XCTAssertEqual(todo.value as? String, "To do")

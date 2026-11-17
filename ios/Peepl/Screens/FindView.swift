@@ -188,7 +188,7 @@ private struct FindCard: View {
                         Task { text = await AIClient.draft(p, action: action); writing = false }
                     } label: {
                         Text(action.label).font(.system(size: 15, weight: .medium)).foregroundStyle(Theme.ink)
-                            .padding(.horizontal, 18).frame(height: 40).background(.white, in: .capsule)
+                            .frame(maxWidth: .infinity).frame(height: 40).background(.white, in: .capsule)
                     }.buttonStyle(.plain)
                 } else {
                     TextField("", text: Binding(get: { text ?? "" }, set: { text = $0 }), prompt: Text(writing ? "Writing…" : ""), axis: .vertical)

@@ -111,14 +111,18 @@ struct ProfileView: View {
     }
 
     private var hero: some View {
-        VStack(spacing: 6) {
-            Avatar(id: person.id, size: 60).padding(.bottom, 6)
-            Text(person.name).font(.system(size: 20, weight: .medium)).foregroundStyle(.white)
-            Text(person.subtitle).font(.system(size: 13)).foregroundStyle(.white.opacity(0.85))
-            Text(metDate).font(.system(size: 13)).foregroundStyle(Color(hex: "cccccc"))
+        // Figma "Profile Top": 233 pt tall, avatar left, name and details beside it
+        HStack(spacing: 16) {
+            Avatar(id: person.id, size: 88)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(person.name).font(.system(size: 20, weight: .medium)).foregroundStyle(.white)
+                Text(person.subtitle).font(.system(size: 13)).foregroundStyle(.white.opacity(0.85))
+                Text(metDate).font(.system(size: 13)).foregroundStyle(Color(hex: "cccccc"))
+            }
+            Spacer(minLength: 0)
         }
-        .multilineTextAlignment(.center)
-        .frame(maxWidth: .infinity).padding(.top, 150).padding(.bottom, 32)
+        .padding(.horizontal, 22).padding(.top, 118).padding(.bottom, 22)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background {
             ZStack {
                 Color(hex: blob.base)
@@ -187,31 +191,33 @@ struct ProfileView: View {
     private var todos: some View {
         VStack(alignment: .leading, spacing: 8) {
             header("Things to do with \(person.firstName)")
-            ForEach(person.todos.sorted { $0.id < $1.id }) { t in
-                Button { t.done.toggle(); try? context.save() } label: {
-                    HStack(spacing: 12) {
-                        Image(systemName: t.done ? "checkmark.circle.fill" : "circle").foregroundStyle(t.done ? Theme.ink : Theme.inkMuted)
+            // Figma: one card, rows split by hairlines
+            VStack(spacing: 0) {
+                ForEach(person.todos.sorted { $0.id < $1.id }) { t in
+                    Button { t.done.toggle(); try? context.save() } label: {
                         Text(t.text).strikethrough(t.done).font(.system(size: 15)).foregroundStyle(Theme.ink)
                             .frame(maxWidth: .infinity, alignment: .leading)
+                            .opacity(t.done ? 0.45 : 1).padding(.horizontal, 16).padding(.vertical, 14).contentShape(.rect)
                     }
-                    .opacity(t.done ? 0.5 : 1).padding(14).glass(16)
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(t.text).accessibilityValue(t.done ? "Done" : "To do")
+                    Divider().padding(.leading, 16)
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel(t.text).accessibilityValue(t.done ? "Done" : "To do")
-            }
-            if addingTodo {
-                InlineField(placeholder: "Something to do with \(person.firstName)", size: 15, onDone: addTodo).padding(14).glass(16)
-            } else {
-                Button { addingTodo = true } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: "plus").font(.system(size: 12, weight: .semibold))
-                        Text("Add something to do").font(.system(size: 14))
-                        Spacer()
+                if addingTodo {
+                    InlineField(placeholder: "Something to do with \(person.firstName)", size: 15, onDone: addTodo).padding(16)
+                } else {
+                    Button { addingTodo = true } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "plus").font(.system(size: 12, weight: .semibold))
+                            Text("Add something to do").font(.system(size: 14))
+                            Spacer()
+                        }
+                        .foregroundStyle(Theme.inkMuted).padding(16).contentShape(.rect)
                     }
-                    .foregroundStyle(Theme.inkMuted).padding(14).glass(16)
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
+            .glass(16)
         }
     }
 
@@ -305,7 +311,7 @@ struct ProfileView: View {
     }
 
     private func header(_ s: String) -> some View {
-        Text(s).font(.system(size: 18, weight: .medium)).tracking(-0.5).foregroundStyle(Theme.ink)
+        Text(s.uppercased()).font(.system(size: 11, design: .monospaced)).tracking(0.6).foregroundStyle(Theme.inkMuted).accessibilityLabel(s)
     }
 }
 

@@ -89,3 +89,7 @@ Unit 112 / UI 15 on `Peepl-M4`, all passing. Every "fixed" row above was checked
 - `M5-debug.png` was scratch and is deleted.
 - M3 / F3 "Show all" on the mindmap: the filter pill and the narrowed list are verified, but `M5-show-all-mindmap.png` shows **no dots**. Cause: the two climbers are unlinked, the layout pushes them ~1600 world px apart, and `fitZoom` 1.6 (same constant and formula as the web's `FIT_ZOOM`) puts both just off the edges of the screen. Same behaviour as the web, so left; a human call whether a 2-person filter should fit tighter.
 - `M5-find-closes-todo.png` shows the profile with the keyboard up, not the ticked to-do; the tick itself is asserted in the test.
+
+### Figma match (profile, Find, Add)
+Compared with the "FINAL DESIGN" page (frames 2.6, 6.4, 2.2b): profile hero is now left-aligned (88 pt avatar, name beside it, ~233 pt tall); section labels are small uppercase mono; to-dos are one card split by hairlines with no tick circles (done = strikethrough); Find's Draft button is full width; Add's idle heading sits lower. Not matched: Geist font, grain texture, Find heading size/colour, "Show all" (in the app, not the frame), moment-quote "why" text.
+Note: screenshots are only written when the variable is passed as `TEST_RUNNER_M5_SHOT_DIR`; the `M5_SHOT_DIR` runs earlier in this round did not overwrite anything, so `M5-show-all-mindmap.png` was not re-taken after `sleep(8)`. The off-screen-dots finding rests on a throwaway unit test (nodes ±797 world px at k 0.288), not on that screenshot.

@@ -53,7 +53,7 @@ struct AddView: View {
                 VStack(alignment: .leading, spacing: 16) {
                     switch phase {
                     case .idle:
-                        title(heading)
+                        title(heading).padding(.top, 60) // Figma 2.2b: the heading sits a third of the way down
                     case .choosing(let c):
                         bubble
                         title("Which \(c[0].firstName) did you catch up with?")
