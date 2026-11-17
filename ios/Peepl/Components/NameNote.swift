@@ -26,6 +26,7 @@ struct NameNote: View {
     @Binding var fixed: [(heard: String, meant: String)]
     let people: [any Named]
     let onPlain: () -> Void
+    var interactive = true
 
     private struct Word: Identifiable { let id: Int; let text: String; let name: String?; let index: Int; var gap = true }
     @State private var editing: Int?
@@ -51,7 +52,7 @@ struct NameNote: View {
                 Group {
                     if let name = w.name { nameWord(w, name) } else {
                         Text(w.text).font(.system(size: 16)).foregroundStyle(Theme.ink).padding(.vertical, 1)
-                            .contentShape(.rect).onTapGesture(perform: onPlain)
+                            .contentShape(.rect).onTapGesture { if interactive { onPlain() } }
                     }
                 }
                 .padding(.trailing, w.gap ? 4 : 0)
@@ -73,6 +74,9 @@ struct NameNote: View {
             .font(.system(size: 16)).padding(.horizontal, 3).padding(.vertical, 1)
             .overlay(RoundedRectangle(cornerRadius: 6).stroke(Theme.ink, lineWidth: 1))
             .onAppear { typing = true }
+        } else if !interactive {
+            Text(w.text).font(.system(size: 16)).foregroundStyle(Theme.ink).padding(.horizontal, 3).padding(.vertical, 1)
+                .overlay(RoundedRectangle(cornerRadius: 6).stroke(Theme.ink.opacity(0.25), lineWidth: 1))
         } else {
             Button { typed = ""; editing = w.id } label: {
                 Text(w.text).font(.system(size: 16)).foregroundStyle(Theme.ink).padding(.horizontal, 3).padding(.vertical, 1)

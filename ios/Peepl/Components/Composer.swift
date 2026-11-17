@@ -64,8 +64,12 @@ struct Composer: View {
     @ViewBuilder private var field: some View {
         if recording {
             ScrollView {
-                Text(voice.text.isEmpty ? " " : voice.text).font(.system(size: 16)).foregroundStyle(Theme.ink)
-                    .frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 10).padding(.leading, 6)
+                if let people {
+                    NameNote(text: .constant(voice.text), fixed: .constant([]), people: people, onPlain: {}, interactive: false)
+                } else {
+                    Text(voice.text.isEmpty ? " " : voice.text).font(.system(size: 16)).foregroundStyle(Theme.ink)
+                        .frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 10).padding(.leading, 6)
+                }
             }
             .defaultScrollAnchor(.bottom).frame(maxHeight: 144).fixedSize(horizontal: false, vertical: true)
         } else if showNote, let people {
