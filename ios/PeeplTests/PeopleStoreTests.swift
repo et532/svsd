@@ -65,4 +65,20 @@ final class PeopleStoreTests: XCTestCase {
         XCTAssertEqual(lena.knows, [sam.id])
         XCTAssertEqual(sam.knows, [lena.id])
     }
+
+    func testDeletePersonTakesTheirThingsAndEveryLinkToThem() throws {
+        let ctx = ModelContext(try makeContainer())
+        let (sam, _) = make(ctx)
+        PeopleStore.addMoment(to: sam, note: "Caught up with Sam. Need to send him the map.", in: ctx)
+        let noteB = "Met Bea Ortiz at a book club, editor at Kiln"
+        let bea = PeopleStore.createPerson(Capture.parsePerson(noteB, people: []), note: noteB, in: ctx, mutualOf: sam.id).person
+        bea.mutualNotes[sam.id] = "from the pickleball meetup"
+        XCTAssertEqual(bea.knows, [sam.id]); XCTAssertEqual(sam.knows, [bea.id])
+
+        PeopleStore.delete([sam], in: ctx)
+        XCTAssertEqual(try ctx.fetch(FetchDescriptor<Person>()).map(\.name), ["Bea Ortiz"])
+        XCTAssertEqual(bea.knows, []); XCTAssertEqual(bea.mutualNotes, [:])
+        XCTAssertEqual(try ctx.fetchCount(FetchDescriptor<Moment>()), 1) // only Bea's first meeting
+        XCTAssertEqual(try ctx.fetchCount(FetchDescriptor<Todo>()), 0)
+    }
 }

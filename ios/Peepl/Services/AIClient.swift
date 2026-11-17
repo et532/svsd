@@ -8,7 +8,8 @@ enum AIClient {
     static func reset() { off = false }
 
     private static var base: String {
-        (Bundle.main.object(forInfoDictionaryKey: "PeeplAPIBase") as? String).flatMap { $0.isEmpty ? nil : $0 }
+        // -PeeplAPIBase <url>: UI tests point it at nothing, so they never use the network
+        (UserDefaults.standard.string(forKey: "PeeplAPIBase") ?? Bundle.main.object(forInfoDictionaryKey: "PeeplAPIBase") as? String).flatMap { $0.isEmpty ? nil : $0 }
             ?? "https://peepl-steel.vercel.app"
     }
 

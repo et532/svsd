@@ -54,6 +54,17 @@ enum PeopleStore {
         try? context.save()
         return moment
     }
+
+    /// Deletes people with their moments and to-dos (cascade), and the links other people have to them.
+    static func delete(_ gone: [Person], in context: ModelContext) {
+        let ids = Set(gone.map(\.id))
+        for p in (try? context.fetch(FetchDescriptor<Person>())) ?? [] where !ids.contains(p.id) {
+            if p.knows.contains(where: ids.contains) { p.knows.removeAll(where: ids.contains) }
+            if p.mutualNotes.keys.contains(where: ids.contains) { p.mutualNotes = p.mutualNotes.filter { !ids.contains($0.key) } }
+        }
+        gone.forEach(context.delete)
+        try? context.save()
+    }
 }
 
 private extension String { var nonEmpty: String? { isEmpty ? nil : self } }
