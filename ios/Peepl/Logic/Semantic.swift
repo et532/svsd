@@ -36,6 +36,22 @@ enum Semantic {
 
     /// web chunks.ts chunksOf: pieces of what you know about someone; moment pieces say where they came from.
     static func chunks(_ p: PersonInfo) -> [Chunk] {
+        let key = stamp(p)
+        cacheLock.lock(); defer { cacheLock.unlock() }
+        if let hit = chunkCache[p.id], hit.0 == key { return hit.1 }
+        let out = computeChunks(p)
+        chunkCache[p.id] = (key, out)
+        return out
+    }
+    nonisolated(unsafe) private static var chunkCache: [String: (Int, [Chunk])] = [:]
+    private static let cacheLock = NSLock()
+    /// Cheap fingerprint of everything chunks / search text read, so caches notice an edit.
+    static func stamp(_ p: PersonInfo) -> Int {
+        var h = Hasher()
+        h.combine(p.profession); h.combine(p.story); h.combine(p.tags); h.combine(p.todos); h.combine(p.moments)
+        return h.finalize()
+    }
+    private static func computeChunks(_ p: PersonInfo) -> [Chunk] {
         let profile: [Chunk] = [Chunk(text: p.profession, kind: "profile")]
             + split(p.story).map { Chunk(text: $0, kind: "profile") }
             + p.tags.map { Chunk(text: $0, kind: "tag") }
@@ -93,6 +109,43 @@ enum Semantic {
             guard let b = best else { return nil }
             if var t = bestText, t.sim >= 0.35, t.sim >= b.sim - 0.2 { t.sim = b.sim; return t }
             return b
+        }
+    }
+}
+
+extension Semantic {
+    private static let moreFiller = try! NSRegularExpression(pattern: "^(do|does|did|make|makes|can|help|need|want|my|me)$")
+    /// web semantic.ts topic(): "someone who does my taxes" -> "taxes".
+    static func topic(_ query: String) -> String {
+        let cleaned = String(String.UnicodeScalarView(query.lowercased().unicodeScalars.map {
+            CharacterSet.letters.contains($0) || CharacterSet.decimalDigits.contains($0) || CharacterSet.whitespacesAndNewlines.contains($0) || "'’-".unicodeScalars.contains($0) ? $0 : " "
+        }))
+        let words = cleaned.split(whereSeparator: \.isWhitespace).map(String.init).filter {
+            !Ask.filler.contains($0) && moreFiller.firstMatch(in: $0, range: NSRange(location: 0, length: $0.utf16.count)) == nil
+        }
+        return words.isEmpty ? query : words.joined(separator: " ")
+    }
+
+    /// web semantic.ts closestMatches: the n people closest in meaning, however close (candidates for the AI to judge).
+    static func closestMatches(_ query: String, people: [PersonInfo], n: Int, embedder: Embedder) async -> [Match] {
+        guard let q = try? await embedder.embed([topic(query)]).first else { return [] }
+        let chunks = people.map(chunks)
+        let vec = await vectors(Array(Set(chunks.flatMap { $0.map(\.text) })), embedder: embedder)
+        var scored: [(person: PersonInfo, score: Float, chunk: Chunk)] = []
+        for (person, cs) in zip(people, chunks) {
+            var best: (Float, Chunk)?
+            for c in cs {
+                guard let v = vec[c.text], v.count == q.count else { continue }
+                let s = vDSP.dot(q, v) + (c.from != nil ? 0.04 : 0)
+                if best == nil || s > best!.0 { best = (s, c) }
+            }
+            if let b = best { scored.append((person, b.0, b.1)) }
+        }
+        let top = scored.enumerated().sorted { $0.element.score != $1.element.score ? $0.element.score > $1.element.score : $0.offset < $1.offset }.prefix(n)
+        return top.map { e in
+            let (person, chunk) = (e.element.person, e.element.chunk)
+            let text = chunk.text.replacingOccurrences(of: "\\.$", with: "", options: .regularExpression)
+            return Match(person: person, why: chunk.from != nil ? "\(text) (\(chunk.from!))" : person.tags.contains(chunk.text) ? "Into \(chunk.text)" : text)
         }
     }
 }
