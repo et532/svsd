@@ -1,9 +1,8 @@
 import SwiftUI
 import SwiftData
 
-enum Layer: Hashable, Identifiable {
+enum Layer: Hashable {
     case add(mutualOf: String?), find(voice: Bool = false), profile(String /* person id */)
-    var id: Self { self }
 }
 
 /// Find's "Show all N in your list / on the mindmap": the list and mindmap show only these people until cleared.
@@ -20,7 +19,7 @@ struct PeopleFilter: Equatable { var ids: [String]; var label: String }
     var toast: String?
     private var toastTask: Task<Void, Never>?
 
-    func push(_ l: Layer) { layers.append(l) }
+    func push(_ l: Layer) { if layers.last != l { layers.append(l) } } // a double tap must not stack the same screen twice
     func pop() { _ = layers.popLast() }
     func replaceTop(_ l: Layer) { if layers.isEmpty { layers.append(l) } else { layers[layers.count - 1] = l } }
     func viewConnections(_ p: Person) { layers = []; tab = .mindmap; focus = (p.id, p.firstName) }
@@ -56,10 +55,11 @@ struct RootView: View {
             }
             VStack { TopControls(tab: Binding(get: { nav.tab }, set: { nav.focus = nil; nav.tab = $0 })).frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 16); Spacer() }
             VStack { Spacer(); AskBar() }
-            ForEach(nav.layers) { layer in
+            // by position: the same profile can be on the stack twice (A -> B -> A), which a by-value id can't hold
+            ForEach(Array(nav.layers.enumerated()), id: \.offset) { i, layer in
                 LayerHost(layer: layer)
                     .transition(layer.isProfile ? .move(edge: .trailing) : .scale(scale: 0.96).combined(with: .opacity))
-                    .zIndex(Double(nav.layers.firstIndex(of: layer) ?? 0) + 1)
+                    .zIndex(Double(i) + 1)
             }
             if let toast = nav.toast {
                 VStack {
