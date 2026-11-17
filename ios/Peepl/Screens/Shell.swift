@@ -6,8 +6,13 @@ enum Layer: Hashable, Identifiable {
     var id: Self { self }
 }
 
+/// Find's "Show all N in your list / on the mindmap": the list and mindmap show only these people until cleared.
+struct PeopleFilter: Equatable { var ids: [String]; var label: String }
+
 @Observable final class Nav {
     var layers: [Layer] = []
+    var showFilter: PeopleFilter?
+    var tab: Tab = .connections // here so Find can say "in your list" / "on the mindmap"
     var toast: String?
     private var toastTask: Task<Void, Never>?
 
@@ -27,18 +32,17 @@ enum Layer: Hashable, Identifiable {
 struct RootView: View {
     @Environment(\.modelContext) private var context
     @State private var nav = Nav()
-    @State private var tab: Tab = .connections
 
     var body: some View {
         ZStack {
             Theme.bg.ignoresSafeArea()
-            switch tab {
+            switch nav.tab {
             case .mindmap:
                 MindmapView()
             case .connections:
                 ConnectionsView()
             }
-            VStack { TopControls(tab: $tab).frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 16); Spacer() }
+            VStack { TopControls(tab: Bindable(nav).tab).frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 16); Spacer() }
             VStack { Spacer(); AskBar() }
             ForEach(nav.layers) { layer in
                 LayerHost(layer: layer)
@@ -64,7 +68,12 @@ struct RootView: View {
         .animation(.easeInOut(duration: 0.3), value: nav.layers)
         .animation(.easeInOut(duration: 0.25), value: nav.toast)
         .environment(nav)
-        .task { Seed.loadIfEmpty(context) }
+        .task {
+            Seed.loadIfEmpty(context)
+            #if DEBUG
+            if UserDefaults.standard.string(forKey: "findQuery") != nil { nav.push(.find) } // see FindView.preset
+            #endif
+        }
     }
 }
 
@@ -87,7 +96,7 @@ private struct LayerHost: View {
                     ProfileView(person: p)
                 }
             case .add(let mutualOf): AddView(mutualOf: mutualOf)
-            case .find: Text("Find").frame(maxWidth: .infinity, maxHeight: .infinity)
+            case .find: FindView()
             }
             if !layer.isProfile {
                 Button { nav.pop() } label: {

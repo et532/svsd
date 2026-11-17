@@ -2,7 +2,12 @@ import SwiftUI
 import SwiftData
 
 struct MindmapView: View {
-    @Query(sort: \Person.id) private var people: [Person]
+    @Environment(Nav.self) private var nav
+    @Query(sort: \Person.id) private var allPeople: [Person]
+    private var people: [Person] {
+        guard let f = nav.showFilter else { return allPeople }
+        let ids = Set(f.ids); return allPeople.filter { ids.contains($0.id) }
+    }
     private let model = MindmapModel.shared
     @State private var groupBy = MindmapModel.shared.groupBy
     @State private var paused = false
