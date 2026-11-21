@@ -37,19 +37,19 @@ struct AskBar: View {
     private var bar: some View {
         HStack(spacing: 10) {
             HStack(spacing: 0) {
-                Button { nav.focus = nil; nav.push(.find()) } label: {
+                Button { nav.focus = nil; nav.revealOrigin = UnitPoint(x: 0.4, y: 0.95); nav.push(.find()) } label: {
                     Text("Ask me about people").font(.system(size: 16)).foregroundStyle(Theme.inkMuted)
                         .frame(maxWidth: .infinity, alignment: .leading).frame(height: 56).padding(.leading, 20).contentShape(.rect)
                 }
                 .buttonStyle(.plain)
-                Button { nav.focus = nil; nav.push(.find(voice: true)) } label: {
+                Button { nav.focus = nil; nav.revealOrigin = UnitPoint(x: 0.4, y: 0.95); nav.push(.find(voice: true)) } label: {
                     Image(systemName: "mic").font(.system(size: 20)).foregroundStyle(Theme.ink).frame(width: 60, height: 56).contentShape(.rect)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Ask by voice")
             }
             .glassEffect(.regular, in: .capsule)
-            Button { nav.push(.add(mutualOf: nil)) } label: {
+            Button { nav.revealOrigin = UnitPoint(x: 0.92, y: 0.95); nav.push(.add(mutualOf: nil)) } label: {
                 Image(systemName: "person.badge.plus").font(.system(size: 20)).foregroundStyle(Theme.ink)
                     .frame(width: 56, height: 56)
                     .glassEffect(.regular, in: .circle)

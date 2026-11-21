@@ -34,6 +34,9 @@ enum Seed {
 
     /// First launch: the sample people. Never again after that, so someone who deletes everybody stays at zero.
     static func loadIfEmpty(_ context: ModelContext, defaults: UserDefaults = .standard) {
+        #if !DEBUG
+        return // shipping builds start empty; the empty state offers loadSamples
+        #else
         // Launch arguments, UI tests only: -PeeplNoSeed YES starts with nobody; -PeeplInMemory YES (see PeeplApp) seeds every launch.
         let args = UserDefaults.standard, memory = args.bool(forKey: "PeeplInMemory")
         if args.bool(forKey: "PeeplNoSeed") { return }
@@ -63,5 +66,22 @@ enum Seed {
                 return p
             }, in: context)
         }
+        #endif
+    }
+
+    /// Inserts the diverse-200 + Jordan Lee samples in any build; does nothing if anyone exists.
+    static func loadSamples(_ context: ModelContext) {
+        guard ((try? context.fetchCount(FetchDescriptor<Person>())) ?? 0) == 0,
+              let url = Bundle.main.url(forResource: "seed", withExtension: "json"),
+              let data = try? Data(contentsOf: url),
+              let people = try? JSONDecoder().decode([PersonDTO].self, from: data),
+              let infos = try? JSONDecoder().decode([PersonInfo].self, from: data) else { return }
+        let shown = shownIds(infos)
+        for dto in people where shown.contains(dto.id) {
+            let p = dto.model()
+            p.knows = p.knows.filter(shown.contains)
+            context.insert(p)
+        }
+        try? context.save()
     }
 }

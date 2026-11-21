@@ -17,6 +17,8 @@ struct PeopleFilter: Equatable { var ids: [String]; var label: String }
     /// A moment that was just logged from Add: their profile opens with it expanded.
     var fresh: String?
     var toast: String?
+    /// Where Add / Find grow from (set by the ask bar before push).
+    var revealOrigin = UnitPoint(x: 0.5, y: 0.95)
     private var toastTask: Task<Void, Never>?
 
     func push(_ l: Layer) { if layers.last != l { layers.append(l) } } // a double tap must not stack the same screen twice
@@ -58,7 +60,7 @@ struct RootView: View {
             // by position: the same profile can be on the stack twice (A -> B -> A), which a by-value id can't hold
             ForEach(Array(nav.layers.enumerated()), id: \.offset) { i, layer in
                 LayerHost(layer: layer)
-                    .transition(layer.isProfile ? .move(edge: .trailing) : .scale(scale: 0.96).combined(with: .opacity))
+                    .transition(layer.isProfile ? AnyTransition.move(edge: .trailing) : AnyTransition(RevealTransition(origin: nav.revealOrigin)))
                     .zIndex(Double(i) + 1)
             }
             if let toast = nav.toast {
@@ -79,6 +81,9 @@ struct RootView: View {
         }
         .animation(.easeInOut(duration: 0.3), value: nav.layers)
         .animation(.easeInOut(duration: 0.25), value: nav.toast)
+        .sensoryFeedback(.selection, trigger: nav.tab)
+        .sensoryFeedback(.impact(weight: .light), trigger: nav.layers.count)
+        .sensoryFeedback(.success, trigger: nav.toast) { _, new in new != nil }
         .environment(nav)
         .task {
             Seed.loadIfEmpty(context)
@@ -101,7 +106,7 @@ private struct LayerHost: View {
 
     var body: some View {
         ZStack(alignment: .topLeading) {
-            Theme.bg.ignoresSafeArea()
+            if layer.isProfile { Theme.bg.ignoresSafeArea() } else { AuraBackground(light: false) }
             switch layer {
             case .profile(let id):
                 if let p = try? context.fetch(FetchDescriptor<Person>(predicate: #Predicate { $0.id == id })).first {

@@ -201,6 +201,7 @@ struct ProfileView: View {
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(t.text).accessibilityValue(t.done ? "Done" : "To do")
+                    .sensoryFeedback(.selection, trigger: t.done)
                     Divider().padding(.leading, 16)
                 }
                 if addingTodo {

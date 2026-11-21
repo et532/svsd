@@ -25,6 +25,7 @@ targets:
         INFOPLIST_KEY_UIUserInterfaceStyle: Light
         INFOPLIST_KEY_NSMicrophoneUsageDescription: "Peepl listens when you tap the mic so you can talk instead of type."
         INFOPLIST_KEY_NSSpeechRecognitionUsageDescription: "Peepl turns what you say into a note, on your iPhone when it can."
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         TARGETED_DEVICE_FAMILY: "1"
         PEEPL_API_BASE: https://peepl-steel.vercel.app
   PeeplTests:
