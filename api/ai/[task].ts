@@ -9,5 +9,8 @@ export default function handler(req: IncomingMessage, res: ServerResponse) {
     model: process.env.OPENAI_MODEL,
     transcribeModel: process.env.OPENAI_TRANSCRIBE_MODEL,
     liveModel: process.env.OPENAI_LIVE_MODEL,
+    appTokenSecret: process.env.APP_TOKEN_SECRET,
+    appleAppId: process.env.APPLE_APP_ID,
+    debugToken: process.env.APP_DEBUG_TOKEN,
   })
 }

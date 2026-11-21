@@ -27,7 +27,7 @@ enum PeopleStore {
                 knows: draft.knowsIds + (mutualOf.map { [$0] } ?? []), mutualNotes: [:], closeness: 1)
             context.insert(person)
             for text in Capture.dedupeTodos([draft.follow, draft.goal, draft.remember]) {
-                person.todos.append(Todo(id: Capture.uid(), text: text))
+                person.addTodo(id: Capture.uid(), text: text)
             }
             person.moments.append(Moment(
                 id: Capture.uid(), date: today, title: draft.met.map { "Met at \($0)" } ?? "First meeting",
@@ -48,7 +48,7 @@ enum PeopleStore {
         let moment = Moment(id: Capture.uid(), date: Capture.today(), title: draft.what ?? "New moment",
                             transcript: note.trimmingCharacters(in: .whitespacesAndNewlines))
         person.moments.append(moment)
-        if let f = draft.follow { person.todos.append(Todo(id: Capture.uid(), text: f)) }
+        if let f = draft.follow { person.addTodo(id: Capture.uid(), text: f) }
         person.lastContacted = Capture.today()
         person.closeness = min(3, (person.closeness ?? 1) + 1)
         try? context.save()

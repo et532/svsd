@@ -65,6 +65,17 @@ final class MindmapMathTests: XCTestCase {
         XCTAssertEqual(MindmapMath.minK(fitK: 1.6), 0.85, accuracy: 1e-12)
     }
 
+    func testFitKeepsFarApartPeopleInFrame() {
+        // Two unlinked people sit on opposite sides of the loner ring (~1600 apart).
+        let g = ForceGraph(ids: ["a", "b"], pairs: [])
+        g.nodes[0].x = -800; g.nodes[1].x = 800; g.nodes[0].y = 0; g.nodes[1].y = 0
+        let f = MindmapMath.fit(g.nodes, width: 393, height: 852)
+        for n in g.nodes {
+            let sx = 393 / 2 + f.x + n.x * f.k
+            XCTAssertTrue(sx > 0 && sx < 393, "node at \(sx) is off screen")
+        }
+    }
+
     func testGroupOvalsContainMembers() {
         let g = ForceGraph(ids: (0..<12).map { "p\($0)" }, pairs: [("p0", "p1"), ("p1", "p2")])
         g.setGroups({ Int($0.dropFirst())! < 8 ? "A" : "B" }, last: nil)

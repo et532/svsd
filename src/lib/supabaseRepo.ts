@@ -6,7 +6,7 @@ import type { Hit } from './rank'
 import { embed } from './semantic'
 
 // The online store: Supabase over plain HTTP (PostgREST), no client library. With no VITE_SUPABASE_* set the app
-// stays fully local (IndexedDB + the shipped sample people). DEMO ONLY: the anon key can read and write
+// stays fully local (IndexedDB + the shipped sample people). Read-only for the anon key now (writes need the service role; the old demo_open policy was removed from the migration); it used to read and write
 // everything (see the policies at the bottom of the migration).
 
 const URL = import.meta.env.VITE_SUPABASE_URL as string | undefined

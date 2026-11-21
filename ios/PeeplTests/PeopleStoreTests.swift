@@ -91,4 +91,21 @@ final class PeopleStoreTests: XCTestCase {
         XCTAssertEqual(try ctx.fetchCount(FetchDescriptor<Moment>()), 1) // only Bea's first meeting
         XCTAssertEqual(try ctx.fetchCount(FetchDescriptor<Todo>()), 0)
     }
+
+    func testNewTodoSortsLastEvenWithEarlierId() throws {
+        let ctx = ModelContext(try makeContainer())
+        let p = make(ctx).person
+        p.addTodo(id: "zzz", text: "second")
+        p.addTodo(id: "aaa", text: "third") // id sorts before the others; order must win
+        XCTAssertEqual(p.orderedTodos.map(\.text), ["Loves trail running", "second", "third"])
+    }
+
+    func testOldBackupWithoutOrderKeepsFileOrder() throws {
+        let json = #"{"version":1,"people":[{"id":"p1","name":"A B","context":"x","profession":"","story":"","tags":[],"from":{"city":"","lat":0,"lng":0},"met":{"city":"","lat":0,"lng":0},"livesNow":{"city":"","lat":0,"lng":0},"lastContacted":"2026-01-01","knows":[],"mutualNotes":{},"todos":[{"id":"z","text":"one","done":false},{"id":"a","text":"two","done":false}],"moments":[]}],"nameFixes":{}}"#
+        let file = try JSONDecoder().decode(BackupFile.self, from: Data(json.utf8))
+        let ctx = ModelContext(try makeContainer())
+        file.restore(into: ctx)
+        let p = try XCTUnwrap(try ctx.fetch(FetchDescriptor<Person>()).first)
+        XCTAssertEqual(p.orderedTodos.map(\.text), ["one", "two"])
+    }
 }

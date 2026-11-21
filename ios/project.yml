@@ -15,13 +15,14 @@ targets:
       path: Peepl/Info.plist
       properties:
         PeeplAPIBase: $(PEEPL_API_BASE)
+        PeeplDebugToken: $(PEEPL_DEBUG_TOKEN)
+        UILaunchScreen: {UIColorName: LaunchBackground}
         UIAppFonts: [Geist-Light.ttf, Geist-Regular.ttf, Geist-Medium.ttf, Geist-SemiBold.ttf, GeistMono-Regular.ttf, GeistMono-Medium.ttf]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.vincelin.peepl
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: Peepl
-        INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
         INFOPLIST_KEY_UIUserInterfaceStyle: Light
         INFOPLIST_KEY_NSMicrophoneUsageDescription: "Peepl listens when you tap the mic so you can talk instead of type."
@@ -29,6 +30,8 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         TARGETED_DEVICE_FAMILY: "1"
         PEEPL_API_BASE: https://peepl-steel.vercel.app
+        PEEPL_DEBUG_TOKEN: ""
+        CODE_SIGN_ENTITLEMENTS: Peepl/Peepl.entitlements
   PeeplTests:
     type: bundle.unit-test
     platform: iOS

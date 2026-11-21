@@ -39,7 +39,7 @@ struct AskBar: View {
             HStack(spacing: 0) {
                 Button { nav.focus = nil; nav.revealOrigin = UnitPoint(x: 0.4, y: 0.95); nav.push(.find()) } label: {
                     Text("Ask me about people").font(Theme.font(16)).foregroundStyle(Theme.inkMuted)
-                        .frame(maxWidth: .infinity, alignment: .leading).frame(height: 56).padding(.leading, 20).contentShape(.rect)
+                        .frame(maxWidth: .infinity, alignment: .leading).frame(minHeight: 56).padding(.leading, 20).contentShape(.rect)
                 }
                 .buttonStyle(.plain)
                 Button { nav.focus = nil; nav.revealOrigin = UnitPoint(x: 0.4, y: 0.95); nav.push(.find(voice: true)) } label: {
@@ -57,5 +57,6 @@ struct AskBar: View {
             .buttonStyle(.plain)
             .accessibilityLabel("Add person")
         }
+        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
     }
 }

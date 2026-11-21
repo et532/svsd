@@ -20,6 +20,8 @@
 	<string>1</string>
 	<key>PeeplAPIBase</key>
 	<string>$(PEEPL_API_BASE)</string>
+	<key>PeeplDebugToken</key>
+	<string>$(PEEPL_DEBUG_TOKEN)</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>Geist-Light.ttf</string>
@@ -29,5 +31,10 @@
 		<string>GeistMono-Regular.ttf</string>
 		<string>GeistMono-Medium.ttf</string>
 	</array>
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIColorName</key>
+		<string>LaunchBackground</string>
+	</dict>
 </dict>
 </plist>

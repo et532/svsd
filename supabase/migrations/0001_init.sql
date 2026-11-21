@@ -240,12 +240,14 @@ language sql stable as $$
   limit p_limit
 $$;
 
--- ---------- DEMO-ONLY open access for the anon key ----------
+-- ---------- Read-only access for the anon key ----------
+-- (was demo_open: the public anon key could read AND write everything. Writes now need the service role,
+-- which bypasses RLS. If you already applied the old migration, run: drop policy demo_open on <each table>.)
 do $$
 declare t text;
 begin
   foreach t in array array['places', 'people', 'person_links', 'moments', 'todos', 'tags', 'chunks', 'name_fixes', 'profile'] loop
     execute format('alter table %I enable row level security', t);
-    execute format('create policy demo_open on %I for all to anon, authenticated using (true) with check (true)', t);
+    execute format('create policy read_only on %I for select to anon, authenticated using (true)', t);
   end loop;
 end $$;

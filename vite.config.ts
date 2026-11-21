@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [
       react(),
-      aiPlugin({ key: env.OPENAI_API_KEY, model: env.OPENAI_MODEL, transcribeModel: env.OPENAI_TRANSCRIBE_MODEL, liveModel: env.OPENAI_LIVE_MODEL }),
+      aiPlugin({ key: env.OPENAI_API_KEY, model: env.OPENAI_MODEL, transcribeModel: env.OPENAI_TRANSCRIBE_MODEL, liveModel: env.OPENAI_LIVE_MODEL, appTokenSecret: env.APP_TOKEN_SECRET, appleAppId: env.APPLE_APP_ID, debugToken: env.APP_DEBUG_TOKEN }),
     ],
     // The model worker (src/lib/ml.worker.ts) is an ES module
     worker: { format: 'es' },

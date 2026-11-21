@@ -14,7 +14,8 @@ struct Place: Codable, Hashable {
     var text: String
     var done: Bool
     var person: Person?
-    init(id: String, text: String, done: Bool = false) { self.id = id; self.text = text; self.done = done }
+    var order: Int = 0 // relationships are unordered; display sorts by (order, id)
+    init(id: String, text: String, done: Bool = false, order: Int = 0) { self.id = id; self.text = text; self.done = done; self.order = order }
 }
 
 @Model final class Moment {
@@ -67,4 +68,10 @@ struct Place: Codable, Hashable {
         let p = name.split(separator: " ")
         return ((p.first?.first.map(String.init) ?? "") + (p.count > 1 ? String(p.last!.first!) : "")).uppercased()
     }
+}
+
+extension Person {
+    var orderedTodos: [Todo] { todos.sorted { ($0.order, $0.id) < ($1.order, $1.id) } }
+    /// Appends a to-do after the existing ones.
+    func addTodo(id: String, text: String) { todos.append(Todo(id: id, text: text, order: (todos.map(\.order).max() ?? -1) + 1)) }
 }

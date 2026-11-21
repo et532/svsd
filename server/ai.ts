@@ -1,5 +1,6 @@
 import type { IncomingHttpHeaders, IncomingMessage, ServerResponse } from 'node:http'
 import type { Plugin } from 'vite'
+import { challengeValid, makeChallenge, signToken, verifyAttestation, verifyToken } from './appAttest'
 
 // The AI behind the app, as one endpoint: POST /api/ai/<task> answers with JSON. It holds the OpenAI key so the browser
 // never sees it. The same `handleAi` runs in two places: the Vite dev / preview server (aiPlugin below, key from
@@ -14,7 +15,7 @@ import type { Plugin } from 'vite'
 // browser. The deployed site is public, so every call is guarded (see guard below): same-site only, a per-visitor rate
 // limit, small inputs and capped answers. The hard backstop is a spending limit on the OpenAI key itself.
 
-export type AiEnv = { key?: string; model?: string; transcribeModel?: string; liveModel?: string }
+export type AiEnv = { key?: string; model?: string; transcribeModel?: string; liveModel?: string; appTokenSecret?: string; appleAppId?: string; debugToken?: string }
 
 // Cheap, fast (no reasoning step) and good at structured output; in testing 5 candidate models read notes equally
 // well and this one was the quickest. Override with OPENAI_MODEL.
@@ -63,7 +64,7 @@ const TASKS: Record<string, Task> = {
 // How many calls one visitor (by IP) may make in 10 minutes, per task. Generous for a person using the app, small for a
 // script. Counted in memory, so it is per server instance: a good brake, not a hard wall (the OpenAI spending limit is).
 const WINDOW_MS = 10 * 60 * 1000
-const LIMITS: Record<string, number> = { parse: 30, rank: 60, draft: 60, transcribe: 20, live: 15 }
+const LIMITS: Record<string, number> = { parse: 30, rank: 60, draft: 60, transcribe: 20, live: 15, attest: 10, 'attest-challenge': 20 }
 const hits = new Map<string, number[]>()
 
 // Seconds until this visitor may call `task` again, or 0 when they may now (and counts this call).
@@ -194,11 +195,39 @@ export async function handleAi(req: IncomingMessage, res: ServerResponse, env: A
   // models it would never need)
   if (name === 'status') return send(200, { ready: !!env.key })
   const task = TASKS[name]
-  if (!task && name !== 'transcribe' && name !== 'live') return send(404, { error: 'Unknown task' })
+  const isAttest = name === 'attest' || name === 'attest-challenge'
+  if (!task && name !== 'transcribe' && name !== 'live' && !isAttest) return send(404, { error: 'Unknown task' })
   if (req.method !== 'POST') return send(405, { error: 'POST only' }, { allow: 'POST' })
+  // The native app sends no browser headers. It must prove itself with a token (see server/appAttest.ts); never open when unconfigured.
+  const native = !req.headers.origin && !req.headers['sec-fetch-site']
+  const secret = env.appTokenSecret
+  if ((native || isAttest) && !secret && (isAttest || !env.debugToken)) return send(503, { error: 'Native app access is not configured (APP_TOKEN_SECRET)' })
+  if (isAttest) {
+    const wait = rateLimited(clientIp(req), name)
+    if (wait) return send(429, { error: 'Too many requests, try again in a moment' }, { 'retry-after': String(wait) })
+    if (name === 'attest-challenge') return send(200, { challenge: makeChallenge(secret!) })
+    try {
+      const raw = await readBody(req, MAX_JSON)
+      const b = JSON.parse(raw?.toString('utf8') ?? '') as { keyId?: string; attestation?: string; challenge?: string }
+      if (!env.appleAppId || !b.keyId || !b.attestation || !b.challenge) return send(400, { error: 'Bad request body' })
+      if (!challengeValid(secret!, b.challenge)) return send(401, { error: 'Challenge expired' })
+      verifyAttestation({ attestation: Buffer.from(b.attestation, 'base64'), challenge: b.challenge, keyId: b.keyId, appId: env.appleAppId })
+      return send(200, signToken(secret!, b.keyId))
+    } catch {
+      return send(401, { error: 'Attestation rejected' })
+    }
+  }
+  let device = ''
+  if (native) {
+    const bearer = /^Bearer (.+)$/.exec(String(req.headers.authorization ?? ''))?.[1] ?? ''
+    // APP_DEBUG_TOKEN: a static token for development builds only; never set it in production
+    const did = env.debugToken && bearer === env.debugToken ? 'debug' : secret ? verifyToken(secret, bearer) : null
+    if (!did) return send(401, { error: 'Missing or invalid token' })
+    device = did
+  }
   if (!env.key) return send(503, { error: 'Set OPENAI_API_KEY (.env.local locally, Environment Variables on Vercel)' })
   if (crossSite(req.headers)) return send(403, { error: 'Not allowed from another site' })
-  const wait = rateLimited(clientIp(req), name)
+  const wait = Math.max(rateLimited(clientIp(req), name), device ? rateLimited(`dev:${device}`, name) : 0)
   if (wait) return send(429, { error: 'Too many requests, try again in a moment' }, { 'retry-after': String(wait) })
   try {
     const out =

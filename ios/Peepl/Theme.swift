@@ -34,9 +34,21 @@ extension Theme {
         case .semibold, .bold, .heavy, .black: name = "Geist-SemiBold"
         default: name = "Geist-Regular"
         }
-        return .custom(name, size: size)
+        return .custom(name, size: size, relativeTo: textStyle(size))
     }
     static func mono(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
-        .custom(weight == .medium || weight == .semibold ? "GeistMono-Medium" : "GeistMono-Regular", size: size)
+        .custom(weight == .medium || weight == .semibold ? "GeistMono-Medium" : "GeistMono-Regular", size: size, relativeTo: textStyle(size))
+    }
+    /// Nearest text style by size, so Geist scales with Dynamic Type.
+    private static func textStyle(_ size: CGFloat) -> Font.TextStyle {
+        switch size {
+        case ...12: .caption
+        case ...13: .footnote
+        case ...15: .subheadline
+        case ...17: .body
+        case ...20: .title3
+        case ...24: .title2
+        default: .title
+        }
     }
 }

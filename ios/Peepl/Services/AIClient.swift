@@ -7,10 +7,26 @@ enum AIClient {
     /// Tests call this to forget a 503 / 404 from an earlier case.
     static func reset() { off = false }
 
-    private static var base: String {
+    static var base: String {
         // -PeeplAPIBase <url>: UI tests point it at nothing, so they never use the network
         (UserDefaults.standard.string(forKey: "PeeplAPIBase") ?? Bundle.main.object(forInfoDictionaryKey: "PeeplAPIBase") as? String).flatMap { $0.isEmpty ? nil : $0 }
             ?? "https://peepl-steel.vercel.app"
+    }
+
+    /// POST JSON with the App Attest bearer token; one fresh token and retry on 401. nil = offline (no token, no answer).
+    static func send(_ path: String, _ body: [String: Any], timeout: TimeInterval) async -> (Data, HTTPURLResponse)? {
+        guard let url = URL(string: base + "/api/ai/" + path) else { return nil }
+        for attempt in 0..<2 {
+            guard let token = await AppAttest.token(refresh: attempt > 0) else { return nil }
+            var req = URLRequest(url: url, timeoutInterval: timeout)
+            req.httpMethod = "POST"
+            req.setValue("application/json", forHTTPHeaderField: "content-type")
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "authorization")
+            req.httpBody = try? JSONSerialization.data(withJSONObject: body)
+            guard let (data, resp) = try? await session.data(for: req), let http = resp as? HTTPURLResponse else { return nil }
+            if http.statusCode != 401 || attempt == 1 { return (data, http) }
+        }
+        return nil
     }
 
     private static func cut(_ v: String) -> String {
@@ -22,12 +38,7 @@ enum AIClient {
 
     static func parse(_ note: String) async -> Draft? {
         let t = note.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !off, !t.isEmpty, let url = URL(string: base + "/api/ai/parse") else { return nil }
-        var req = URLRequest(url: url, timeoutInterval: 10)
-        req.httpMethod = "POST"
-        req.setValue("application/json", forHTTPHeaderField: "content-type")
-        req.httpBody = try? JSONSerialization.data(withJSONObject: ["text": t])
-        guard let (data, resp) = try? await session.data(for: req), let http = resp as? HTTPURLResponse else { return nil }
+        guard !off, !t.isEmpty, let (data, http) = await send("parse", ["text": t], timeout: 10) else { return nil }
         if http.statusCode == 503 || http.statusCode == 404 { off = true; return nil }
         guard (200..<300).contains(http.statusCode),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
@@ -74,12 +85,7 @@ extension AIClient {
 
     /// POST /api/ai/<task>; nil on any failure. 503 / 404 turn the AI off for the session.
     private static func post(_ task: String, _ body: [String: Any], timeout: TimeInterval) async -> [String: Any]? {
-        guard !off, let url = URL(string: base + "/api/ai/" + task) else { return nil }
-        var req = URLRequest(url: url, timeoutInterval: timeout)
-        req.httpMethod = "POST"
-        req.setValue("application/json", forHTTPHeaderField: "content-type")
-        req.httpBody = try? JSONSerialization.data(withJSONObject: body)
-        guard let (data, resp) = try? await session.data(for: req), let http = resp as? HTTPURLResponse else { return nil }
+        guard !off, let (data, http) = await send(task, body, timeout: timeout) else { return nil }
         if http.statusCode == 503 || http.statusCode == 404 { off = true; return nil }
         guard (200..<300).contains(http.statusCode) else { return nil }
         return try? JSONSerialization.jsonObject(with: data) as? [String: Any]

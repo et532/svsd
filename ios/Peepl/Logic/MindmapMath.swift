@@ -67,7 +67,9 @@ enum MindmapMath {
         guard !nodes.isEmpty else { return (0, 0, 1) }
         let xs = nodes.map(\.x), ys = nodes.map(\.y)
         let x0 = xs.min()!, x1 = xs.max()!, y0 = ys.min()!, y1 = ys.max()!
-        let k = fitZoom * min(1.2, max(0.02, min((width - 90) / (x1 - x0 + 90), (height - 330) / (y1 - y0 + 90))))
+        var k = fitZoom * min(1.2, max(0.02, min((width - 90) / (x1 - x0 + 90), (height - 330) / (y1 - y0 + 90))))
+        // The 1.6x above overshoots a very wide spread (two unlinked people ~1600 apart landed off screen): never push centers out of frame.
+        k = min(k, (width - 40) / max(x1 - x0, 1), (height - 260) / max(y1 - y0, 1))
         return (-(x0 + x1) / 2 * k, -(y0 + y1) / 2 * k + 65, k)   // +65: controls take more room at the top
     }
 

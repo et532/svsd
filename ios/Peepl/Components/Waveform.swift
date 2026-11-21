@@ -15,6 +15,7 @@ struct Waveform: View {
                 }
             }
             .frame(height: 36)
+            .accessibilityHidden(true)
             .onChange(of: ctx.date) { _, _ in
                 history.removeFirst()
                 history.append(min(1, max(0, level())))

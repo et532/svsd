@@ -11,6 +11,7 @@ final class AIRankDraftTests: XCTestCase {
         cfg.protocolClasses = [StubProtocol.self]
         AIClient.session = URLSession(configuration: cfg)
         AIClient.reset()
+        AppAttest.override = { "test-token" }
         StubProtocol.requests = 0
     }
 

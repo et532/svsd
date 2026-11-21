@@ -15,6 +15,7 @@ struct TopControls: View {
         .padding(6)
         .frame(height: 54)
         .glassEffect(.regular, in: .capsule)
+        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
     }
 
     private func button(_ t: Tab, _ symbol: String, _ label: String) -> some View {

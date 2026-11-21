@@ -97,7 +97,7 @@ struct ProfileView: View {
     private func addTodo(_ text: String?) {
         addingTodo = false
         guard let text else { return }
-        person.todos.append(Todo(id: Capture.uid(), text: text))
+        person.addTodo(id: Capture.uid(), text: text)
         try? context.save()
     }
 
@@ -193,7 +193,7 @@ struct ProfileView: View {
             header("Things to do with \(person.firstName)")
             // Figma: one card, rows split by hairlines
             VStack(spacing: 0) {
-                ForEach(person.todos.sorted { $0.id < $1.id }) { t in
+                ForEach(person.orderedTodos) { t in
                     Button { t.done.toggle(); try? context.save() } label: {
                         Text(t.text).strikethrough(t.done).font(Theme.font(15)).foregroundStyle(Theme.ink)
                             .frame(maxWidth: .infinity, alignment: .leading)

@@ -10,6 +10,8 @@ struct AuraBackground: View {
         let ground = light ? Color(hex: "f4f4f4") : Color(hex: "ededed")
         TimelineView(.animation(paused: reduceMotion)) { tl in
             Canvas { ctx, size in
+                // grain sits under the orbs, over the ground (web: Texture/Grain)
+                ctx.fill(Path(CGRect(origin: .zero, size: size)), with: .tiledImage(Self.grain, sourceRect: CGRect(x: 0, y: 0, width: 1, height: 1), scale: 1))
                 let t = tl.date.timeIntervalSinceReferenceDate, s = size.width / 393
                 for (i, o) in MindmapModel.aura.enumerated() {
                     // each orb wanders on its own 14-25 s loop, up to ~45% of the screen
@@ -30,6 +32,18 @@ struct AuraBackground: View {
         }
         .background(ground)
         .ignoresSafeArea()
+        .accessibilityHidden(true)
         .allowsHitTesting(false)
     }
+
+    /// 256x256 noise tile, built once: about half the pixels white at ~5% alpha.
+    private static let grain: Image = {
+        let n = 256
+        var px = [UInt8](repeating: 0, count: n * n * 2)
+        var rng = SystemRandomNumberGenerator()
+        for i in 0..<n * n where Bool.random(using: &rng) { px[i * 2] = 255; px[i * 2 + 1] = 13 }
+        let cg = CGContext(data: &px, width: n, height: n, bitsPerComponent: 8, bytesPerRow: n * 2,
+                           space: CGColorSpaceCreateDeviceGray(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!.makeImage()!
+        return Image(decorative: cg, scale: 1)
+    }()
 }

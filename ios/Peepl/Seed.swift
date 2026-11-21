@@ -18,7 +18,7 @@ private struct PersonDTO: Decodable {
         let p = Person(id: id, name: name, context: context, alsoContext: alsoContext, profession: profession, story: story,
                        tags: tags, from: from, met: met, livesNow: livesNow, lifeStage: lifeStage, lastContacted: lastContacted,
                        knows: knows, mutualNotes: mutualNotes ?? [:], closeness: closeness)
-        p.todos = (todos ?? []).map { Todo(id: $0.id, text: $0.text, done: $0.done) }
+        p.todos = (todos ?? []).enumerated().map { Todo(id: $1.id, text: $1.text, done: $1.done, order: $0) }
         p.moments = (moments ?? []).map {
             Moment(id: $0.id, date: $0.date, title: $0.title, text: $0.text, transcript: $0.transcript, seconds: $0.seconds, firstMeeting: $0.firstMeeting ?? false)
         }
