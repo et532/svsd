@@ -44,10 +44,10 @@ struct FindView: View {
                         ForEach(Self.ways, id: \.1) { way in
                             Button { ask(way.2, query: way.3) } label: {
                                 HStack(spacing: 14) {
-                                    Image(systemName: way.0).font(.system(size: 20)).foregroundStyle(Theme.ink).frame(width: 28)
+                                    Image(systemName: way.0).font(Theme.font(20)).foregroundStyle(Theme.ink).frame(width: 28)
                                     VStack(alignment: .leading, spacing: 2) {
-                                        Text(way.1).font(.system(size: 16, weight: .medium)).foregroundStyle(Theme.ink)
-                                        Text("“\(way.2)”").font(.system(size: 13)).foregroundStyle(Theme.inkMuted)
+                                        Text(way.1).font(Theme.font(16, .medium)).foregroundStyle(Theme.ink)
+                                        Text("“\(way.2)”").font(Theme.font(13)).foregroundStyle(Theme.inkMuted)
                                     }
                                     Spacer()
                                 }
@@ -67,14 +67,14 @@ struct FindView: View {
     }
 
     private func title(_ s: String) -> some View {
-        Text(s).font(.system(size: 28, weight: .light)).tracking(-1.1).foregroundStyle(Theme.ink)
+        Text(s).font(Theme.font(28, .light)).tracking(-1.1).foregroundStyle(Theme.ink)
     }
     private func note(_ s: String) -> some View {
-        Text(s).font(.system(size: 16)).foregroundStyle(Theme.inkMuted)
+        Text(s).font(Theme.font(16)).foregroundStyle(Theme.inkMuted)
     }
     private func wide(_ label: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text(label).font(.system(size: 15, weight: .medium)).foregroundStyle(Theme.ink)
+            Text(label).font(Theme.font(15, .medium)).foregroundStyle(Theme.ink)
                 .frame(maxWidth: .infinity).frame(height: 48).glassEffect(.regular, in: .capsule)
         }.buttonStyle(.plain)
     }
@@ -106,7 +106,7 @@ struct FindView: View {
     }
 
     @ViewBuilder private func group(_ label: String, _ matches: [Match]) -> some View {
-        if !label.isEmpty { Text(label.uppercased()).font(.system(size: 12, weight: .medium)).tracking(0.6).foregroundStyle(Theme.inkMuted) }
+        if !label.isEmpty { Text(label.uppercased()).font(Theme.font(12, .medium)).tracking(0.6).foregroundStyle(Theme.inkMuted) }
         ForEach(matches) { m in
             FindCard(match: m, open: { nav.push(.profile(m.id)) }, sent: sent)
         }
@@ -169,30 +169,30 @@ private struct FindCard: View {
                 HStack(spacing: 12) {
                     Avatar(id: p.id, size: 40)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(p.name).font(.system(size: 16, weight: .medium)).foregroundStyle(Theme.ink)
+                        Text(p.name).font(Theme.font(16, .medium)).foregroundStyle(Theme.ink)
                         Text([p.profession, p.livesNow.city].filter { !$0.isEmpty && $0 != "Unknown" }.joined(separator: " · "))
-                            .font(.system(size: 13)).foregroundStyle(Theme.inkMuted).lineLimit(1)
+                            .font(Theme.font(13)).foregroundStyle(Theme.inkMuted).lineLimit(1)
                     }
                     Spacer(minLength: 8)
-                    Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(.tertiary)
+                    Image(systemName: "chevron.right").font(Theme.font(13, .semibold)).foregroundStyle(.tertiary)
                 }
                 .contentShape(Rectangle())
             }.buttonStyle(.plain)
             Divider()
-            if let via = match.via { Text(via.uppercased()).font(.system(size: 11, weight: .medium)).tracking(0.6).foregroundStyle(Theme.inkMuted) }
-            Text(match.why).font(.system(size: 17, weight: .light)).foregroundStyle(Theme.ink).fixedSize(horizontal: false, vertical: true)
+            if let via = match.via { Text(via.uppercased()).font(Theme.font(11, .medium)).tracking(0.6).foregroundStyle(Theme.inkMuted) }
+            Text(match.why).font(Theme.font(17, .light)).foregroundStyle(Theme.ink).fixedSize(horizontal: false, vertical: true)
             if let action = match.action {
                 if text == nil {
                     Button {
                         text = ""; writing = true
                         Task { text = await AIClient.draft(p, action: action); writing = false }
                     } label: {
-                        Text(action.label).font(.system(size: 15, weight: .medium)).foregroundStyle(Theme.ink)
+                        Text(action.label).font(Theme.font(15, .medium)).foregroundStyle(Theme.ink)
                             .frame(maxWidth: .infinity).frame(height: 40).background(.white, in: .capsule)
                     }.buttonStyle(.plain)
                 } else {
                     TextField("", text: Binding(get: { text ?? "" }, set: { text = $0 }), prompt: Text(writing ? "Writing…" : ""), axis: .vertical)
-                        .font(.system(size: 16)).foregroundStyle(Theme.ink).lineLimit(3...10).disabled(writing)
+                        .font(Theme.font(16)).foregroundStyle(Theme.ink).lineLimit(3...10).disabled(writing)
                         .padding(12).background(.white.opacity(0.8), in: .rect(cornerRadius: 16))
                         .accessibilityLabel("Message")
                     HStack(spacing: 8) {
@@ -208,7 +208,7 @@ private struct FindCard: View {
     }
 
     private func pill(_ s: String) -> some View {
-        Text(s).font(.system(size: 15, weight: .medium)).foregroundStyle(Theme.ink)
+        Text(s).font(Theme.font(15, .medium)).foregroundStyle(Theme.ink)
             .padding(.horizontal, 18).frame(height: 40).background(Theme.pressed, in: .capsule)
     }
 }
@@ -220,7 +220,7 @@ private struct Thinking: View {
     @State private var dim = false
 
     var body: some View {
-        Text(Self.steps[step]).font(.system(size: 16)).foregroundStyle(Theme.inkMuted)
+        Text(Self.steps[step]).font(Theme.font(16)).foregroundStyle(Theme.inkMuted)
             .task {
                 while step < Self.steps.count - 1 {
                     try? await Task.sleep(for: .milliseconds(530))

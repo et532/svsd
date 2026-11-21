@@ -52,7 +52,7 @@ struct NameNote: View {
             ForEach(words) { w in
                 HStack(spacing: 0) {
                     if let name = w.name { nameWord(w, name) }
-                    Text(w.name == nil ? w.text : w.tail).font(.system(size: 16)).foregroundStyle(Theme.ink).padding(.vertical, 1)
+                    Text(w.name == nil ? w.text : w.tail).font(Theme.font(16)).foregroundStyle(Theme.ink).padding(.vertical, 1)
                         .contentShape(.rect).onTapGesture { if interactive { onPlain() } }
                 }
                 .padding(.trailing, 4)
@@ -71,15 +71,15 @@ struct NameNote: View {
                         .autocorrectionDisabled().textInputAutocapitalization(.words)
                         .onSubmit { save(w, name) }
                 }
-            .font(.system(size: 16)).padding(.horizontal, 3).padding(.vertical, 1)
+            .font(Theme.font(16)).padding(.horizontal, 3).padding(.vertical, 1)
             .overlay(RoundedRectangle(cornerRadius: 6).stroke(Theme.ink, lineWidth: 1))
             .onAppear { typing = true }
         } else if !interactive {
-            Text(w.text).font(.system(size: 16)).foregroundStyle(Theme.ink).padding(.horizontal, 3).padding(.vertical, 1)
+            Text(w.text).font(Theme.font(16)).foregroundStyle(Theme.ink).padding(.horizontal, 3).padding(.vertical, 1)
                 .overlay(RoundedRectangle(cornerRadius: 6).stroke(Theme.ink.opacity(0.25), lineWidth: 1))
         } else {
             Button { typed = ""; editing = w.id } label: {
-                Text(w.text).font(.system(size: 16)).foregroundStyle(Theme.ink).padding(.horizontal, 3).padding(.vertical, 1)
+                Text(w.text).font(Theme.font(16)).foregroundStyle(Theme.ink).padding(.horizontal, 3).padding(.vertical, 1)
                     .overlay(RoundedRectangle(cornerRadius: 6).stroke(Theme.ink.opacity(0.25), lineWidth: 1))
             }
             .buttonStyle(.plain).accessibilityLabel("Fix the name \(w.text)")
@@ -124,7 +124,7 @@ struct NameOutlines: View {
                 $0 + Text($1.offset > 0 ? " " : "") + Text($1.element).customAttribute(OutlinedWord())
             }
         }
-        .font(.system(size: 16)).foregroundStyle(.clear)
+        .font(Theme.font(16)).foregroundStyle(.clear)
         .textRenderer(OutlineRenderer())
         .accessibilityElement().accessibilityLabel(names.isEmpty ? "" : "Names found: " + names.joined(separator: ", "))
         .accessibilityHidden(names.isEmpty)

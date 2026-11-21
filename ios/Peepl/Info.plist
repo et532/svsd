@@ -20,5 +20,14 @@
 	<string>1</string>
 	<key>PeeplAPIBase</key>
 	<string>$(PEEPL_API_BASE)</string>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Geist-Light.ttf</string>
+		<string>Geist-Regular.ttf</string>
+		<string>Geist-Medium.ttf</string>
+		<string>Geist-SemiBold.ttf</string>
+		<string>GeistMono-Regular.ttf</string>
+		<string>GeistMono-Medium.ttf</string>
+	</array>
 </dict>
 </plist>

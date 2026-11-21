@@ -34,26 +34,26 @@ struct Composer: View {
         VStack(alignment: .leading, spacing: 0) {
         // its own line, not the placeholder: it must show even when there is text in the field
         if let m = voice.message {
-            Text(m).font(.system(size: 13)).foregroundStyle(Theme.inkMuted).padding(.horizontal, 6).padding(.top, 8)
+            Text(m).font(Theme.font(13)).foregroundStyle(Theme.inkMuted).padding(.horizontal, 6).padding(.top, 8)
         }
         HStack(alignment: .bottom, spacing: 8) {
             field
             if recording {
                 Waveform(level: { voice.recognizer.level }).frame(height: 40)
                 Button { voice.stop() } label: {
-                    Image(systemName: "stop.fill").font(.system(size: 16)).foregroundStyle(.white)
+                    Image(systemName: "stop.fill").font(Theme.font(16)).foregroundStyle(.white)
                         .frame(width: 40, height: 40).background(Theme.night, in: .circle)
                 }
                 .buttonStyle(.plain).accessibilityLabel("Stop")
             } else {
                 Button { listen() } label: {
-                    Image(systemName: "mic").font(.system(size: 18)).foregroundStyle(Theme.ink).frame(width: 40, height: 40)
+                    Image(systemName: "mic").font(Theme.font(18)).foregroundStyle(Theme.ink).frame(width: 40, height: 40)
                 }
                 .buttonStyle(.plain).accessibilityLabel("Voice")
             }
             if !trimmed.isEmpty {
                 Button { onSend(trimmed); text = ""; voice.reset(); plain = true } label: {
-                    Image(systemName: "arrow.up").font(.system(size: 16, weight: .semibold)).foregroundStyle(.white)
+                    Image(systemName: "arrow.up").font(Theme.font(16, .semibold)).foregroundStyle(.white)
                         .frame(width: 40, height: 40).background(Theme.night, in: .circle)
                 }
                 .buttonStyle(.plain).accessibilityLabel("Send").transition(.scale.combined(with: .opacity))
@@ -75,7 +75,7 @@ struct Composer: View {
                 if let people {
                     NameNote(text: .constant(voice.text), fixed: .constant([]), people: people, onPlain: {}, interactive: false)
                 } else {
-                    Text(voice.text.isEmpty ? " " : voice.text).font(.system(size: 16)).foregroundStyle(Theme.ink)
+                    Text(voice.text.isEmpty ? " " : voice.text).font(Theme.font(16)).foregroundStyle(Theme.ink)
                         .frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 10).padding(.leading, 6)
                 }
             }
@@ -84,7 +84,7 @@ struct Composer: View {
             NameNote(text: $text, fixed: $voice.fixed, people: people) { plain = true; focused = true }
         } else {
             TextField("", text: $text, prompt: Text(placeholder).foregroundStyle(Theme.inkMuted), axis: .vertical)
-                .font(.system(size: 16)).foregroundStyle(Theme.ink)
+                .font(Theme.font(16)).foregroundStyle(Theme.ink)
                 .accessibilityIdentifier("composer")
                 .lineLimit(1...6).focused($focused) // 6 lines ≈ the web's 144 pt cap; a maxHeight frame made it greedy
                 // names outlined as you type. shortcut: past 6 lines the outlines follow the end of the note only

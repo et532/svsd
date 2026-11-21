@@ -18,7 +18,7 @@ struct ConnectionsView: View {
                 LazyVStack(spacing: 8) {
                     HStack {
                         Text("Connections")
-                            .font(.system(size: 32, weight: .regular))
+                            .font(Theme.font(32, .regular))
                             .tracking(-1.28)
                             .foregroundStyle(Theme.ink)
                         Spacer()
@@ -26,7 +26,7 @@ struct ConnectionsView: View {
                             Button("Back up") { exporting = true }.accessibilityLabel("Back up")
                             Button("Restore") { importing = true }.accessibilityLabel("Restore")
                         } label: {
-                            Image(systemName: "ellipsis").font(.system(size: 18)).foregroundStyle(Theme.ink).frame(width: 44, height: 44).contentShape(.rect)
+                            Image(systemName: "ellipsis").font(Theme.font(18)).foregroundStyle(Theme.ink).frame(width: 44, height: 44).contentShape(.rect)
                         }
                         .accessibilityLabel("More")
                     }
@@ -59,12 +59,12 @@ private struct Row: View {
         HStack(spacing: 12) {
             Avatar(id: person.id, size: 40)
             VStack(alignment: .leading, spacing: 2) {
-                Text(person.name).font(.system(size: 16, weight: .medium)).foregroundStyle(Theme.ink)
+                Text(person.name).font(Theme.font(16, .medium)).foregroundStyle(Theme.ink)
                 Text(person.subtitle)
-                    .font(.system(size: 13)).foregroundStyle(Theme.inkMuted).lineLimit(1)
+                    .font(Theme.font(13)).foregroundStyle(Theme.inkMuted).lineLimit(1)
             }
             Spacer(minLength: 8)
-            Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(.tertiary)
+            Image(systemName: "chevron.right").font(Theme.font(13, .semibold)).foregroundStyle(.tertiary)
         }
         .padding(.horizontal, 16)
         .frame(height: 70)
@@ -78,16 +78,16 @@ struct EmptyPeople: View {
     @Environment(\.modelContext) private var context
     var body: some View {
         VStack(spacing: 10) {
-            Text("No one here yet").font(.system(size: 20, weight: .medium)).foregroundStyle(Theme.ink)
+            Text("No one here yet").font(Theme.font(20, .medium)).foregroundStyle(Theme.ink)
             Text("Add the first person you want to remember:\nwho they are, where you met, their story.")
-                .font(.system(size: 14)).foregroundStyle(Theme.inkMuted).multilineTextAlignment(.center)
+                .font(Theme.font(14)).foregroundStyle(Theme.inkMuted).multilineTextAlignment(.center)
             Button { nav.push(.add(mutualOf: nil)) } label: {
-                Text("Add someone").font(.system(size: 15, weight: .medium)).foregroundStyle(.white)
+                Text("Add someone").font(Theme.font(15, .medium)).foregroundStyle(.white)
                     .padding(.horizontal, 18).frame(height: 44).background(Theme.night, in: .capsule)
             }
             .buttonStyle(.plain).padding(.top, 6)
             Button { Seed.loadSamples(context) } label: {
-                Text("Try with sample people").font(.system(size: 14)).foregroundStyle(Theme.inkMuted)
+                Text("Try with sample people").font(Theme.font(14)).foregroundStyle(Theme.inkMuted)
             }
             .buttonStyle(.plain).padding(.top, 4)
         }

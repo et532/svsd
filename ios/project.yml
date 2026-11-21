@@ -15,6 +15,7 @@ targets:
       path: Peepl/Info.plist
       properties:
         PeeplAPIBase: $(PEEPL_API_BASE)
+        UIAppFonts: [Geist-Light.ttf, Geist-Regular.ttf, Geist-Medium.ttf, Geist-SemiBold.ttf, GeistMono-Regular.ttf, GeistMono-Medium.ttf]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.vincelin.peepl

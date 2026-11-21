@@ -11,10 +11,10 @@ struct MindmapPill: View {
             HStack(spacing: 12) {
                 Avatar(id: person.id, size: 36)
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(person.name).font(.system(size: 14, weight: .medium)).tracking(-0.56).foregroundStyle(Theme.ink)
-                    if !sub.isEmpty { Text(sub).font(.system(size: 12)).foregroundStyle(Theme.inkMuted) }
+                    Text(person.name).font(Theme.font(14, .medium)).tracking(-0.56).foregroundStyle(Theme.ink)
+                    if !sub.isEmpty { Text(sub).font(Theme.font(12)).foregroundStyle(Theme.inkMuted) }
                 }
-                Image(systemName: "chevron.right").font(.system(size: 19)).foregroundStyle(Theme.inkMuted)
+                Image(systemName: "chevron.right").font(Theme.font(19)).foregroundStyle(Theme.inkMuted)
             }
             .padding(.vertical, 8).padding(.horizontal, 16)
             .background(.white.opacity(0.8), in: .capsule)

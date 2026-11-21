@@ -61,7 +61,7 @@ struct AddView: View {
                             Button { saveMoment(p) } label: { candidateRow(p) }.buttonStyle(.plain)
                         }
                         Button { startNew() } label: {
-                            Text("Neither, add a new profile").font(.system(size: 15, weight: .medium)).foregroundStyle(.white)
+                            Text("Neither, add a new profile").font(Theme.font(15, .medium)).foregroundStyle(.white)
                                 .padding(.horizontal, 18).padding(.vertical, 12).background(Theme.night, in: .capsule)
                         }.buttonStyle(.plain)
                     case .creating:
@@ -83,7 +83,7 @@ struct AddView: View {
                             Button { nav.replaceTop(.profile(p.id)) } label: { ResultCard(person: p) }.buttonStyle(.plain)
                         }
                         Text("\(AddMany.list(ps.map(\.firstName))) were met together, so they're linked as mutuals.")
-                            .font(.system(size: 13)).foregroundStyle(Theme.inkMuted)
+                            .font(Theme.font(13)).foregroundStyle(Theme.inkMuted)
                     }
                 }
                 .padding(.horizontal, 20).padding(.top, 80).padding(.bottom, 24)
@@ -96,11 +96,11 @@ struct AddView: View {
     }
 
     private func title(_ s: String) -> some View {
-        Text(s).font(.system(size: 28, weight: .light)).tracking(-1.1).foregroundStyle(Theme.ink)
+        Text(s).font(Theme.font(28, .light)).tracking(-1.1).foregroundStyle(Theme.ink)
     }
 
     private var bubble: some View {
-        Text(note).font(.system(size: 16)).foregroundStyle(Theme.ink).padding(14)
+        Text(note).font(Theme.font(16)).foregroundStyle(Theme.ink).padding(14)
             .background(.white.opacity(0.7), in: .rect(cornerRadius: 20)).frame(maxWidth: .infinity, alignment: .trailing)
     }
 
@@ -108,8 +108,8 @@ struct AddView: View {
         HStack(spacing: 12) {
             Avatar(id: p.id, size: 40)
             VStack(alignment: .leading, spacing: 2) {
-                Text(p.name).font(.system(size: 16, weight: .medium)).foregroundStyle(Theme.ink)
-                Text("Last updated \(monthYear(p.lastContacted))").font(.system(size: 13)).foregroundStyle(Theme.inkMuted)
+                Text(p.name).font(Theme.font(16, .medium)).foregroundStyle(Theme.ink)
+                Text("Last updated \(monthYear(p.lastContacted))").font(Theme.font(13)).foregroundStyle(Theme.inkMuted)
             }
             Spacer()
         }
@@ -165,9 +165,9 @@ private struct ResultCard: View {
         HStack(spacing: 14) {
             Avatar(id: person.id, size: 60)
             VStack(alignment: .leading, spacing: 3) {
-                Text(person.name).font(.system(size: 20, weight: .medium)).foregroundStyle(.white)
-                if !sub.isEmpty { Text(sub).font(.system(size: 13)).foregroundStyle(.white.opacity(0.85)) }
-                Text("Met \(monthYear(Capture.today()))").font(.system(size: 13)).foregroundStyle(Color(hex: "cccccc"))
+                Text(person.name).font(Theme.font(20, .medium)).foregroundStyle(.white)
+                if !sub.isEmpty { Text(sub).font(Theme.font(13)).foregroundStyle(.white.opacity(0.85)) }
+                Text("Met \(monthYear(Capture.today()))").font(Theme.font(13)).foregroundStyle(Color(hex: "cccccc"))
             }
             Spacer()
             Image(systemName: "chevron.right").foregroundStyle(.white)

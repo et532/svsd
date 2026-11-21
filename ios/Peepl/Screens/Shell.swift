@@ -70,7 +70,7 @@ struct RootView: View {
                         Image(systemName: "checkmark.circle.fill").foregroundStyle(Color(hex: "d6f23c"))
                         Text(toast).foregroundStyle(.white)
                     }
-                    .font(.system(size: 15, weight: .medium))
+                    .font(Theme.font(15, .medium))
                     .padding(.horizontal, 18).padding(.vertical, 12)
                     .background(Theme.ink, in: .capsule)
                     .padding(.bottom, 90)
@@ -119,7 +119,7 @@ private struct LayerHost: View {
             }
             if !layer.isProfile {
                 Button { nav.pop() } label: {
-                    Image(systemName: "xmark").font(.system(size: 16, weight: .semibold))
+                    Image(systemName: "xmark").font(Theme.font(16, .semibold))
                         .foregroundStyle(Theme.ink).frame(width: 44, height: 44).glassEffect(.regular, in: .circle)
                 }
                 .buttonStyle(.plain).padding(.leading, 16)

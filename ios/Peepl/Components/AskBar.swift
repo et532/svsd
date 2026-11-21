@@ -9,8 +9,8 @@ struct AskBar: View {
             if let f = nav.focus {
                 Button { nav.focus = nil; nav.push(.profile(f.id)) } label: {
                     HStack(spacing: 6) {
-                        Image(systemName: "chevron.left").font(.system(size: 12, weight: .semibold))
-                        Text(f.name).font(.system(size: 13, weight: .medium))
+                        Image(systemName: "chevron.left").font(Theme.font(12, .semibold))
+                        Text(f.name).font(Theme.font(13, .medium))
                     }
                     .foregroundStyle(.white).padding(.leading, 10).padding(.trailing, 14).frame(height: 34).background(Theme.night, in: .capsule)
                 }
@@ -19,9 +19,9 @@ struct AskBar: View {
             }
             if let f = nav.showFilter {
                 HStack(spacing: 8) {
-                    Text("\(f.label) · \(f.ids.count)").font(.system(size: 14, weight: .medium)).foregroundStyle(Theme.ink)
+                    Text("\(f.label) · \(f.ids.count)").font(Theme.font(14, .medium)).foregroundStyle(Theme.ink)
                     Button { nav.showFilter = nil } label: {
-                        Image(systemName: "xmark").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.ink)
+                        Image(systemName: "xmark").font(Theme.font(12, .semibold)).foregroundStyle(Theme.ink)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Clear filter")
@@ -38,19 +38,19 @@ struct AskBar: View {
         HStack(spacing: 10) {
             HStack(spacing: 0) {
                 Button { nav.focus = nil; nav.revealOrigin = UnitPoint(x: 0.4, y: 0.95); nav.push(.find()) } label: {
-                    Text("Ask me about people").font(.system(size: 16)).foregroundStyle(Theme.inkMuted)
+                    Text("Ask me about people").font(Theme.font(16)).foregroundStyle(Theme.inkMuted)
                         .frame(maxWidth: .infinity, alignment: .leading).frame(height: 56).padding(.leading, 20).contentShape(.rect)
                 }
                 .buttonStyle(.plain)
                 Button { nav.focus = nil; nav.revealOrigin = UnitPoint(x: 0.4, y: 0.95); nav.push(.find(voice: true)) } label: {
-                    Image(systemName: "mic").font(.system(size: 20)).foregroundStyle(Theme.ink).frame(width: 60, height: 56).contentShape(.rect)
+                    Image(systemName: "mic").font(Theme.font(20)).foregroundStyle(Theme.ink).frame(width: 60, height: 56).contentShape(.rect)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Ask by voice")
             }
             .glassEffect(.regular, in: .capsule)
             Button { nav.revealOrigin = UnitPoint(x: 0.92, y: 0.95); nav.push(.add(mutualOf: nil)) } label: {
-                Image(systemName: "person.badge.plus").font(.system(size: 20)).foregroundStyle(Theme.ink)
+                Image(systemName: "person.badge.plus").font(Theme.font(20)).foregroundStyle(Theme.ink)
                     .frame(width: 56, height: 56)
                     .glassEffect(.regular, in: .circle)
             }

@@ -23,3 +23,20 @@ extension View {
         glassEffect(.regular, in: .rect(cornerRadius: radius))
     }
 }
+
+extension Theme {
+    /// Geist (bundled, Resources/Fonts). Falls back to the system font if a file is missing.
+    static func font(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
+        let name: String
+        switch weight {
+        case .light, .thin, .ultraLight: name = "Geist-Light"
+        case .medium: name = "Geist-Medium"
+        case .semibold, .bold, .heavy, .black: name = "Geist-SemiBold"
+        default: name = "Geist-Regular"
+        }
+        return .custom(name, size: size)
+    }
+    static func mono(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
+        .custom(weight == .medium || weight == .semibold ? "GeistMono-Medium" : "GeistMono-Regular", size: size)
+    }
+}

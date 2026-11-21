@@ -115,9 +115,9 @@ struct ProfileView: View {
         HStack(spacing: 16) {
             Avatar(id: person.id, size: 88)
             VStack(alignment: .leading, spacing: 6) {
-                Text(person.name).font(.system(size: 20, weight: .medium)).foregroundStyle(.white)
-                Text(person.subtitle).font(.system(size: 13)).foregroundStyle(.white.opacity(0.85))
-                Text(metDate).font(.system(size: 13)).foregroundStyle(Color(hex: "cccccc"))
+                Text(person.name).font(Theme.font(20, .medium)).foregroundStyle(.white)
+                Text(person.subtitle).font(Theme.font(13)).foregroundStyle(.white.opacity(0.85))
+                Text(metDate).font(Theme.font(13)).foregroundStyle(Color(hex: "cccccc"))
             }
             Spacer(minLength: 0)
         }
@@ -139,7 +139,7 @@ struct ProfileView: View {
         let p = min(max((scrolled - 90) / 40, 0), 1)
         return ZStack {
             Color(hex: blob.base).opacity(p).ignoresSafeArea(edges: .top)
-            Text(person.name).font(.system(size: 16, weight: .medium)).foregroundStyle(.white).opacity(p)
+            Text(person.name).font(Theme.font(16, .medium)).foregroundStyle(.white).opacity(p)
             HStack {
                 circleButton("chevron.left", label: "Back") { nav.pop() }
                 Spacer()
@@ -152,14 +152,14 @@ struct ProfileView: View {
 
     private func circleButton(_ icon: String, label: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Image(systemName: icon).font(.system(size: 16, weight: .semibold)).foregroundStyle(.white)
+            Image(systemName: icon).font(Theme.font(16, .semibold)).foregroundStyle(.white)
                 .frame(width: 44, height: 44).glassEffect(.regular.tint(.white.opacity(0.14)), in: .circle)
         }
         .buttonStyle(.plain).accessibilityLabel(label)
     }
 
     private func chip(_ t: String, ghost: Bool = false) -> some View {
-        Text(t).font(.system(size: 12, weight: .medium)).foregroundStyle(Theme.inkMuted)
+        Text(t).font(Theme.font(12, .medium)).foregroundStyle(Theme.inkMuted)
             .padding(.horizontal, 10).padding(.vertical, 5)
             .background(ghost ? Color.clear : Theme.pressed, in: .capsule)
             .overlay { if ghost { Capsule().stroke(Theme.inkMuted.opacity(0.3), lineWidth: 1) } }
@@ -167,7 +167,7 @@ struct ProfileView: View {
 
     private var summary: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(person.story).font(.system(size: 15)).foregroundStyle(Theme.ink)
+            Text(person.story).font(Theme.font(15)).foregroundStyle(Theme.ink)
             FlowLayout(spacing: 6) {
                 ForEach(person.tags, id: \.self) { chip($0) }
                 if addingTag {
@@ -195,7 +195,7 @@ struct ProfileView: View {
             VStack(spacing: 0) {
                 ForEach(person.todos.sorted { $0.id < $1.id }) { t in
                     Button { t.done.toggle(); try? context.save() } label: {
-                        Text(t.text).strikethrough(t.done).font(.system(size: 15)).foregroundStyle(Theme.ink)
+                        Text(t.text).strikethrough(t.done).font(Theme.font(15)).foregroundStyle(Theme.ink)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .opacity(t.done ? 0.45 : 1).padding(.horizontal, 16).padding(.vertical, 14).contentShape(.rect)
                     }
@@ -209,8 +209,8 @@ struct ProfileView: View {
                 } else {
                     Button { addingTodo = true } label: {
                         HStack(spacing: 8) {
-                            Image(systemName: "plus").font(.system(size: 12, weight: .semibold))
-                            Text("Add something to do").font(.system(size: 14))
+                            Image(systemName: "plus").font(Theme.font(12, .semibold))
+                            Text("Add something to do").font(Theme.font(14))
                             Spacer()
                         }
                         .foregroundStyle(Theme.inkMuted).padding(16).contentShape(.rect)
@@ -235,8 +235,8 @@ struct ProfileView: View {
 
     private func tile(_ label: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(label).font(.system(size: 12)).foregroundStyle(Theme.inkMuted)
-            Text(value).font(.system(size: 14, weight: .medium)).foregroundStyle(Theme.ink).lineLimit(2)
+            Text(label).font(Theme.font(12)).foregroundStyle(Theme.inkMuted)
+            Text(value).font(Theme.font(14, .medium)).foregroundStyle(Theme.ink).lineLimit(2)
         }
         .padding(12).frame(maxWidth: .infinity, alignment: .leading).glass(16)
     }
@@ -247,15 +247,15 @@ struct ProfileView: View {
                 header("Mutuals")
                 Spacer()
                 Button("View connections") { nav.viewConnections(person) }
-                    .font(.system(size: 13, weight: .medium)).foregroundStyle(Theme.inkMuted).buttonStyle(.plain)
+                    .font(Theme.font(13, .medium)).foregroundStyle(Theme.inkMuted).buttonStyle(.plain)
             }
             ScrollView(.horizontal) {
                 HStack(alignment: .top, spacing: 16) {
                     Button { nav.push(.add(mutualOf: person.id)) } label: {
                         VStack(spacing: 4) {
-                            Image(systemName: "plus").font(.system(size: 18)).foregroundStyle(Theme.inkMuted).frame(width: 48, height: 48)
+                            Image(systemName: "plus").font(Theme.font(18)).foregroundStyle(Theme.inkMuted).frame(width: 48, height: 48)
                                 .overlay(Circle().stroke(Theme.inkMuted.opacity(0.5), style: StrokeStyle(lineWidth: 1.5, dash: [4, 3])))
-                            Text("Add").font(.system(size: 12)).foregroundStyle(Theme.ink)
+                            Text("Add").font(Theme.font(12)).foregroundStyle(Theme.ink)
                         }
                         .contentShape(.rect)
                     }
@@ -264,9 +264,9 @@ struct ProfileView: View {
                         Button { nav.push(.profile(m.id)) } label: {
                             VStack(spacing: 4) {
                                 Avatar(id: m.id, size: 48)
-                                Text(m.firstName).font(.system(size: 12)).foregroundStyle(Theme.ink)
+                                Text(m.firstName).font(Theme.font(12)).foregroundStyle(Theme.ink)
                                 if let note = person.mutualNotes[m.id] {
-                                    Text(note).font(.system(size: 10)).foregroundStyle(Theme.inkMuted).lineLimit(2).frame(maxWidth: 72)
+                                    Text(note).font(Theme.font(10)).foregroundStyle(Theme.inkMuted).lineLimit(2).frame(maxWidth: 72)
                                 }
                             }
                         }
@@ -288,11 +288,11 @@ struct ProfileView: View {
                     Button { openMoment = open ? nil : m.id } label: {
                         HStack {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(dayLabel(m.date)).font(.system(size: 12)).foregroundStyle(Theme.inkMuted)
-                                Text(m.title).font(.system(size: 15, weight: .medium)).foregroundStyle(Theme.ink).multilineTextAlignment(.leading)
+                                Text(dayLabel(m.date)).font(Theme.font(12)).foregroundStyle(Theme.inkMuted)
+                                Text(m.title).font(Theme.font(15, .medium)).foregroundStyle(Theme.ink).multilineTextAlignment(.leading)
                             }
                             Spacer()
-                            Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.inkMuted)
+                            Image(systemName: "chevron.right").font(Theme.font(13, .semibold)).foregroundStyle(Theme.inkMuted)
                                 .rotationEffect(.degrees(open ? 90 : 0))
                         }
                         .contentShape(.rect)
@@ -300,7 +300,7 @@ struct ProfileView: View {
                     .buttonStyle(.plain).accessibilityValue(open ? "Open" : "Closed")
                     if open {
                         if let text = m.text, text != m.title {
-                            Text(text).font(.system(size: 14)).foregroundStyle(Theme.inkMuted).frame(maxWidth: .infinity, alignment: .leading)
+                            Text(text).font(Theme.font(14)).foregroundStyle(Theme.inkMuted).frame(maxWidth: .infinity, alignment: .leading)
                         }
                         if let t = m.transcript { VoiceNote(transcript: t, seconds: m.seconds) }
                     }
@@ -312,7 +312,7 @@ struct ProfileView: View {
     }
 
     private func header(_ s: String) -> some View {
-        Text(s.uppercased()).font(.system(size: 11, design: .monospaced)).tracking(0.6).foregroundStyle(Theme.inkMuted).accessibilityLabel(s)
+        Text(s.uppercased()).font(Theme.mono(11)).tracking(0.6).foregroundStyle(Theme.inkMuted).accessibilityLabel(s)
     }
 }
 
@@ -346,7 +346,7 @@ private struct InlineField: View {
     @FocusState private var focused: Bool
 
     var body: some View {
-        TextField(placeholder, text: $text).font(.system(size: size)).foregroundStyle(Theme.ink)
+        TextField(placeholder, text: $text).font(Theme.font(size)).foregroundStyle(Theme.ink)
             .focused($focused).submitLabel(.done)
             .onAppear { focused = true }
             .onSubmit(finish)
@@ -377,13 +377,13 @@ private struct VoiceNote: View {
             VStack(alignment: .leading, spacing: 10) {
                 (Text(words.prefix(said).joined(separator: " ") + (said > 0 ? " " : "")).foregroundStyle(Theme.ink)
                     + Text(words.dropFirst(said).joined(separator: " ")).foregroundStyle(at == 0 ? Theme.ink : Theme.inkMuted.opacity(0.5)))
-                    .font(.system(size: 14)).frame(maxWidth: .infinity, alignment: .leading)
+                    .font(Theme.font(14)).frame(maxWidth: .infinity, alignment: .leading)
                 HStack(spacing: 10) {
                     Button {
                         if !playing, at >= Self.wave.count { at = 0 }
                         playing.toggle()
                     } label: {
-                        Image(systemName: playing ? "pause.fill" : "play.fill").font(.system(size: 12)).foregroundStyle(.white)
+                        Image(systemName: playing ? "pause.fill" : "play.fill").font(Theme.font(12)).foregroundStyle(.white)
                             .frame(width: 32, height: 32).background(Theme.night, in: .circle)
                     }
                     .buttonStyle(.plain).accessibilityLabel(playing ? "Pause voice note" : "Play voice note")
@@ -393,7 +393,7 @@ private struct VoiceNote: View {
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading).accessibilityHidden(true)
-                    Text("\(seconds / 60):\(String(format: "%02d", seconds % 60))").font(.system(size: 12)).foregroundStyle(Theme.inkMuted)
+                    Text("\(seconds / 60):\(String(format: "%02d", seconds % 60))").font(Theme.font(12)).foregroundStyle(Theme.inkMuted)
                 }
             }
             .task(id: playing) {
@@ -406,8 +406,8 @@ private struct VoiceNote: View {
             }
         } else {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Typed note").font(.system(size: 12)).foregroundStyle(Theme.inkMuted)
-                Text("“\(transcript)”").font(.system(size: 14)).foregroundStyle(Theme.ink)
+                Text("Typed note").font(Theme.font(12)).foregroundStyle(Theme.inkMuted)
+                Text("“\(transcript)”").font(Theme.font(14)).foregroundStyle(Theme.ink)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }

@@ -141,13 +141,13 @@ struct MindmapView: View {
             ctx.fill(dot, with: .color(.white))
             ctx.stroke(dot, with: .color(.black.opacity(0.08)), lineWidth: 0.5)
             if ini > 0, let text = m.initials[n.id] {
-                ctx.draw(Text(text).font(.system(size: dotR, weight: .semibold)).foregroundColor(.black.opacity(0.24 * ini)), at: p)
+                ctx.draw(Text(text).font(Theme.font(dotR, .semibold)).foregroundColor(.black.opacity(0.24 * ini)), at: p)
             }
         }
         for g in m.ovals.keys {
             guard let r = m.labelRect(g, size: sz) else { continue }
             ctx.opacity = focus != nil && focus != g ? 0.2 : 1
-            ctx.draw(Text(g).font(.system(size: 13, weight: .medium)).tracking(-0.52).foregroundColor(Theme.ink.opacity(0.7)), at: CGPoint(x: r.midX, y: r.midY))
+            ctx.draw(Text(g).font(Theme.font(13, .medium)).tracking(-0.52).foregroundColor(Theme.ink.opacity(0.7)), at: CGPoint(x: r.midX, y: r.midY))
         }
         ctx.opacity = 1
         m.addDraw(ms: (CACurrentMediaTime() - t0) * 1000)

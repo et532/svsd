@@ -14,8 +14,8 @@ struct MindmapFilters: View {
             }
         } label: {
             HStack(spacing: 8) {
-                Image(systemName: "slider.horizontal.3").font(.system(size: 16))
-                Text("Filters").font(.system(size: 15, weight: .medium))
+                Image(systemName: "slider.horizontal.3").font(Theme.font(16))
+                Text("Filters").font(Theme.font(15, .medium))
             }
             .foregroundStyle(Theme.ink)
             .padding(.horizontal, 20)

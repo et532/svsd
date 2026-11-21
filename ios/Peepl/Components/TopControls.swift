@@ -22,7 +22,7 @@ struct TopControls: View {
             withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) { tab = t }
         } label: {
             Image(systemName: symbol)
-                .font(.system(size: 18))
+                .font(Theme.font(18))
                 .foregroundStyle(Theme.ink)
                 .frame(width: 42, height: 42)
                 .background {
