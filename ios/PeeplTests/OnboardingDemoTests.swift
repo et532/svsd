@@ -36,7 +36,7 @@ final class OnboardingDemoTests: XCTestCase {
     }
 
     func testTimelineDurations() async {
-        for (script, total) in [(DemoScript.step2, 9.0), (.step3, 8.0), (.step4, 8.0)] {
+        for (script, total) in [(DemoScript.step2, 9.0), (.step3, 8.0), (.step4, 8.0), (.step5, 14.0), (.step6, 16.0)] {
             let clock = FakeClock(), stages = StageLog()
             await script.run(clock: clock, reduce: false) { stages.seen.append($0) }
             XCTAssertEqual(clock.total, total, accuracy: 0.3)
@@ -45,12 +45,34 @@ final class OnboardingDemoTests: XCTestCase {
     }
 
     func testReduceMotionShowsFinalFrameWithoutTimers() async {
-        for script in [DemoScript.step2, .step3, .step4] {
+        for script in [DemoScript.step2, .step3, .step4, .step5, .step6] {
             let clock = FakeClock(), stages = StageLog()
             await script.run(clock: clock, reduce: true) { stages.seen.append($0) }
             XCTAssertEqual(stages.seen, [script.finalStage])
             XCTAssertEqual(clock.total, 0)
         }
+    }
+
+    func testStep6TypingStartsBeforeTheMindmapIsGone() {
+        let s = DemoScript.step6
+        XCTAssertEqual(s.cues[3], 7.0) // the swing begins
+        XCTAssertEqual(s.cues[4], DemoScript.step6TypingStart)
+        XCTAssertLessThanOrEqual(s.cues[4], DemoScript.step6SwingEnd) // no empty beat
+    }
+
+    func testTheosReasonExplainsTheSFMatch() {
+        XCTAssertTrue(Step6Copy.reason.contains("San Francisco"))
+        XCTAssertFalse(Step6Copy.reason.contains("\u{2014}"))
+        XCTAssertEqual(Step6Copy.query, "coffee in SF")
+    }
+
+    func testStep56HaveNoPhoneFrameAndEachPanelIsTilted() throws {
+        let file = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("Peepl/Screens/Onboarding/OnboardingDemos56.swift")
+        let src = try String(contentsOf: file, encoding: .utf8).lowercased()
+        for word in ["bezel", "phoneframe", "deviceframe", "peoplestore", "aiclient", "modelcontext"] { XCTAssertFalse(src.contains(word), word) }
+        XCTAssertTrue(src.contains(".tilted3d(10, layer: 0)") && src.contains(".tilted3d(10, layer: 1)") && src.contains("layer: 2"))
+        for small in ["font(10", "font(11", "font(12", "font(13", "font(14", "mono(1)", "mono(12", "mono(13", "mono(14"] { XCTAssertFalse(src.contains("theme." + small), small) }
     }
 
     func testScatterIsDeterministic() {

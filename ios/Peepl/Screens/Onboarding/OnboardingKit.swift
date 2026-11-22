@@ -84,6 +84,13 @@ struct DemoScript {
     static let step2 = DemoScript(cues: [0.0, 1.2, 3.0, 4.0, 4.6], duration: 9.0)
     static let step3 = DemoScript(cues: [0.0, 1.0, 2.5, 4.5, 6.5], duration: 8.0)
     static let step4 = DemoScript(cues: [0.0, 1.0, 4.0, 5.0, 6.5], duration: 8.0)
+    /// Step 5: panels, words stream, stop, the name fix, shimmer, card, hold (tilt).
+    static let step5 = DemoScript(cues: [0.0, 1.0, 6.0, 6.8, 9.5, 11.0, 12.0], duration: 14.0)
+    /// Step 6: panels, plop, pill, swing to Find (7.0 to `step6SwingEnd`), typing, thinking, card. Typing starts while the
+    /// mindmap is still swinging away, so there is no empty beat.
+    static let step6 = DemoScript(cues: [0.0, 1.0, 3.0, 7.0, step6TypingStart, 8.6, 9.4], duration: 16.0)
+    static let step6SwingEnd = 7.8
+    static let step6TypingStart = 7.2
 }
 
 // MARK: Pip

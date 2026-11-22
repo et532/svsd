@@ -25,7 +25,7 @@ struct OnboardingFlow: View {
                 header.frame(height: 56).padding(.horizontal, 16)
                 ScrollView {
                     Group {
-                        if (2...4).contains(step) { OnboardingDemoStep(step: step) }
+                        if (2...6).contains(step) { OnboardingDemoStep(step: step) }
                         else { OnboardingStep(step: step, replay: replay, picks: $picks, restore: { importing = true }) }
                     }
                         .id(step)
