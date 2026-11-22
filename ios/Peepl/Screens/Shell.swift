@@ -120,6 +120,7 @@ struct RootView: View {
         .environment(nav)
         .task {
             Seed.loadIfEmpty(context)
+            if BackupReminder.shouldRemind(count: (try? context.fetchCount(FetchDescriptor<Person>())) ?? 0) { nav.say(BackupReminder.text) }
             #if DEBUG
             if UserDefaults.standard.string(forKey: "findQuery") != nil { nav.push(.find()) } // see FindView.preset
             #endif

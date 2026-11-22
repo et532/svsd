@@ -149,3 +149,35 @@ struct ShareSheet: UIViewControllerRepresentable {
     func updateUIViewController(_ vc: UIActivityViewController, context: Context) {}
 }
 extension URL: @retroactive Identifiable { public var id: String { absoluteString } }
+
+/// When to nudge "Back up your people?" and the little state behind it. All dates are ISO strings in UserDefaults.
+enum BackupReminder {
+    static var store = UserDefaults.standard
+    static let text = "Back up your people? Settings, then Back up."
+    private static let iso = ISO8601DateFormatter()
+    private static func date(_ k: String) -> Date? { store.string(forKey: k).flatMap(iso.date) }
+
+    /// 10+ more people than at the last backup, or 30+ days since it; at most once per 7 days; never with nobody.
+    static func due(now: Date, lastBackupAt: Date, baselineCount: Int, count: Int, lastReminderAt: Date?) -> Bool {
+        guard count > 0 else { return false }
+        if let r = lastReminderAt, now.timeIntervalSince(r) < 7 * 86400 { return false }
+        return count - baselineCount >= 10 || now.timeIntervalSince(lastBackupAt) >= 30 * 86400
+    }
+
+    static func recordBackup(count: Int, now: Date = Date()) {
+        store.set(iso.string(from: now), forKey: "lastBackupAt"); store.set(count, forKey: "backupBaselineCount")
+    }
+
+    /// Call once at launch after the list has loaded. A fresh install counts from its first launch, so it isn't nagged at once.
+    static func shouldRemind(count: Int, now: Date = Date()) -> Bool {
+        if store.object(forKey: "backupBaselineCount") == nil { store.set(count, forKey: "backupBaselineCount") }
+        if date("firstLaunchAt") == nil { store.set(iso.string(from: now), forKey: "firstLaunchAt") }
+        let yes = due(now: now, lastBackupAt: date("lastBackupAt") ?? date("firstLaunchAt") ?? now,
+                      baselineCount: store.integer(forKey: "backupBaselineCount"), count: count, lastReminderAt: date("lastBackupReminderAt"))
+        if yes { store.set(iso.string(from: now), forKey: "lastBackupReminderAt") }
+        return yes
+    }
+
+    /// The share sheet is closed: the temp copy is no longer needed.
+    static func cleanup(_ url: URL?) { if let url { try? FileManager.default.removeItem(at: url) } }
+}
