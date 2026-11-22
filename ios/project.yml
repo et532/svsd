@@ -23,6 +23,9 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.vincelin.peepl
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: Peepl
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+        MARKETING_VERSION: "0.9.0"
+        CURRENT_PROJECT_VERSION: "1"
         INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
         INFOPLIST_KEY_UIUserInterfaceStyle: Light
         INFOPLIST_KEY_NSMicrophoneUsageDescription: "Peepl listens when you tap the mic so you can talk instead of type."
