@@ -119,6 +119,12 @@ private struct LayerHost: View {
     @State private var dragX: CGFloat = 0
     @Environment(\.accessibilityReduceMotion) private var reduce
     @State private var glyphShown = false // the X turns in as the reveal grows
+    @State private var xCenter = CGPoint.zero // the X's centre in the host's own space, which is what CircleReveal resolves against
+    @State private var hostSize = CGSize.zero
+    private func syncOrigin() {
+        guard hostSize.width > 0, hostSize.height > 0 else { return }
+        nav.revealOrigin = UnitPoint(x: xCenter.x / hostSize.width, y: xCenter.y / hostSize.height)
+    }
     @State private var edgeDrag = false // this drag began at the left edge and is mostly sideways
 
     var body: some View {
@@ -142,15 +148,14 @@ private struct LayerHost: View {
                         .frame(width: 44, height: 44).pastel(in: Circle())
                 }
                 // The dismiss shrinks into the X: set before the pop so the removal transition already has it.
-                .onGeometryChange(for: CGPoint.self) { let f = $0.frame(in: .global); return CGPoint(x: f.midX, y: f.midY) } action: { c in
-                    let s = UIScreen.main.bounds.size
-                    nav.revealOrigin = UnitPoint(x: c.x / s.width, y: c.y / s.height)
-                }
+                .onGeometryChange(for: CGPoint.self) { let f = $0.frame(in: .named("host")); return CGPoint(x: f.midX, y: f.midY) } action: { xCenter = $0; syncOrigin() }
                 .onAppear { withAnimation(Motion.smooth.delay(0.15)) { glyphShown = true } }
                 .buttonStyle(PressStyle(scale: 0.92)).padding(.leading, 16)
                 .accessibilityLabel("Back")
             }
         }
+        .coordinateSpace(name: "host")
+        .onGeometryChange(for: CGSize.self) { $0.size } action: { hostSize = $0; syncOrigin() }
         .offset(x: dragX)
         // Swipe in from the left edge: the profile follows the finger and the page under it shows through.
         // Past 20% of the width it leaves; less, and it springs back.
