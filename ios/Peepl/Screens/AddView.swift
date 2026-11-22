@@ -189,7 +189,7 @@ private struct Arrive: ViewModifier {
     }
 }
 
-private struct ResultCard: View {
+struct ResultCard: View {
     let person: Person
     var body: some View {
         let b = Blobs.blob(for: person.id)

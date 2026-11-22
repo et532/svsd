@@ -167,28 +167,7 @@ struct ProfileView: View {
     private var heroFade: CGFloat { min(max((scrolled - 40) / 80, 0), 1) }
 
     private var hero: some View {
-        // Figma "Profile Top": 233 pt tall, avatar left, name and details beside it
-        HStack(spacing: 16) {
-            Avatar(id: person.id, size: 88).scaleEffect(1 - 0.15 * heroFade).opacity(1 - heroFade)
-            VStack(alignment: .leading, spacing: 6) {
-                Text(person.name).font(Theme.font(20, .medium)).foregroundStyle(.white)
-                Text(person.subtitle).font(Theme.font(13)).foregroundStyle(.white.opacity(0.85))
-                Text(metDate).font(Theme.font(13)).foregroundStyle(Color(hex: "cccccc"))
-            }
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 22).padding(.top, 118).padding(.bottom, 22)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background {
-            ZStack {
-                Color(hex: blob.base)
-                Circle().fill(Color(hex: blob.mid)).frame(width: 220).blur(radius: 23).offset(x: -110, y: -50)
-                Circle().fill(Color(hex: blob.accent)).frame(width: 200).blur(radius: 23).offset(x: 140, y: 0)
-                Circle().fill(Color(hex: blob.deep)).frame(width: 220).blur(radius: 23).offset(x: -120, y: 70)
-            }
-            .clipped()
-        }
-        .clipShape(UnevenRoundedRectangle(bottomLeadingRadius: 28, bottomTrailingRadius: 28))
+        ProfileHero(id: person.id, name: person.name, subtitle: person.subtitle, met: metDate, fade: heroFade)
     }
 
     private var topBar: some View {
@@ -221,12 +200,7 @@ struct ProfileView: View {
         .buttonStyle(PressStyle(scale: 0.92)).accessibilityLabel(label).accessibilityIdentifier(id ?? label)
     }
 
-    private func chip(_ t: String, ghost: Bool = false) -> some View {
-        Text(t).font(Theme.font(12, .medium)).foregroundStyle(Theme.inkMuted)
-            .padding(.horizontal, 10).padding(.vertical, 5)
-            .background(ghost ? Color.clear : Theme.pressed, in: .capsule)
-            .overlay { if ghost { Capsule().stroke(Theme.inkMuted.opacity(0.3), lineWidth: 1) } }
-    }
+    private func chip(_ t: String, ghost: Bool = false) -> some View { ProfileChip(text: t, ghost: ghost) }
 
     private var summary: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -263,14 +237,7 @@ struct ProfileView: View {
                 ForEach(person.orderedTodos) { t in
                     VStack(spacing: 0) {
                         Button { go(Motion.snap) { t.done.toggle() }; try? context.save() } label: {
-                            HStack(spacing: 10) {
-                                Image(systemName: t.done ? "checkmark.circle.fill" : "circle").font(Theme.font(17))
-                                    .foregroundStyle(t.done ? Theme.ink : Theme.inkMuted.opacity(0.6))
-                                    .symbolEffect(.bounce, value: reduce ? false : t.done)
-                                Text(t.text).strikethrough(t.done).font(Theme.font(15)).foregroundStyle(Theme.ink)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                            }
-                            .opacity(t.done ? 0.45 : 1).padding(.horizontal, 16).padding(.vertical, 14).contentShape(.rect)
+                            TodoRowLabel(text: t.text, done: t.done, bounce: !reduce)
                         }
                         .buttonStyle(PressStyle(scale: 0.99))
                         .accessibilityLabel(t.text).accessibilityValue(t.done ? "Done" : "To do")
@@ -363,16 +330,7 @@ struct ProfileView: View {
                 let open = openMoment == m.id
                 VStack(alignment: .leading, spacing: 10) {
                     Button { go(Motion.smooth) { openMoment = open ? nil : m.id } } label: {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(dayLabel(m.date)).font(Theme.font(12)).foregroundStyle(Theme.inkMuted)
-                                Text(m.title).font(Theme.font(15, .medium)).foregroundStyle(Theme.ink).multilineTextAlignment(.leading)
-                            }
-                            Spacer()
-                            Image(systemName: "chevron.right").font(Theme.font(13, .semibold)).foregroundStyle(Theme.inkMuted)
-                                .rotationEffect(.degrees(open ? 90 : 0))
-                        }
-                        .contentShape(.rect)
+                        MomentRowLabel(date: dayLabel(m.date), title: m.title, open: open)
                     }
                     .buttonStyle(PressStyle(scale: 0.98)).accessibilityValue(open ? "Open" : "Closed")
                     if open {
@@ -498,5 +456,106 @@ private struct VoiceNote: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+    }
+}
+
+// MARK: Read-only pieces, shared with the onboarding demos (no store, no actions).
+
+/// The dark hero: blob colours, ringed avatar, name, details, "Met ..." line. `fade` is the scroll fade of the avatar.
+struct ProfileHero: View {
+    let id: String
+    let name: String
+    let subtitle: String
+    let met: String
+    var fade: CGFloat = 0
+    var avatarSize: CGFloat = 88
+    var topInset: CGFloat = 118
+    var dim = 1.0 // text opacity (onboarding demo fades it)
+    var avatarSaturation = 1.0
+    var body: some View {
+        let blob = Blobs.blob(for: id)
+        // Figma "Profile Top": 233 pt tall, avatar left, name and details beside it
+        HStack(spacing: 16) {
+            Avatar(id: id, size: avatarSize).saturation(avatarSaturation).scaleEffect(1 - 0.15 * fade).opacity(1 - fade)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(name).font(Theme.font(20, .medium)).foregroundStyle(.white)
+                Text(subtitle).font(Theme.font(13)).foregroundStyle(.white.opacity(0.85))
+                Text(met).font(Theme.font(13)).foregroundStyle(Color(hex: "cccccc"))
+            }
+            .opacity(dim)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 22).padding(.top, topInset).padding(.bottom, 22)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            ZStack {
+                Color(hex: blob.base)
+                Circle().fill(Color(hex: blob.mid)).frame(width: 220).blur(radius: 23).offset(x: -110, y: -50)
+                Circle().fill(Color(hex: blob.accent)).frame(width: 200).blur(radius: 23).offset(x: 140, y: 0)
+                Circle().fill(Color(hex: blob.deep)).frame(width: 220).blur(radius: 23).offset(x: -120, y: 70)
+            }
+            .clipped()
+        }
+        .clipShape(UnevenRoundedRectangle(bottomLeadingRadius: 28, bottomTrailingRadius: 28))
+    }
+}
+
+struct ProfileChip: View {
+    let text: String
+    var ghost = false
+    var body: some View {
+        Text(text).font(Theme.font(12, .medium)).foregroundStyle(Theme.inkMuted)
+            .padding(.horizontal, 10).padding(.vertical, 5)
+            .background(ghost ? Color.clear : Theme.pressed, in: .capsule)
+            .overlay { if ghost { Capsule().stroke(Theme.inkMuted.opacity(0.3), lineWidth: 1) } }
+    }
+}
+
+/// The summary card with its story and tags, read-only.
+struct ProfileSummaryCard: View {
+    let story: String
+    let tags: [String]
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(story).font(Theme.font(15)).foregroundStyle(Theme.ink)
+            WrapLayout(spacing: 6, lineSpacing: 6) { ForEach(tags, id: \.self) { ProfileChip(text: $0) } }
+        }
+        .padding(16).frame(maxWidth: .infinity, alignment: .leading).glass(20)
+    }
+}
+
+/// A to-do row's content: check ring and text.
+struct TodoRowLabel: View {
+    let text: String
+    let done: Bool
+    var bounce = true
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: done ? "checkmark.circle.fill" : "circle").font(Theme.font(17))
+                .foregroundStyle(done ? Theme.ink : Theme.inkMuted.opacity(0.6))
+                .symbolEffect(.bounce, value: bounce ? done : false)
+            Text(text).strikethrough(done).font(Theme.font(15)).foregroundStyle(Theme.ink)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .opacity(done ? 0.45 : 1).padding(.horizontal, 16).padding(.vertical, 14).contentShape(.rect)
+    }
+}
+
+/// A moment row's header: day label, title, chevron.
+struct MomentRowLabel: View {
+    let date: String
+    let title: String
+    var open = false
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(date).font(Theme.font(12)).foregroundStyle(Theme.inkMuted)
+                Text(title).font(Theme.font(15, .medium)).foregroundStyle(Theme.ink).multilineTextAlignment(.leading)
+            }
+            Spacer()
+            Image(systemName: "chevron.right").font(Theme.font(13, .semibold)).foregroundStyle(Theme.inkMuted)
+                .rotationEffect(.degrees(open ? 90 : 0))
+        }
+        .contentShape(.rect)
     }
 }

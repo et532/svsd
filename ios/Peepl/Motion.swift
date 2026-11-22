@@ -8,6 +8,12 @@ enum Motion {
     static let ease     = Animation.timingCurve(0.42, 0, 0.58, 1, duration: 0.4)  // ease-in-out for things that move
     static let easeSlow = Animation.timingCurve(0.42, 0, 0.58, 1, duration: 0.6)
     static let easeFast = Animation.timingCurve(0.42, 0, 0.58, 1, duration: 0.25)
+    // Motion spec table (ONBOARDING.md section 4)
+    static let entrance = Animation.timingCurve(0.05, 0.7, 0.1, 1, duration: 0.45)  // emphasized decelerate
+    static let exit     = Animation.timingCurve(0.3, 0, 0.8, 0.15, duration: 0.3)    // emphasized accelerate
+    static let page     = Animation.smooth(duration: 0.5)                            // step to step
+    static let tiltEntrance = Animation.smooth(duration: 0.9, extraBounce: 0.05)     // 3D panel comes in
+    static let idleFloat = Animation.easeInOut(duration: 3.5).repeatForever(autoreverses: true) // 7 s loop
 
     /// Stagger delay for the i-th item of a list entrance.
     static func stagger(_ i: Int, step: Double = 0.04, cap: Int = 10) -> Animation {
