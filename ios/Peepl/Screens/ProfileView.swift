@@ -30,6 +30,8 @@ struct ProfileView: View {
             ScrollView {
                 VStack(spacing: 0) {
                     hero
+                        // pulling down past the top: the hero's color carries on upward instead of showing the page behind it
+                        .background(alignment: .top) { Color(hex: blob.base).frame(height: 1200).offset(y: -1200) }
                     VStack(alignment: .leading, spacing: 24) {
                         summary
                         todos
@@ -45,6 +47,10 @@ struct ProfileView: View {
             .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y + $0.contentInsets.top } action: { _, y in scrolled = y }
             topBar
         }
+        .simultaneousGesture(DragGesture(minimumDistance: 20).onEnded { v in
+            // swipe in from the left edge, like a navigation stack
+            if v.startLocation.x < 28, v.translation.width > 80, abs(v.translation.height) < 80 { nav.pop() }
+        })
         .safeAreaInset(edge: .bottom) {
             if !addingTag && !addingTodo { // the inline field has the keyboard
                 Composer(placeholder: "Add a moment", onSend: { text in
@@ -138,24 +144,29 @@ struct ProfileView: View {
     private var topBar: some View {
         let p = min(max((scrolled - 90) / 40, 0), 1)
         return ZStack {
-            Color(hex: blob.base).opacity(p).ignoresSafeArea(edges: .top)
             Text(person.name).font(Theme.font(16, .medium)).foregroundStyle(.white).opacity(p)
             HStack {
-                circleButton("chevron.left", label: "Back") { nav.pop() }
+                iconButton("chevron.left", label: "Back", id: nil) { nav.pop() }
                 Spacer()
-                circleButton("ellipsis", label: "More") { confirmDelete = true }
+                iconButton("trash", label: "Delete person", id: "More") { confirmDelete = true }
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, 12)
         }
         .frame(height: 56)
+        .padding(.bottom, 18) // room under the buttons before the colour ends
+        .background(alignment: .top) {
+            UnevenRoundedRectangle(bottomLeadingRadius: 28, bottomTrailingRadius: 28)
+                .fill(Color(hex: blob.base)).opacity(p).ignoresSafeArea(edges: .top)
+        }
     }
 
-    private func circleButton(_ icon: String, label: String, action: @escaping () -> Void) -> some View {
+    /// A plain icon, no glass behind it.
+    private func iconButton(_ icon: String, label: String, id: String?, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Image(systemName: icon).font(Theme.font(16, .semibold)).foregroundStyle(.white)
-                .frame(width: 44, height: 44).glassEffect(.regular.tint(.white.opacity(0.14)), in: .circle)
+            Image(systemName: icon).font(Theme.font(18, .semibold)).foregroundStyle(.white)
+                .frame(width: 44, height: 44).contentShape(.rect)
         }
-        .buttonStyle(.plain).accessibilityLabel(label)
+        .buttonStyle(.plain).accessibilityLabel(label).accessibilityIdentifier(id ?? label)
     }
 
     private func chip(_ t: String, ghost: Bool = false) -> some View {
