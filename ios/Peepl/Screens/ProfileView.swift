@@ -14,6 +14,7 @@ struct ProfileView: View {
     @State private var deleted = false
     @State private var newMoment: String?
     @State private var addBounce = 0
+    @State private var snoozed = Nudges.load()
     @Environment(\.accessibilityReduceMotion) private var reduce
 
     /// Runs `body` with a Motion animation (a short fade under Reduce Motion).
@@ -41,6 +42,7 @@ struct ProfileView: View {
                 VStack(spacing: 0) {
                     hero
                     VStack(alignment: .leading, spacing: 24) {
+                        touch
                         summary.appear(0)
                         todos.appear(1)
                         where_.appear(2)
@@ -124,6 +126,36 @@ struct ProfileView: View {
         guard let text else { go(Motion.snap) { addingTodo = false }; return }
         go(Motion.smooth) { addingTodo = false; person.addTodo(id: Capture.uid(), text: text) }
         try? context.save()
+    }
+
+    private var isDue: Bool { !Nudges.due([person], today: Capture.today(), snoozed: snoozed).isEmpty }
+
+    private func talked() {
+        go(Motion.smooth) { PeopleStore.talkedToday(person, in: context); snoozed = Nudges.load() }
+        nav.say("Marked as talked today")
+    }
+
+    private func pill(_ t: String, _ action: @escaping () -> Void) -> some View {
+        Button(action: action) { chip(t) }.buttonStyle(PressStyle(scale: 0.95))
+    }
+
+    /// Losing-touch card when due; otherwise a small "Talked today" button (hidden once it is today).
+    @ViewBuilder private var touch: some View {
+        if isDue, let d = Nudges.daysSince(person.lastContacted, today: Capture.today()) {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Haven't talked in \(d) days").font(Theme.font(15, .medium)).foregroundStyle(Theme.ink)
+                HStack(spacing: 8) {
+                    pill("Talked today", talked)
+                    pill("Snooze 30 days") {
+                        go(Motion.smooth) { Nudges.snooze(person.id); snoozed = Nudges.load() }
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading).padding(16).glass(20)
+            .transition(tr(.opacity))
+        } else if person.lastContacted != Capture.today() {
+            pill("Talked today", talked).frame(maxWidth: .infinity, alignment: .leading)
+        }
     }
 
     private var aura: some View {
