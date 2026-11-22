@@ -7,7 +7,7 @@ final class M5FlowUITests: XCTestCase {
 
     func launch(_ extra: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = ["-PeeplInMemory", "YES", "-PeeplAPIBase", "http://127.0.0.1:9", "-peepl.nameFixes.v1", "{}"] + extra
+        app.launchArguments = ["-PeeplInMemory", "YES", "-PeeplSkipOnboarding", "YES", "-PeeplAPIBase", "http://127.0.0.1:9", "-peepl.nameFixes.v1", "{}"] + extra
         app.launch()
         return app
     }
