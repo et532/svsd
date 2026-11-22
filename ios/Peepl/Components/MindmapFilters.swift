@@ -21,7 +21,7 @@ struct MindmapFilters: View {
             .padding(.horizontal, 20)
             .frame(minHeight: 54)
             .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
-            .glassEffect(.regular, in: .capsule)
+            .pastel(in: Capsule())
         }
         .accessibilityLabel("Filters")
     }

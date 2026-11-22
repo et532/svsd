@@ -52,8 +52,13 @@ struct ProfileView: View {
                     let m = PeopleStore.addMoment(to: person, note: text, in: context)
                     openMoment = m.id
                     nav.say("New moment saved")
-                }, people: everyone)
+                }, people: everyone, tall: true)
                 .padding(.horizontal, 16).padding(.bottom, 8)
+                .background(alignment: .bottom) {
+                    // a soft darkening behind the input, so it reads as something to tap
+                    LinearGradient(colors: [.clear, Color(hex: "3b2a5e").opacity(0.22)], startPoint: .top, endPoint: .bottom)
+                        .frame(height: 190).ignoresSafeArea(edges: .bottom).allowsHitTesting(false)
+                }
             }
         }
         .onAppear {
@@ -155,12 +160,13 @@ struct ProfileView: View {
         }
     }
 
-    /// Glass circle behind the icon on the expanded banner (`glass` 1), plain icon once the bar has collapsed (0).
+    /// Pastel circle behind the icon on the expanded banner (`glass` 1), plain icon once the bar has collapsed (0).
     private func iconButton(_ icon: String, label: String, id: String?, glass: CGFloat, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Image(systemName: icon).font(Theme.font(18, .semibold)).foregroundStyle(.white)
+            Image(systemName: icon).font(Theme.font(18, .semibold))
+                .foregroundStyle(Theme.ink.mix(with: .white, by: 1 - glass)) // dark on the pastel circle, white once it is gone
                 .frame(width: 44, height: 44).contentShape(.rect)
-                .background { Color.clear.glassEffect(.regular.tint(.white.opacity(0.14)), in: .circle).opacity(glass) }
+                .background { Circle().fill(Color(hex: "faf7ff").opacity(0.94)).opacity(glass) }
         }
         .buttonStyle(.plain).accessibilityLabel(label).accessibilityIdentifier(id ?? label)
     }

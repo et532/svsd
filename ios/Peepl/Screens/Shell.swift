@@ -122,7 +122,7 @@ private struct LayerHost: View {
             if !layer.isProfile {
                 Button { nav.pop() } label: {
                     Image(systemName: "xmark").font(Theme.font(16, .semibold))
-                        .foregroundStyle(Theme.ink).frame(width: 44, height: 44).glassEffect(.regular, in: .circle)
+                        .foregroundStyle(Theme.ink).frame(width: 44, height: 44).pastel(in: Circle())
                 }
                 .buttonStyle(.plain).padding(.leading, 16)
                 .accessibilityLabel("Back")

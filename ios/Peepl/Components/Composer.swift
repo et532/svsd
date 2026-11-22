@@ -4,6 +4,7 @@ import SwiftUI
 struct Composer: View {
     let placeholder: String
     var autofocus = false
+    var tall = false // 1.5x the height, so it reads as something to tap
     let onSend: (String) -> Void
     var onMic: (() -> Void)?
     var people: [any Named]?
@@ -18,9 +19,9 @@ struct Composer: View {
     private var trimmed: String { (recording ? "" : text).trimmingCharacters(in: .whitespacesAndNewlines) }
 
     init(placeholder: String, autofocus: Bool = false, onSend: @escaping (String) -> Void, onMic: (() -> Void)? = nil,
-         people: [any Named]? = nil, startVoice: Bool = false) {
+         people: [any Named]? = nil, startVoice: Bool = false, tall: Bool = false) {
         self.placeholder = placeholder; self.autofocus = autofocus; self.onSend = onSend; self.onMic = onMic; self.people = people
-        self.startVoice = startVoice
+        self.startVoice = startVoice; self.tall = tall
     }
 
     private func listen() {
@@ -61,7 +62,8 @@ struct Composer: View {
         }
         }
         .padding(.horizontal, 10).padding(.vertical, 3)
-        .glassEffect(.regular.tint(.white.opacity(0.8)), in: .rect(cornerRadius: 26))
+        .frame(minHeight: tall ? 84 : nil)
+        .pastel(in: RoundedRectangle(cornerRadius: 26), tint: Color(hex: "eee7fb"))
         .animation(.snappy, value: trimmed.isEmpty)
         .onAppear { if startVoice { listen() } else if autofocus { focused = true } }
         .onChange(of: voice.state) { _, s in

@@ -75,7 +75,7 @@ struct FindView: View {
     private func wide(_ label: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(label).font(Theme.font(15, .medium)).foregroundStyle(Theme.ink)
-                .frame(maxWidth: .infinity).frame(height: 48).glassEffect(.regular, in: .capsule)
+                .frame(maxWidth: .infinity).frame(height: 48).pastel(in: Capsule())
         }.buttonStyle(.plain)
     }
 

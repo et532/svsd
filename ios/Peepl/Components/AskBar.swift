@@ -27,7 +27,7 @@ struct AskBar: View {
                     .accessibilityLabel("Clear filter")
                 }
                 .padding(.horizontal, 16).frame(height: 36)
-                .glassEffect(.regular, in: .capsule)
+                .pastel(in: Capsule())
             }
             bar
         }
@@ -48,11 +48,11 @@ struct AskBar: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel("Ask by voice")
             }
-            .glassEffect(.regular, in: .capsule)
+            .pastel(in: Capsule())
             Button { nav.revealOrigin = UnitPoint(x: 0.92, y: 0.95); nav.push(.add(mutualOf: nil)) } label: {
                 Image(systemName: "person.badge.plus").font(Theme.font(20)).foregroundStyle(Theme.ink)
                     .frame(width: 56, height: 56)
-                    .glassEffect(.regular, in: .circle)
+                    .pastel(in: Circle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Add person")

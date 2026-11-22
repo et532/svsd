@@ -18,7 +18,7 @@ struct MindmapPill: View {
             }
             .padding(.vertical, 8).padding(.horizontal, 16)
             .background(.white.opacity(0.8), in: .capsule)
-            .glassEffect(.regular, in: .capsule)
+            .pastel(in: Capsule())
         }
         .buttonStyle(.plain)
         .accessibilityLabel("View \(person.name)")

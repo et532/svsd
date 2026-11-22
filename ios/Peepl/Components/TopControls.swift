@@ -14,7 +14,7 @@ struct TopControls: View {
         }
         .padding(6)
         .frame(height: 54)
-        .glassEffect(.regular, in: .capsule)
+        .pastel(in: Capsule())
         .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
     }
 

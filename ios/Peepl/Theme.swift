@@ -20,7 +20,14 @@ enum Theme {
 extension View {
     // Native Liquid Glass, standing in for the web app's SVG-filter glass.
     func glass(_ radius: CGFloat = 20) -> some View {
-        glassEffect(.regular, in: .rect(cornerRadius: radius))
+        pastel(in: RoundedRectangle(cornerRadius: radius))
+    }
+
+    /// Soft pastel surface (replaces Liquid Glass everywhere): a light lavender-white fill, a faint edge and a soft lavender shadow.
+    func pastel<S: InsettableShape>(in shape: S, tint: Color = Color(hex: "faf7ff").opacity(0.92)) -> some View {
+        background { shape.fill(tint) }
+            .overlay { shape.strokeBorder(Color(hex: "e6def5"), lineWidth: 1) }
+            .shadow(color: Color(hex: "9c88c9").opacity(0.18), radius: 10, y: 4)
     }
 }
 
