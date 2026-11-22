@@ -215,6 +215,81 @@ enum LocalAI {
         return out
     }
 
+    // MARK: Add note parse (PLAN 12.2): the regex result is always computed first; these fields only go on top when validated.
+
+    /// What the model read in a note, before checks.
+    struct NoteFields: Sendable {
+        var name = "", company = "", does = "", from = "", lives = "", met = "", interest = "", followUp = ""
+    }
+
+    private static func cut44(_ v: String) -> String {
+        if v.count <= 44 { return v }
+        var s = String(v.prefix(44))
+        if let r = s.range(of: #"\s+\S*$"#, options: .regularExpression) { s.removeSubrange(r) }
+        return s + "…"
+    }
+
+    /// Drops any name / company / from / lives / met that is not literally in the note (case-insensitive, as AIClient.parse's found()).
+    static func validated(_ f: NoteFields, note: String) -> Draft {
+        let t = note.trimmingCharacters(in: .whitespacesAndNewlines)
+        func clean(_ v: String) -> String { v.trimmingCharacters(in: .whitespacesAndNewlines) }
+        func found(_ v: String) -> String? { let v = clean(v); return !v.isEmpty && t.localizedCaseInsensitiveContains(v) ? v : nil }
+        func strip(_ v: String, _ p: String) -> String { v.replacingOccurrences(of: p, with: "", options: [.regularExpression, .caseInsensitive]) }
+        func plain(_ v: String) -> String? { clean(v).isEmpty ? nil : cut44(clean(v)) }
+        var d = Draft()
+        d.name = found(f.name).map { strip($0, #"^(?:Dr|Mr|Mrs|Ms|Prof)\.?\s+"#) }
+        d.company = found(f.company); d.from = found(f.from); d.lives = found(f.lives)
+        d.does = plain(f.does); d.follow = plain(f.followUp)
+        d.met = found(strip(strip(clean(f.met), #"^(?:at|in|through)\s+"#), #"^(?:an?|the)\s+"#)).map(cut44)
+        if var r = plain(f.interest) {
+            if r.range(of: #"^(?:loves?|likes?|enjoys?|into|plays?|climbs?|runs?|collects?|obsessed|passionate)\b"#, options: [.regularExpression, .caseInsensitive]) == nil { r = cut44("Loves \(r)") }
+            d.remember = r
+        }
+        return d
+    }
+
+    #if canImport(FoundationModels)
+    @Generable struct NoteRead {
+        @Guide(description: "The new person's full name exactly as written in the note, else empty")
+        var name: String
+        @Guide(description: "Company exactly as written, else empty")
+        var company: String
+        @Guide(description: "Their job or what they do, 1 to 4 words, else empty")
+        var does: String
+        @Guide(description: "Where they are from, exactly as written, else empty")
+        var from: String
+        @Guide(description: "Where they live now, exactly as written, else empty")
+        var lives: String
+        @Guide(description: "Where or how you met, exactly as written, else empty")
+        var met: String
+        @Guide(description: "An interest of theirs, under 8 words, else empty")
+        var interest: String
+        @Guide(description: "Something the user wants to do next with them, under 8 words, else empty")
+        var followUp: String
+    }
+    #endif
+
+    private static let noteInstructions = "You read a note a user wrote about a person they just met. Copy names and places exactly as written; never invent. Leave a field empty when the note does not say it."
+
+    /// The note -> a validated Draft, or nil (unavailable, timeout, error): keep the regex result.
+    /// `model` is a test seam returning the raw fields.
+    static func parseNote(_ note: String, timeout: Double = 3, model: ((String) async -> NoteFields?)? = nil) async -> Draft? {
+        let text = clip(note.trimmingCharacters(in: .whitespacesAndNewlines), 1500)
+        guard !text.isEmpty else { return nil }
+        if let model { return await model(text).map { validated($0, note: text) } }
+        #if canImport(FoundationModels)
+        guard isAvailable else { return nil }
+        guard let r = await within(timeout, {
+            let s = LanguageModelSession(instructions: noteInstructions)
+            return try await s.respond(to: text, generating: NoteRead.self, options: GenerationOptions(sampling: .greedy)).content
+        }) else { return nil }
+        return validated(NoteFields(name: r.name, company: r.company, does: r.does, from: r.from, lives: r.lives, met: r.met,
+                                    interest: r.interest, followUp: r.followUp), note: text)
+        #else
+        return nil
+        #endif
+    }
+
     private static func modelPicks(_ q: String, _ candidates: [Match], timeout: Double) async -> [(n: Int, why: String)]? {
         #if canImport(FoundationModels)
         guard isAvailable else { return nil }
