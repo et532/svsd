@@ -1,0 +1,936 @@
+{
+ "about": "W1 eval set (PLAN.md 12.4). gold = people who really fit, checked by hand against Resources/seed.json (all 500). labels = what the question asks for; place is a gazetteer name and compares by metro (or the place itself when it has no metro). topics = acceptable word stems, a parse agrees when it has at least one theme word and every theme word matches one of them.",
+ "questions": [
+  {
+   "id": "demo-climbing",
+   "kind": "demo",
+   "q": "I want to find someone to go climbing with me",
+   "gold": [
+    "jordan-lee",
+    "zara-ahmed"
+   ],
+   "labels": {
+    "intent": "plan",
+    "activity": "climbing",
+    "place": "New York City",
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "climb",
+     "boulder"
+    ]
+   }
+  },
+  {
+   "id": "demo-sf-trip",
+   "kind": "demo",
+   "q": "I’m traveling to SF next month. Who can I grab a coffee with?",
+   "gold": [
+    "daniel-okafor",
+    "priya-nair",
+    "rohan-mehta",
+    "sasha-ivanova",
+    "jun-ito",
+    "ty-nakamura",
+    "wes-tran",
+    "hye-jin-oh",
+    "elliot-park",
+    "gloria-tan",
+    "marcus-whitlock"
+   ],
+   "labels": {
+    "intent": "plan",
+    "activity": "coffee",
+    "place": "San Francisco",
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": []
+   }
+  },
+  {
+   "id": "demo-hardware-intro",
+   "kind": "demo",
+   "q": "I just met a founder looking for a hardware engineer. Who can I introduce?",
+   "gold": [
+    "ana-ruiz",
+    "aisha-khan"
+   ],
+   "labels": {
+    "intent": "find",
+    "activity": null,
+    "place": null,
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "hardware",
+     "engineer"
+    ]
+   }
+  },
+  {
+   "id": "messy-taxes",
+   "kind": "messy",
+   "q": "ugh taxes are due and i have no clue, anyone i know do that kind of thing??",
+   "gold": [
+    "wendy-tsai",
+    "otto-schneider",
+    "miriam-adler"
+   ],
+   "labels": {
+    "intent": "knowledge",
+    "activity": null,
+    "place": null,
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "tax",
+     "account"
+    ]
+   }
+  },
+  {
+   "id": "messy-sink",
+   "kind": "messy",
+   "q": "my kitchen sink is leaking again lol who do i even call",
+   "gold": [
+    "gideon-reyes"
+   ],
+   "labels": {
+    "intent": "knowledge",
+    "activity": null,
+    "place": null,
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "plumb",
+     "handyman",
+     "sink",
+     "repair",
+     "fix",
+     "leak"
+    ]
+   }
+  },
+  {
+   "id": "messy-haircut",
+   "kind": "messy",
+   "q": "need a haircut sooo bad, who cuts hair",
+   "gold": [
+    "lou-marchetti",
+    "andre-baptiste"
+   ],
+   "labels": {
+    "intent": "knowledge",
+    "activity": null,
+    "place": null,
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "barber",
+     "hair"
+    ]
+   }
+  },
+  {
+   "id": "messy-tooth",
+   "kind": "messy",
+   "q": "tooth is killing me, do i know a dentist or something",
+   "gold": [
+    "susan-lin",
+    "raymond-zhou",
+    "meera-iyer",
+    "abby-lin-chen",
+    "raymond-liu",
+    "yvonne-baptiste"
+   ],
+   "labels": {
+    "intent": "knowledge",
+    "activity": null,
+    "place": null,
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "dent",
+     "tooth"
+    ]
+   }
+  },
+  {
+   "id": "messy-cello",
+   "kind": "messy",
+   "q": "who could teach me cello, total beginner here",
+   "gold": [
+    "anselm-richter",
+    "zara-ahmed",
+    "rebecca-lindgren"
+   ],
+   "labels": {
+    "intent": "knowledge",
+    "activity": null,
+    "place": null,
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "cello"
+    ]
+   }
+  },
+  {
+   "id": "messy-bike",
+   "kind": "messy",
+   "q": "my bike's making a weird clicking noise, who'd know how to fix it",
+   "gold": [
+    "felix-wagner",
+    "finley-ross",
+    "stefan-ivanov"
+   ],
+   "labels": {
+    "intent": "knowledge",
+    "activity": null,
+    "place": null,
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "bike",
+     "bicycl",
+     "cycl",
+     "mechanic",
+     "repair"
+    ]
+   }
+  },
+  {
+   "id": "messy-wine",
+   "kind": "messy",
+   "q": "wine ppl?? need a bottle rec for a dinner im going to",
+   "gold": [
+    "rafael-cruz",
+    "hugo-beaumont",
+    "ethan-lee",
+    "ines-moreau",
+    "clara-ibanez"
+   ],
+   "labels": {
+    "intent": "knowledge",
+    "activity": null,
+    "place": null,
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "wine",
+     "sommelier"
+    ]
+   }
+  },
+  {
+   "id": "messy-pottery",
+   "kind": "messy",
+   "q": "anyone into pottery or throwing clay?",
+   "gold": [
+    "ayesha-malik",
+    "mina-takeda",
+    "noa-levi",
+    "hana-yoshida",
+    "hannah-berg",
+    "hannah-cohen",
+    "dani-moreno",
+    "hye-jin-oh",
+    "ayumi-kondo",
+    "sakura-ito"
+   ],
+   "labels": {
+    "intent": "find",
+    "activity": null,
+    "place": null,
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "potter",
+     "ceramic",
+     "clay"
+    ]
+   }
+  },
+  {
+   "id": "messy-sourdough",
+   "kind": "messy",
+   "q": "who's the sourdough person again",
+   "gold": [
+    "bea-lopez"
+   ],
+   "labels": {
+    "intent": "find",
+    "activity": null,
+    "place": null,
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "sourdough",
+     "bread",
+     "bak"
+    ]
+   }
+  },
+  {
+   "id": "messy-lease",
+   "kind": "messy",
+   "q": "got a lease thing going on with my landlord, know any lawyers?",
+   "gold": [
+    "hannah-cohen",
+    "marcus-ellison",
+    "yasmin-nasser",
+    "keisha-williams",
+    "joel-abramson",
+    "cora-bellamy",
+    "george-lambrou",
+    "andrew-oyelaran",
+    "chinwe-adeyemi",
+    "emily-schwartz",
+    "miriam-adler",
+    "cousin-emily-chen"
+   ],
+   "labels": {
+    "intent": "knowledge",
+    "activity": null,
+    "place": null,
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "lawyer",
+     "law",
+     "attorney",
+     "legal",
+     "lease",
+     "landlord",
+     "tenant"
+    ]
+   }
+  },
+  {
+   "id": "messy-flowers",
+   "kind": "messy",
+   "q": "need someone to do flowers for my sister's wedding",
+   "gold": [
+    "phoebe-lawrence",
+    "brooke-hammond",
+    "elena-sokolov"
+   ],
+   "labels": {
+    "intent": "knowledge",
+    "activity": null,
+    "place": null,
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "flower",
+     "florist"
+    ]
+   }
+  },
+  {
+   "id": "messy-chess-kid",
+   "kind": "messy",
+   "q": "my kid wants to learn chess, who could teach him",
+   "gold": [
+    "oleg-ivanov"
+   ],
+   "labels": {
+    "intent": "knowledge",
+    "activity": null,
+    "place": null,
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "chess"
+    ]
+   }
+  },
+  {
+   "id": "messy-resume",
+   "kind": "messy",
+   "q": "job hunting rn, who could look over my resume",
+   "gold": [
+    "rhonda-pierce",
+    "anton-petrov",
+    "manuela-ortiz",
+    "sofia-ramirez",
+    "fiona-gallagher"
+   ],
+   "labels": {
+    "intent": "knowledge",
+    "activity": null,
+    "place": null,
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "recruit",
+     "resume",
+     "job",
+     "career",
+     "hiring"
+    ]
+   }
+  },
+  {
+   "id": "messy-back",
+   "kind": "messy",
+   "q": "my back's been wrecked since the move, any physio types i know",
+   "gold": [
+    "marcus-bell",
+    "sophie-laurent",
+    "jerome-baptiste",
+    "tamar-weiss"
+   ],
+   "labels": {
+    "intent": "knowledge",
+    "activity": null,
+    "place": null,
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "physio",
+     "physical therap",
+     "back"
+    ]
+   }
+  },
+  {
+   "id": "messy-murals",
+   "kind": "messy",
+   "q": "lookin 4 someone who paints walls, like big murals",
+   "gold": [
+    "benji-stern",
+    "pedro-quintero",
+    "pablo-herrera"
+   ],
+   "labels": {
+    "intent": "find",
+    "activity": null,
+    "place": null,
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "mural",
+     "paint"
+    ]
+   }
+  },
+  {
+   "id": "multi-sf-engineer",
+   "kind": "multi",
+   "q": "a software engineer who lives in San Francisco",
+   "gold": [
+    "ty-nakamura"
+   ],
+   "labels": {
+    "intent": "find",
+    "activity": null,
+    "place": "San Francisco",
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "software",
+     "engineer"
+    ]
+   }
+  },
+  {
+   "id": "multi-boston-college",
+   "kind": "multi",
+   "q": "college friends living in Boston",
+   "gold": [
+    "grace-kim",
+    "nina-volkov",
+    "june-park",
+    "hugh-calloway",
+    "dalia-mansour",
+    "harper-wells"
+   ],
+   "labels": {
+    "intent": "find",
+    "activity": null,
+    "place": "Boston",
+    "stage": "college",
+    "relationship": "friends",
+    "metAt": null,
+    "topics": []
+   }
+  },
+  {
+   "id": "multi-config-designers",
+   "kind": "multi",
+   "q": "designers I met at Config",
+   "gold": [
+    "daniel-okafor",
+    "gloria-tan",
+    "priscilla-ang"
+   ],
+   "labels": {
+    "intent": "find",
+    "activity": null,
+    "place": null,
+    "stage": null,
+    "relationship": null,
+    "metAt": "Config",
+    "topics": [
+     "design"
+    ]
+   }
+  },
+  {
+   "id": "multi-seattle-hiking",
+   "kind": "multi",
+   "q": "who in Seattle likes hiking",
+   "gold": [
+    "tina-chen",
+    "tara-lindholm",
+    "emily-schwartz",
+    "fiona-chu"
+   ],
+   "labels": {
+    "intent": "find",
+    "activity": null,
+    "place": "Seattle",
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "hik"
+    ]
+   }
+  },
+  {
+   "id": "multi-seattle-nurses",
+   "kind": "multi",
+   "q": "any nurses in Seattle",
+   "gold": [
+    "rachel-lin",
+    "aunt-lin-hua"
+   ],
+   "labels": {
+    "intent": "find",
+    "activity": null,
+    "place": "Seattle",
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "nurs"
+    ]
+   }
+  },
+  {
+   "id": "multi-hs-runners",
+   "kind": "multi",
+   "q": "high school friends who still run",
+   "gold": [
+    "dale-brandt",
+    "maddie-kowalczyk",
+    "ravi-subramanian",
+    "tyler-hobbs",
+    "owen-fitzgerald",
+    "kelsey-moran",
+    "trent-callahan",
+    "jun-ito",
+    "emilia-novak",
+    "dominic-russo",
+    "zach-feldman",
+    "alex-petrov"
+   ],
+   "labels": {
+    "intent": "find",
+    "activity": null,
+    "place": null,
+    "stage": "high-school",
+    "relationship": "friends",
+    "metAt": null,
+    "topics": [
+     "run",
+     "marathon"
+    ]
+   }
+  },
+  {
+   "id": "multi-tokyo-chef",
+   "kind": "multi",
+   "q": "a chef in Tokyo",
+   "gold": [
+    "kenji-watanabe",
+    "yuri-tanaka"
+   ],
+   "labels": {
+    "intent": "find",
+    "activity": null,
+    "place": "Tokyo",
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "chef",
+     "cook"
+    ]
+   }
+  },
+  {
+   "id": "multi-austin-first-job",
+   "kind": "multi",
+   "q": "people from my first job who live in Austin",
+   "gold": [
+    "raj-patel",
+    "tasha-greene",
+    "maribel-santos"
+   ],
+   "labels": {
+    "intent": "find",
+    "activity": null,
+    "place": "Austin",
+    "stage": "first-job",
+    "relationship": null,
+    "metAt": null,
+    "topics": []
+   }
+  },
+  {
+   "id": "multi-brooklyn-jazz",
+   "kind": "multi",
+   "q": "drinks in Brooklyn with someone into jazz",
+   "gold": [
+    "marcus-ellison",
+    "marcus-tillman",
+    "tyrone-banks",
+    "andrew-oyelaran",
+    "adaeze-obi",
+    "otis-whitmore",
+    "emanuel-grant",
+    "alberto-vidal",
+    "isaac-bell"
+   ],
+   "labels": {
+    "intent": "plan",
+    "activity": "drinks",
+    "place": "Brooklyn",
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "jazz"
+    ]
+   }
+  },
+  {
+   "id": "multi-houston-doctor",
+   "kind": "multi",
+   "q": "a doctor in Houston, family member is sick",
+   "gold": [
+    "arjun-kapoor",
+    "sana-qureshi",
+    "hadiya-ali",
+    "felipe-arce"
+   ],
+   "labels": {
+    "intent": "knowledge",
+    "activity": null,
+    "place": "Houston",
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "doctor",
+     "medic",
+     "physician"
+    ]
+   }
+  },
+  {
+   "id": "std-taxes",
+   "kind": "standard",
+   "q": "who knows about taxes",
+   "gold": [
+    "wendy-tsai",
+    "otto-schneider",
+    "miriam-adler"
+   ],
+   "labels": {
+    "intent": "knowledge",
+    "activity": null,
+    "place": null,
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "tax"
+    ]
+   }
+  },
+  {
+   "id": "std-pickleball",
+   "kind": "standard",
+   "q": "someone to play pickleball with",
+   "gold": [
+    "marcus-bell",
+    "dana-reyes",
+    "victor-huang",
+    "gabe-silverman",
+    "jamie-okada",
+    "bernadette-fox",
+    "jasmine-ford",
+    "hiroshi-yamamoto",
+    "natalie-stone",
+    "bruce-takahashi"
+   ],
+   "labels": {
+    "intent": "plan",
+    "activity": "pickleball",
+    "place": "New York City",
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "pickleball",
+     "tennis"
+    ]
+   }
+  },
+  {
+   "id": "std-run",
+   "kind": "standard",
+   "q": "someone to go for a run with",
+   "gold": [
+    "bianca-costa"
+   ],
+   "labels": {
+    "intent": "plan",
+    "activity": "running",
+    "place": "New York City",
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "run",
+     "marathon"
+    ]
+   }
+  },
+  {
+   "id": "std-bushwick-fashion",
+   "kind": "standard",
+   "q": "fashion themed party in Bushwick",
+   "gold": [
+    "tamsin-okoro",
+    "dmitri-sokolov",
+    "chloe-bernard",
+    "jules-amato"
+   ],
+   "labels": {
+    "intent": "plan",
+    "activity": "house-party",
+    "place": "Bushwick",
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "fashion"
+    ]
+   }
+  },
+  {
+   "id": "std-classical",
+   "kind": "standard",
+   "q": "a night of classical music in Brooklyn",
+   "gold": [
+    "lucien-bailey",
+    "anselm-richter",
+    "rhiannon-davies"
+   ],
+   "labels": {
+    "intent": "plan",
+    "activity": "concert",
+    "place": "Brooklyn",
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "classical",
+     "music"
+    ]
+   }
+  },
+  {
+   "id": "std-supper-club",
+   "kind": "standard",
+   "q": "people I met at Supper club",
+   "gold": [
+    "jordan-smith",
+    "francesca-marino",
+    "rafael-cruz",
+    "iris-tanaka",
+    "marcel-dupont",
+    "lia-fontana",
+    "elodie-marchand",
+    "ethan-lee",
+    "george-kim"
+   ],
+   "labels": {
+    "intent": "find",
+    "activity": null,
+    "place": null,
+    "stage": null,
+    "relationship": null,
+    "metAt": "Supper club",
+    "topics": []
+   }
+  },
+  {
+   "id": "std-college-nyc",
+   "kind": "standard",
+   "q": "college friends who moved to New York",
+   "gold": [
+    "neil-banerjee",
+    "eli-novak",
+    "alex-ferrante",
+    "lena-fischer",
+    "rosa-delgado",
+    "chloe-bernard",
+    "dev-malhotra",
+    "emily-chung",
+    "gabriela-ruiz",
+    "julian-reyes",
+    "marcus-tillman",
+    "sean-doherty",
+    "fatima-hassan",
+    "chiara-moretti",
+    "gianni-rossi",
+    "ayo-bankole",
+    "will-prescott",
+    "anjana-krishnan",
+    "priyanka-joshi",
+    "leo-fontaine",
+    "rob-castellan",
+    "cora-bellamy",
+    "lucia-fernandes",
+    "niko-stavros",
+    "monique-laurent",
+    "samuel-oduya",
+    "rhea-kapoor",
+    "layla-zaman",
+    "garrett-boyle",
+    "pooja-bhatt",
+    "mina-takeda",
+    "alec-brandt"
+   ],
+   "labels": {
+    "intent": "find",
+    "activity": null,
+    "place": "New York City",
+    "stage": "college",
+    "relationship": "friends",
+    "metAt": null,
+    "topics": []
+   }
+  },
+  {
+   "id": "none-austin-taxes",
+   "kind": "nomatch",
+   "q": "someone in Austin who could help with taxes",
+   "gold": [],
+   "labels": {
+    "intent": "knowledge",
+    "activity": null,
+    "place": "Austin",
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "tax"
+    ]
+   }
+  },
+  {
+   "id": "none-beekeeping",
+   "kind": "nomatch",
+   "q": "who knows about beekeeping",
+   "gold": [],
+   "labels": {
+    "intent": "knowledge",
+    "activity": null,
+    "place": null,
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "bee"
+    ]
+   }
+  },
+  {
+   "id": "none-falconer",
+   "kind": "nomatch",
+   "q": "a falconer",
+   "gold": [],
+   "labels": {
+    "intent": "find",
+    "activity": null,
+    "place": null,
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "falcon"
+    ]
+   }
+  },
+  {
+   "id": "none-alpacas",
+   "kind": "nomatch",
+   "q": "someone who breeds alpacas",
+   "gold": [],
+   "labels": {
+    "intent": "find",
+    "activity": null,
+    "place": null,
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "alpaca"
+    ]
+   }
+  },
+  {
+   "id": "none-taxidermist",
+   "kind": "nomatch",
+   "q": "a taxidermist in Brooklyn",
+   "gold": [],
+   "labels": {
+    "intent": "find",
+    "activity": null,
+    "place": "Brooklyn",
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "taxiderm"
+    ]
+   }
+  }
+ ]
+}
