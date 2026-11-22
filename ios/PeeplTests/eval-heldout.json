@@ -1,0 +1,245 @@
+{
+ "about": "W1 eval set (PLAN.md 12.4). gold = people who really fit, checked by hand against Resources/seed.json (all 500). labels = what the question asks for; place is a gazetteer name and compares by metro (or the place itself when it has no metro). topics = acceptable word stems, a parse agrees when it has at least one theme word and every theme word matches one of them. Held-out set (ho-): written blind to the prompts to test generalization.",
+ "questions": [
+  {
+   "id": "ho-messy-vet",
+   "kind": "messy",
+   "q": "my dog's been limping since yesterday, any vet people in my phone?",
+   "gold": [
+    "fiona-mccarthy",
+    "bridget-oneill",
+    "amelia-hart",
+    "emilia-novak"
+   ],
+   "labels": {
+    "intent": "knowledge",
+    "activity": null,
+    "place": null,
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "vet",
+     "animal"
+    ]
+   }
+  },
+  {
+   "id": "ho-messy-photographer",
+   "kind": "messy",
+   "q": "got a wedding next month and we have zero photos lined up, know a photographer??",
+   "gold": [
+    "tessa-nguyen"
+   ],
+   "labels": {
+    "intent": "knowledge",
+    "activity": null,
+    "place": null,
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "photograph"
+    ]
+   }
+  },
+  {
+   "id": "ho-messy-podcast",
+   "kind": "messy",
+   "q": "thinking of starting a podcast, who's done one before",
+   "gold": [
+    "lauren-voss"
+   ],
+   "labels": {
+    "intent": "knowledge",
+    "activity": null,
+    "place": null,
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "podcast"
+    ]
+   }
+  },
+  {
+   "id": "ho-messy-translate",
+   "kind": "messy",
+   "q": "need a letter translated, anyone i know do that kinda thing",
+   "gold": [
+    "camila-bruno",
+    "camille-roche",
+    "noelia-vasquez"
+   ],
+   "labels": {
+    "intent": "knowledge",
+    "activity": null,
+    "place": null,
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "translat",
+     "interpret",
+     "language"
+    ]
+   }
+  },
+  {
+   "id": "ho-multi-chicago-realestate",
+   "kind": "multi",
+   "q": "a real estate agent in Chicago",
+   "gold": [
+    "craig-bellamy"
+   ],
+   "labels": {
+    "intent": "find",
+    "activity": null,
+    "place": "Chicago",
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "real estate",
+     "realtor",
+     "broker"
+    ]
+   }
+  },
+  {
+   "id": "ho-multi-manhattan-boardgames",
+   "kind": "multi",
+   "q": "board game night with someone in Manhattan",
+   "gold": [
+    "victor-huang",
+    "neil-banerjee",
+    "colette-dubois",
+    "sung-min-kang",
+    "nate-bergstrom"
+   ],
+   "labels": {
+    "intent": "plan",
+    "activity": "board-games",
+    "place": "Manhattan",
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "board game"
+    ]
+   }
+  },
+  {
+   "id": "ho-multi-college-surf",
+   "kind": "multi",
+   "q": "college friends who surf",
+   "gold": [
+    "ty-nakamura",
+    "derek-yamada"
+   ],
+   "labels": {
+    "intent": "find",
+    "activity": null,
+    "place": null,
+    "stage": "college",
+    "relationship": "friends",
+    "metAt": null,
+    "topics": [
+     "surf"
+    ]
+   }
+  },
+  {
+   "id": "ho-multi-madison-vet",
+   "kind": "multi",
+   "q": "a veterinarian who lives in Madison",
+   "gold": [
+    "amelia-hart",
+    "emilia-novak"
+   ],
+   "labels": {
+    "intent": "find",
+    "activity": null,
+    "place": "Madison",
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "vet"
+    ]
+   }
+  },
+  {
+   "id": "ho-none-scuba",
+   "kind": "nomatch",
+   "q": "someone who can teach me scuba diving",
+   "gold": [],
+   "labels": {
+    "intent": "knowledge",
+    "activity": null,
+    "place": null,
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "scuba",
+     "diving"
+    ]
+   }
+  },
+  {
+   "id": "ho-none-tattoo",
+   "kind": "nomatch",
+   "q": "a tattoo artist I could go to",
+   "gold": [],
+   "labels": {
+    "intent": "find",
+    "activity": null,
+    "place": null,
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "tattoo"
+    ]
+   }
+  },
+  {
+   "id": "ho-none-pilot-seattle",
+   "kind": "nomatch",
+   "q": "a pilot who lives in Seattle",
+   "gold": [],
+   "labels": {
+    "intent": "find",
+    "activity": null,
+    "place": "Seattle",
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "pilot",
+     "aviation"
+    ]
+   }
+  },
+  {
+   "id": "ho-std-firefighter",
+   "kind": "standard",
+   "q": "who is a firefighter",
+   "gold": [
+    "hector-villanueva"
+   ],
+   "labels": {
+    "intent": "find",
+    "activity": null,
+    "place": null,
+    "stage": null,
+    "relationship": null,
+    "metAt": null,
+    "topics": [
+     "firefight"
+    ]
+   }
+  }
+ ]
+}
