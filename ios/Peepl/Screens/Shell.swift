@@ -74,9 +74,11 @@ struct RootView: View {
             VStack { TopControls(tab: Binding(get: { nav.tab }, set: { nav.focus = nil; nav.tab = $0 })).frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 16); Spacer() }
             VStack { Spacer(); AskBar() }
             }
-            .scaleEffect(reduce ? 1 : 1 - 0.04 * depth)
-            .offset(x: reduce ? 0 : -30 * depth)
-            .opacity(1 - 0.15 * depth)
+            // the mindmap's orbs are drawn in its Canvas inside this container, so it must not scale or shift there (an edge would show); Connections' ground is separate
+            .scaleEffect(reduce || nav.tab == .mindmap ? 1 : 1 - 0.04 * depth)
+            .offset(x: reduce || nav.tab == .mindmap ? 0 : -30 * depth)
+            // dim with an overlay, not opacity, so the ground never shows through
+            .overlay { Color.black.opacity(0.05 * depth).ignoresSafeArea().allowsHitTesting(false) }
             // by position: the same profile can be on the stack twice (A -> B -> A), which a by-value id can't hold
             ForEach(Array(nav.layers.enumerated()), id: \.offset) { i, layer in
                 LayerHost(layer: layer)
