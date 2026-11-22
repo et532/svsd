@@ -34,6 +34,7 @@ struct SettingsView: View {
     @Query(sort: \Person.name) private var people: [Person]
     @AppStorage(AIClient.enabledKey) private var openAI = false
     @State private var shareURL: URL?
+    @State private var lastShared: URL?
     @State private var importing = false
     private var version: String {
         let i = Bundle.main.infoDictionary
@@ -45,7 +46,7 @@ struct SettingsView: View {
             List {
                 Section("Your data") {
                     Button("Back up") {
-                        do { shareURL = try BackupFile.export(people: people) } catch { nav.say("Could not make the backup: \(error.localizedDescription)") }
+                        do { shareURL = try BackupFile.export(people: people); lastShared = shareURL; BackupReminder.recordBackup(count: people.count) } catch { nav.say("Could not make the backup: \(error.localizedDescription)") }
                     }
                     Button("Restore") { importing = true }
                     Text("Everyone you add stays on this device. Back up saves them to one file.").font(.footnote).foregroundStyle(.secondary)
@@ -75,7 +76,7 @@ struct SettingsView: View {
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
-            .sheet(item: $shareURL) { ShareSheet(url: $0) }
+            .sheet(item: $shareURL, onDismiss: { BackupReminder.cleanup(lastShared); lastShared = nil }) { ShareSheet(url: $0) }
             .backupImporter(isPresented: $importing)
         }
     }
