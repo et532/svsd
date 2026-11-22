@@ -235,7 +235,7 @@ struct ProfileView: View {
                             HStack(spacing: 10) {
                                 Image(systemName: t.done ? "checkmark.circle.fill" : "circle").font(Theme.font(17))
                                     .foregroundStyle(t.done ? Theme.ink : Theme.inkMuted.opacity(0.6))
-                                    .symbolEffect(.bounce, value: t.done)
+                                    .symbolEffect(.bounce, value: reduce ? false : t.done)
                                 Text(t.text).strikethrough(t.done).font(Theme.font(15)).foregroundStyle(Theme.ink)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                             }
@@ -299,7 +299,7 @@ struct ProfileView: View {
                 HStack(alignment: .top, spacing: 16) {
                     Button { addBounce += 1; nav.push(.add(mutualOf: person.id)) } label: {
                         VStack(spacing: 4) {
-                            Image(systemName: "plus").font(Theme.font(18)).foregroundStyle(Theme.inkMuted).symbolEffect(.bounce, value: addBounce).frame(width: 48, height: 48)
+                            Image(systemName: "plus").font(Theme.font(18)).foregroundStyle(Theme.inkMuted).symbolEffect(.bounce, value: reduce ? 0 : addBounce).frame(width: 48, height: 48)
                                 .overlay(Circle().stroke(Theme.inkMuted.opacity(0.5), style: StrokeStyle(lineWidth: 1.5, dash: [4, 3])))
                             Text("Add").font(Theme.font(12)).foregroundStyle(Theme.ink)
                         }
@@ -431,21 +431,21 @@ private struct VoiceNote: View {
                 (Text(words.prefix(said).joined(separator: " ") + (said > 0 ? " " : "")).foregroundStyle(Theme.ink)
                     + Text(words.dropFirst(said).joined(separator: " ")).foregroundStyle(at == 0 ? Theme.ink : Theme.inkMuted.opacity(0.5)))
                     .font(Theme.font(14)).frame(maxWidth: .infinity, alignment: .leading)
-                    .animation(.easeOut(duration: 0.12), value: said)
+                    .animation(reduce ? nil : .easeOut(duration: 0.12), value: said)
                 HStack(spacing: 10) {
                     Button {
                         if !playing, at >= Self.wave.count { at = 0 }
                         withAnimation(Motion.animation(Motion.snap, reduce: reduce)) { playing.toggle() }
                     } label: {
                         Image(systemName: playing ? "pause.fill" : "play.fill").font(Theme.font(12)).foregroundStyle(.white)
-                            .contentTransition(.symbolEffect(.replace))
+                            .contentTransition(reduce ? .identity : .symbolEffect(.replace))
                             .frame(width: 32, height: 32).background(Theme.night, in: .circle)
                     }
                     .buttonStyle(PressStyle(scale: 0.9)).accessibilityLabel(playing ? "Pause voice note" : "Play voice note")
                     HStack(spacing: 2) {
                         ForEach(Self.wave.indices, id: \.self) { i in
                             Capsule().fill(i < at ? Theme.ink : Theme.inkMuted.opacity(0.3)).frame(width: 2.5, height: Self.wave[i])
-                                .animation(.linear(duration: 0.14), value: at)
+                                .animation(reduce ? nil : .linear(duration: 0.14), value: at)
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading).accessibilityHidden(true)
