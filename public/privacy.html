@@ -48,7 +48,7 @@
 <p>To prove the request comes from a genuine Peepl install, the app uses Apple's App Attest while the switch is on. It sends Peepl's server a device key id and an attestation from Apple, and gets back a short-lived token. This identifies the install, not you.</p>
 <p>Peepl's server sees your internet (IP) address on each request and uses it, together with that token, to limit how often requests can be made. These limits are counters held in the server's memory. Peepl's server code does not write the address to a database or a log.</p>
 <p>The server forwards these to OpenAI to get the answer and passes the answer back. It limits how often one internet address can call it. Peepl's server code does not write your notes to a database or a log. Turn the switch off and nothing goes to OpenAI.</p>
-<p>[VINCE: confirm OpenAI data-use wording from https://openai.com/policies]</p>
+<p>OpenAI handles what it receives under its own API data usage policies: <a href="https://openai.com/policies">openai.com/policies</a>.</p>
 
 <h2>Crash reports</h2>
 <p>Peepl does not collect crash reports. If you use TestFlight or the App Store, Apple may give the developer crash information under your Apple settings.</p>
@@ -57,7 +57,7 @@
 <p>Delete the app and its data goes with it. Backup files you made are yours; delete them wherever you saved them. If you used OpenAI, Peepl keeps no copy on its side.</p>
 
 <h2>Contact</h2>
-<p>[VINCE: support email]</p>
+<p>Questions or requests: <a href="mailto:lin_vince@outlook.com">lin_vince@outlook.com</a></p>
 </main>
 </body>
 </html>
