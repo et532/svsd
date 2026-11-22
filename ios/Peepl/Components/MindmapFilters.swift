@@ -23,6 +23,7 @@ struct MindmapFilters: View {
             .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
             .pastel(in: Capsule())
         }
+        .buttonStyle(PressStyle(scale: 0.96))
         .accessibilityLabel("Filters")
     }
 }
