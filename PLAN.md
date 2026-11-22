@@ -466,3 +466,5 @@ Draft message   -> Foundation Models; fallback: template drafts
 - [ ] `CLAUDE.md`, `DECISIONS.md` and this file agree.
 
 **rel-c (privacy manifest) is ON HOLD:** the orchestrator rejected emptying `PrivacyInfo.xcprivacy` because the OpenAI opt-in ships in the app and optional collection must still be declared; it waits for Vince's answer to 12.6 Q1.
+
+**rel-small (2026-11-22, Simulator tests only):** section 11 F4 (launch backup reminder) and F5 (temp backup file removed after the share sheet closes) done as rel-a; H1 / H4 done as rel-b (version 0.9.0 build 1, `ITSAppUsesNonExemptEncryption` NO; Release build Info.plist checked). Accepted gaps: `lastBackupAt` is recorded when the export file is made, not when sharing finishes; if export's validation throws, the temp file is not removed; a release install that loads the sample people later gets one reminder about them.
