@@ -290,6 +290,60 @@ enum LocalAI {
         #endif
     }
 
+    // MARK: Message draft
+
+    /// Trim and strip wrapping quotes from model text.
+    static func cleanDraft(_ s: String) -> String {
+        var t = s.trimmingCharacters(in: .whitespacesAndNewlines)
+        let quotes = CharacterSet(charactersIn: "\"“”")
+        while t.count > 1, let f = t.unicodeScalars.first, let l = t.unicodeScalars.last, quotes.contains(f), quotes.contains(l) {
+            t = String(t.dropFirst().dropLast()).trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        return t
+    }
+
+    /// Facts the app already has about this one person (never other people's data).
+    static func draftFacts(_ p: PersonInfo) -> String {
+        var parts = [p.profession, p.livesNow.city.isEmpty || p.livesNow.city == "Unknown" ? "" : "lives in \(p.livesNow.city)",
+                     p.tags.isEmpty ? "" : "into \(p.tags.prefix(4).joined(separator: ", "))"]
+        if let m = p.moments.first { parts.append("last time: \(m.title)") }
+        return clip(parts.filter { !$0.isEmpty }.joined(separator: "; "), 300)
+    }
+
+    private static let draftInstructions = "You write a short, friendly text message from a user to someone they know, under 60 words, plain text, no emojis, no subject line. Start with the person's first name. Use only the facts given; never invent facts or names."
+
+    /// A model draft, or nil (unavailable, timeout, empty, or it doesn't name this person): use the template.
+    /// `model` is a test seam given (the person's facts, what the message should ask) returning raw text.
+    static func draft(_ person: PersonInfo, action: Action, timeout: Double = 6,
+                      model: ((String, String) async -> String?)? = nil) async -> String? {
+        let facts = draftFacts(person), goal = clip(action.goal ?? action.draft, 200)
+        var raw: String?
+        if let model { raw = await model(facts, goal) } else {
+            #if canImport(FoundationModels)
+            guard isAvailable else { return nil }
+            let prompt = "Person: \(person.firstName). Facts: \(facts). Message should: \(goal.isEmpty ? "catch up" : goal)"
+            raw = await within(timeout, {
+                try await LanguageModelSession(instructions: draftInstructions).respond(to: prompt).content
+            })
+            #endif
+        }
+        guard let t = raw.map(cleanDraft), !t.isEmpty, t.localizedCaseInsensitiveContains(person.firstName) else { return nil }
+        return t
+    }
+
+    /// The "Draft a message" chain: OpenAI only if its switch is on (today's path), else the on-device model, else the template.
+    /// `openAI` / `local` are test seams.
+    static func message(_ person: PersonInfo, action: Action, openAI: ((PersonInfo, Action) async -> String)? = nil,
+                        local: ((PersonInfo, Action) async -> String?)? = nil) async -> String {
+        if AIClient.enabled {
+            if let openAI { return await openAI(person, action) }
+            return await AIClient.draft(person, action: action)
+        }
+        let t: String? = if let local { await local(person, action) } else { await draft(person, action: action) }
+        if let t { return t }
+        return action.draft.isEmpty ? "Hey \(person.firstName)! Hope you’re doing well. Want to catch up soon?" : action.draft
+    }
+
     private static func modelPicks(_ q: String, _ candidates: [Match], timeout: Double) async -> [(n: Int, why: String)]? {
         #if canImport(FoundationModels)
         guard isAvailable else { return nil }
