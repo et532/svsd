@@ -1,0 +1,2757 @@
+{
+  "held-out 12" : [
+    {
+      "fieldAgreement" : 0.8928571428571429,
+      "invalidIds" : 0,
+      "name" : "a: rules + MiniLM",
+      "noMatchHonest" : "3\/3",
+      "notes" : [
+
+      ],
+      "p50ms" : 109.607208,
+      "p95ms" : 258.180375,
+      "perField" : {
+        "activity" : 0.9166666666666666,
+        "metAt" : 1,
+        "place" : 1,
+        "plan" : 1,
+        "relationship" : 1,
+        "stage" : 1,
+        "topics" : 0.3333333333333333
+      },
+      "recallAt10" : 0.5555555555555556,
+      "rows" : [
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : false
+          },
+          "id" : "ho-messy-vet",
+          "ids" : [
+
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "messy",
+          "ms" : 202.672083,
+          "read" : "find | - | - | - | - | - | dogs,limping,since,yesterday,vet,phone",
+          "recall" : 0
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : false
+          },
+          "id" : "ho-messy-photographer",
+          "ids" : [
+
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "messy",
+          "ms" : 258.180375,
+          "read" : "find | - | - | - | - | - | got,wedding,have,zero,photos,lined,photographer",
+          "recall" : 0
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : false
+          },
+          "id" : "ho-messy-podcast",
+          "ids" : [
+
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "messy",
+          "ms" : 202.470542,
+          "read" : "find | - | - | - | - | - | thinking,starting,podcast,done,one,before",
+          "recall" : 0
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : false
+          },
+          "id" : "ho-messy-translate",
+          "ids" : [
+
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "messy",
+          "ms" : 138.73875,
+          "read" : "find | - | - | - | - | - | letter,translated,kinda",
+          "recall" : 0
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : false
+          },
+          "id" : "ho-multi-chicago-realestate",
+          "ids" : [
+            "craig-bellamy"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "multi",
+          "ms" : 115.338375,
+          "read" : "find | - | Chicago | - | - | - | real,estate,agent",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : false,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : false
+          },
+          "id" : "ho-multi-manhattan-boardgames",
+          "ids" : [
+            "nate-bergstrom",
+            "neil-banerjee",
+            "colette-dubois",
+            "jamie-okada",
+            "petra-novakova",
+            "priyanka-joshi",
+            "marisol-vega",
+            "victor-huang",
+            "sung-min-kang"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "multi",
+          "ms" : 82.626166,
+          "read" : "plan | game-night | Manhattan | - | - | - | games,board",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "ho-multi-college-surf",
+          "ids" : [
+            "ty-nakamura",
+            "derek-yamada"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "multi",
+          "ms" : 52.301875,
+          "read" : "find | - | - | college | friends | - | surf",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "ho-multi-madison-vet",
+          "ids" : [
+            "amelia-hart",
+            "emilia-novak"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "multi",
+          "ms" : 53.848459,
+          "read" : "find | - | Madison | - | - | - | veterinarian",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : false
+          },
+          "id" : "ho-none-scuba",
+          "ids" : [
+
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "nomatch",
+          "ms" : 109.607208,
+          "read" : "knowledge | - | - | - | - | - | teach,scuba,diving"
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : false
+          },
+          "id" : "ho-none-tattoo",
+          "ids" : [
+
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "nomatch",
+          "ms" : 79.676292,
+          "read" : "find | - | - | - | - | - | tattoo,artist"
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "ho-none-pilot-seattle",
+          "ids" : [
+
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "nomatch",
+          "ms" : 52.726709,
+          "read" : "find | - | Seattle | - | - | - | pilot"
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "ho-std-firefighter",
+          "ids" : [
+            "hector-villanueva",
+            "colin-murphy"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "standard",
+          "ms" : 49.06925,
+          "read" : "find | - | - | - | - | - | firefighter",
+          "recall" : 1
+        }
+      ]
+    },
+    {
+      "fieldAgreement" : 0.9285714285714286,
+      "invalidIds" : 0,
+      "name" : "b: rules + MiniLM + on-device model",
+      "noMatchHonest" : "3\/3",
+      "notes" : [
+        "first call (model load) took 1092 ms; not counted",
+        "model parsed 12\/12 questions"
+      ],
+      "p50ms" : 2120.469875,
+      "p95ms" : 2554.439416,
+      "perField" : {
+        "activity" : 0.8333333333333334,
+        "metAt" : 1,
+        "place" : 0.9166666666666666,
+        "plan" : 0.9166666666666666,
+        "relationship" : 1,
+        "stage" : 1,
+        "topics" : 0.8333333333333334
+      },
+      "recallAt10" : 0.8296296296296296,
+      "rows" : [
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "ho-messy-vet",
+          "ids" : [
+            "bridget-oneill",
+            "fiona-mccarthy",
+            "emilia-novak",
+            "amelia-hart"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "messy",
+          "modelParsed" : true,
+          "ms" : 2266.821958,
+          "read" : "find | - | - | - | - | - | vet",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : false,
+            "metAt" : true,
+            "place" : false,
+            "plan" : false,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "ho-messy-photographer",
+          "ids" : [
+            "ayesha-malik",
+            "eli-novak",
+            "aisha-khan",
+            "zara-ahmed",
+            "petra-novakova"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "messy",
+          "modelParsed" : true,
+          "ms" : 2554.439416,
+          "read" : "plan | dinner | New York City | - | - | - | photography",
+          "recall" : 0
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "ho-messy-podcast",
+          "ids" : [
+            "stefan-ivanov",
+            "lauren-voss",
+            "nina-volkov"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "messy",
+          "modelParsed" : true,
+          "ms" : 2309.644875,
+          "read" : "find | - | - | - | - | - | podcast",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "ho-messy-translate",
+          "ids" : [
+            "camille-roche",
+            "camila-bruno"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "messy",
+          "modelParsed" : true,
+          "ms" : 1985.1711249999998,
+          "read" : "find | - | - | - | - | - | translator",
+          "recall" : 0.6666666666666666
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "ho-multi-chicago-realestate",
+          "ids" : [
+            "craig-bellamy"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "multi",
+          "modelParsed" : true,
+          "ms" : 2120.469875,
+          "read" : "find | - | Chicago | - | - | - | real,estate",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : false,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : false
+          },
+          "id" : "ho-multi-manhattan-boardgames",
+          "ids" : [
+            "victor-huang",
+            "neil-banerjee",
+            "nate-bergstrom",
+            "jamie-okada",
+            "colette-dubois",
+            "priyanka-joshi",
+            "petra-novakova",
+            "marisol-vega",
+            "marcus-tillman",
+            "oleg-ivanov"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "multi",
+          "modelParsed" : true,
+          "ms" : 2477.635291,
+          "read" : "plan | game-night | Manhattan | - | - | - | games,board,game",
+          "recall" : 0.8
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "ho-multi-college-surf",
+          "ids" : [
+            "derek-yamada",
+            "ty-nakamura"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "multi",
+          "modelParsed" : true,
+          "ms" : 1988.312625,
+          "read" : "find | - | - | college | friends | - | surfing",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "ho-multi-madison-vet",
+          "ids" : [
+            "amelia-hart",
+            "emilia-novak"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "multi",
+          "modelParsed" : true,
+          "ms" : 1970.9218329999999,
+          "read" : "find | - | Madison | - | - | - | veterinarian",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "ho-none-scuba",
+          "ids" : [
+
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "nomatch",
+          "modelParsed" : true,
+          "ms" : 1205.39525,
+          "read" : "find | - | - | - | - | - | scuba,diving"
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : false
+          },
+          "id" : "ho-none-tattoo",
+          "ids" : [
+
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "nomatch",
+          "modelParsed" : true,
+          "ms" : 1114.472708,
+          "read" : "find | - | - | - | - | - | tattoo,artist"
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "ho-none-pilot-seattle",
+          "ids" : [
+
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "nomatch",
+          "modelParsed" : true,
+          "ms" : 1171.2538749999999,
+          "read" : "find | - | Seattle | - | - | - | pilot"
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "ho-std-firefighter",
+          "ids" : [
+            "hector-villanueva",
+            "colin-murphy"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "standard",
+          "modelParsed" : true,
+          "ms" : 2141.799625,
+          "read" : "find | - | - | - | - | - | firefighter",
+          "recall" : 1
+        }
+      ]
+    },
+    {
+      "invalidIds" : 0,
+      "name" : "c: rules + MiniLM + OpenAI rank",
+      "notes" : [
+
+      ],
+      "rows" : [
+
+      ],
+      "skipped" : "no token for \/api\/ai: the Simulator has no App Attest, Debug builds carry no App Attest entitlement, PEEPL_DEBUG_TOKEN is empty and Production never accepts the debug token"
+    }
+  ],
+  "original 40" : [
+    {
+      "fieldAgreement" : 0.8857142857142857,
+      "invalidIds" : 0,
+      "name" : "a: rules + MiniLM",
+      "noMatchHonest" : "5\/5",
+      "notes" : [
+
+      ],
+      "p50ms" : 89.372208,
+      "p95ms" : 245.079167,
+      "perField" : {
+        "activity" : 0.9,
+        "metAt" : 1,
+        "place" : 0.95,
+        "plan" : 0.9,
+        "relationship" : 0.975,
+        "stage" : 1,
+        "topics" : 0.475
+      },
+      "recallAt10" : 0.6571428571428571,
+      "rows" : [
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "demo-climbing",
+          "ids" : [
+            "jordan-lee",
+            "zara-ahmed"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "demo",
+          "ms" : 15.180417,
+          "read" : "plan | climbing | New York City | - | - | - | climbing,bouldering",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : false
+          },
+          "id" : "demo-sf-trip",
+          "ids" : [
+            "priya-nair",
+            "jun-ito",
+            "elliot-park",
+            "sasha-ivanova",
+            "ty-nakamura",
+            "hye-jin-oh",
+            "wes-tran",
+            "gloria-tan",
+            "daniel-okafor",
+            "rohan-mehta",
+            "marcus-whitlock"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "demo",
+          "ms" : 38.193542,
+          "read" : "plan | coffee | San Francisco | - | - | - | traveling",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : false
+          },
+          "id" : "demo-hardware-intro",
+          "ids" : [
+            "ana-ruiz",
+            "aisha-khan"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "demo",
+          "ms" : 13.869667,
+          "read" : "find | - | - | - | - | - | founder,hardware,engineer,introduce",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : false
+          },
+          "id" : "messy-taxes",
+          "ids" : [
+
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "messy",
+          "ms" : 326.072333,
+          "read" : "find | - | - | - | - | - | ugh,taxes,due,have,clue",
+          "recall" : 0
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : false
+          },
+          "id" : "messy-sink",
+          "ids" : [
+
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "messy",
+          "ms" : 231.8545,
+          "read" : "find | - | - | - | - | - | kitchen,sink,leaking,again,lol,even,call",
+          "recall" : 0
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : false
+          },
+          "id" : "messy-haircut",
+          "ids" : [
+
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "messy",
+          "ms" : 171.578458,
+          "read" : "find | - | - | - | - | - | haircut,sooo,bad,cuts,hair",
+          "recall" : 0
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : false
+          },
+          "id" : "messy-tooth",
+          "ids" : [
+            "raymond-liu",
+            "susan-lin",
+            "raymond-zhou",
+            "meera-iyer",
+            "abby-lin-chen",
+            "yara-khoury",
+            "caleb-rhodes",
+            "samuel-oduya",
+            "yvonne-baptiste",
+            "owen-murphy"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "messy",
+          "ms" : 113.99025,
+          "read" : "find | - | - | - | - | - | tooth,killing,dentist",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : false
+          },
+          "id" : "messy-cello",
+          "ids" : [
+
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "messy",
+          "ms" : 168.257625,
+          "read" : "knowledge | - | - | - | - | - | teach,cello,total,beginner,here",
+          "recall" : 0
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : false
+          },
+          "id" : "messy-bike",
+          "ids" : [
+
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "messy",
+          "ms" : 254.165334,
+          "read" : "knowledge | - | - | - | - | - | bikes,making,weird,clicking,noise,whod,fix",
+          "recall" : 0
+        },
+        {
+          "fields" : {
+            "activity" : false,
+            "metAt" : true,
+            "place" : false,
+            "plan" : false,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : false
+          },
+          "id" : "messy-wine",
+          "ids" : [
+            "rafael-cruz",
+            "camille-lefevre",
+            "ethan-lee",
+            "alec-brandt",
+            "oscar-whitfield"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "messy",
+          "ms" : 245.079167,
+          "read" : "plan | dinner | New York City | - | - | - | wine,ppl,bottle,rec,going",
+          "recall" : 0.4
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : false
+          },
+          "id" : "messy-pottery",
+          "ids" : [
+            "hannah-cohen",
+            "ayesha-malik",
+            "chloe-bernard",
+            "cass-whitaker",
+            "sean-doherty",
+            "maya-chen",
+            "jules-amato",
+            "hannah-berg",
+            "hana-yoshida"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "messy",
+          "ms" : 113.280334,
+          "read" : "find | - | - | - | - | - | pottery,throwing,clay",
+          "recall" : 0.4
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : false
+          },
+          "id" : "messy-sourdough",
+          "ids" : [
+            "bea-lopez",
+            "anika-rao",
+            "calvin-reed"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "messy",
+          "ms" : 84.455667,
+          "read" : "find | - | - | - | - | - | sourdough,again",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : false
+          },
+          "id" : "messy-lease",
+          "ids" : [
+
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "messy",
+          "ms" : 195.083041,
+          "read" : "find | - | - | - | - | - | got,lease,going,landlord,lawyers",
+          "recall" : 0
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : false
+          },
+          "id" : "messy-flowers",
+          "ids" : [
+
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "messy",
+          "ms" : 89.463125,
+          "read" : "find | - | - | - | - | - | flowers,sisters,wedding",
+          "recall" : 0
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : false
+          },
+          "id" : "messy-chess-kid",
+          "ids" : [
+            "oleg-ivanov"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "messy",
+          "ms" : 167.41325,
+          "read" : "knowledge | - | - | - | - | - | kid,learn,chess,teach,him",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : false
+          },
+          "id" : "messy-resume",
+          "ids" : [
+            "fiona-gallagher"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "messy",
+          "ms" : 134.596458,
+          "read" : "find | - | - | - | - | - | job,hunting,resume",
+          "recall" : 0.2
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : false
+          },
+          "id" : "messy-back",
+          "ids" : [
+
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "messy",
+          "ms" : 199.781625,
+          "read" : "find | - | - | - | - | - | backs,wrecked,since,physio,types",
+          "recall" : 0
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : false
+          },
+          "id" : "messy-murals",
+          "ids" : [
+            "benji-stern",
+            "pedro-quintero",
+            "luz-hernandez",
+            "pablo-herrera"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "messy",
+          "ms" : 170.161167,
+          "read" : "find | - | - | - | - | - | lookin,paints,walls,murals",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "multi-sf-engineer",
+          "ids" : [
+            "ty-nakamura"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "multi",
+          "ms" : 84.004667,
+          "read" : "find | - | San Francisco | - | - | - | software,engineer",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "multi-boston-college",
+          "ids" : [
+            "harper-wells",
+            "hugh-calloway",
+            "june-park",
+            "dalia-mansour",
+            "grace-kim",
+            "nina-volkov"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "multi",
+          "ms" : 10.208958,
+          "read" : "find | - | Boston | college | friends | - | ",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "multi-config-designers",
+          "ids" : [
+            "daniel-okafor",
+            "priscilla-ang",
+            "gloria-tan"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "multi",
+          "ms" : 55.267125,
+          "read" : "find | - | - | - | - | config | designers",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : false,
+            "metAt" : true,
+            "place" : true,
+            "plan" : false,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "multi-seattle-hiking",
+          "ids" : [
+            "fiona-chu",
+            "tara-lindholm",
+            "emily-schwartz",
+            "tina-chen"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "multi",
+          "ms" : 53.77175,
+          "read" : "plan | hiking | Seattle | - | - | - | hiking",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "multi-seattle-nurses",
+          "ids" : [
+            "rachel-lin",
+            "aunt-lin-hua"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "multi",
+          "ms" : 54.239042,
+          "read" : "find | - | Seattle | - | - | - | nurses",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : false,
+            "metAt" : true,
+            "place" : false,
+            "plan" : false,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : false
+          },
+          "id" : "multi-hs-runners",
+          "ids" : [
+            "zach-feldman",
+            "elise-park",
+            "sofia-bianchi",
+            "valeria-santos",
+            "alma-torres"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "multi",
+          "ms" : 96.946625,
+          "read" : "plan | running | New York City | high-school | friends | - | running,run club,marathon,still",
+          "recall" : 0.1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "multi-tokyo-chef",
+          "ids" : [
+            "kenji-watanabe",
+            "yuri-tanaka"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "multi",
+          "ms" : 52.819459,
+          "read" : "find | - | Tokyo | - | - | - | chef",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "multi-austin-first-job",
+          "ids" : [
+            "raj-patel",
+            "maribel-santos",
+            "tasha-greene"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "multi",
+          "ms" : 59.222167,
+          "read" : "find | - | Austin | first-job | - | - | ",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "multi-brooklyn-jazz",
+          "ids" : [
+            "otis-whitmore",
+            "adaeze-obi",
+            "marcus-ellison",
+            "marcus-tillman",
+            "emanuel-grant",
+            "alberto-vidal",
+            "wren-castellano",
+            "isaac-bell",
+            "andrew-oyelaran",
+            "tyrone-banks"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "multi",
+          "ms" : 80.262041,
+          "read" : "plan | drinks | Brooklyn | - | - | - | jazz",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : false,
+            "stage" : true,
+            "topics" : false
+          },
+          "id" : "multi-houston-doctor",
+          "ids" : [
+
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "multi",
+          "ms" : 114.684125,
+          "read" : "find | - | Houston | - | family | - | doctor,member,sick",
+          "recall" : 0
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "std-taxes",
+          "ids" : [
+            "wendy-tsai",
+            "otto-schneider",
+            "hamid-karimi",
+            "miriam-adler"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "standard",
+          "ms" : 89.372208,
+          "read" : "knowledge | - | - | - | - | - | taxes",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "std-pickleball",
+          "ids" : [
+            "jamie-okada",
+            "jasmine-ford",
+            "marcus-bell",
+            "bernadette-fox",
+            "dana-reyes",
+            "bruce-takahashi",
+            "hiroshi-yamamoto",
+            "natalie-stone",
+            "gabe-silverman",
+            "ethan-rowe"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "standard",
+          "ms" : 62.944541,
+          "read" : "plan | pickleball | New York City | - | - | - | pickleball,tennis",
+          "recall" : 0.9
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "std-run",
+          "ids" : [
+            "bianca-costa",
+            "alex-ferrante",
+            "lena-fischer",
+            "rosa-delgado",
+            "tori-nguyen",
+            "kayla-simmons",
+            "neil-banerjee",
+            "joelle-mercier",
+            "kiara-mendes",
+            "julian-reyes"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "standard",
+          "ms" : 67.291458,
+          "read" : "plan | running | New York City | - | - | - | running,run club,marathon",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "std-bushwick-fashion",
+          "ids" : [
+            "tamsin-okoro",
+            "chloe-bernard",
+            "jules-amato",
+            "dmitri-sokolov",
+            "ayo-bankole",
+            "gigi-laurent",
+            "tori-nguyen",
+            "marisol-vega",
+            "imani-brooks",
+            "lola-marquez"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "standard",
+          "ms" : 206.113208,
+          "read" : "plan | house-party | Bushwick | - | - | - | fashion",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : false,
+            "metAt" : true,
+            "place" : true,
+            "plan" : false,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "std-classical",
+          "ids" : [
+            "anselm-richter",
+            "zara-ahmed",
+            "lucien-bailey",
+            "maya-chen",
+            "marcus-ellison",
+            "rhiannon-davies",
+            "otis-whitmore",
+            "alberto-vidal",
+            "pearl-washington"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "standard",
+          "ms" : 185.416625,
+          "read" : "find | - | Brooklyn | - | - | - | classical,music",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "std-supper-club",
+          "ids" : [
+            "francesca-marino",
+            "rafael-cruz",
+            "marcel-dupont",
+            "iris-tanaka",
+            "lia-fontana",
+            "elodie-marchand",
+            "ethan-lee",
+            "george-kim",
+            "jordan-smith"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "standard",
+          "ms" : 8.725667,
+          "read" : "find | - | - | - | - | supper club | ",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "std-college-nyc",
+          "ids" : [
+            "neil-banerjee",
+            "eli-novak",
+            "alex-ferrante",
+            "lena-fischer",
+            "rosa-delgado",
+            "chloe-bernard",
+            "emily-chung",
+            "ayo-bankole",
+            "monique-laurent",
+            "dev-malhotra"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "standard",
+          "ms" : 42.825583,
+          "read" : "find | - | New York City | college | friends | - | ",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : false
+          },
+          "id" : "none-austin-taxes",
+          "ids" : [
+
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "nomatch",
+          "ms" : 120.955875,
+          "read" : "knowledge | - | Austin | - | - | - | help,taxes"
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "none-beekeeping",
+          "ids" : [
+
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "nomatch",
+          "ms" : 50.042417,
+          "read" : "knowledge | - | - | - | - | - | beekeeping"
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "none-falconer",
+          "ids" : [
+
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "nomatch",
+          "ms" : 48.222125,
+          "read" : "find | - | - | - | - | - | falconer"
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : false
+          },
+          "id" : "none-alpacas",
+          "ids" : [
+
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "nomatch",
+          "ms" : 84.605833,
+          "read" : "find | - | - | - | - | - | breeds,alpacas"
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "none-taxidermist",
+          "ids" : [
+
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "nomatch",
+          "ms" : 55.868292,
+          "read" : "find | - | Brooklyn | - | - | - | taxidermist"
+        }
+      ]
+    },
+    {
+      "fieldAgreement" : 0.975,
+      "invalidIds" : 0,
+      "name" : "b: rules + MiniLM + on-device model",
+      "noMatchHonest" : "5\/5",
+      "notes" : [
+        "first call (model load) took 1537 ms; not counted",
+        "model parsed 40\/40 questions"
+      ],
+      "p50ms" : 2230.900208,
+      "p95ms" : 2639.101375,
+      "perField" : {
+        "activity" : 0.95,
+        "metAt" : 1,
+        "place" : 1,
+        "plan" : 0.95,
+        "relationship" : 0.975,
+        "stage" : 1,
+        "topics" : 0.95
+      },
+      "recallAt10" : 0.8785714285714286,
+      "rows" : [
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "demo-climbing",
+          "ids" : [
+            "jordan-lee",
+            "zara-ahmed"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "demo",
+          "modelParsed" : true,
+          "ms" : 2393.646833,
+          "read" : "plan | climbing | New York City | - | - | - | climbing,bouldering",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "demo-sf-trip",
+          "ids" : [
+            "priya-nair",
+            "jun-ito",
+            "elliot-park",
+            "sasha-ivanova",
+            "ty-nakamura",
+            "hye-jin-oh",
+            "wes-tran",
+            "gloria-tan",
+            "daniel-okafor",
+            "rohan-mehta",
+            "marcus-whitlock"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "demo",
+          "modelParsed" : true,
+          "ms" : 1194.512625,
+          "read" : "plan | coffee | San Francisco | - | - | - | ",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "demo-hardware-intro",
+          "ids" : [
+            "ana-ruiz",
+            "aisha-khan"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "demo",
+          "modelParsed" : true,
+          "ms" : 1196.336584,
+          "read" : "find | - | - | - | - | - | hardware,engineer",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "messy-taxes",
+          "ids" : [
+            "miriam-adler",
+            "wendy-tsai",
+            "otto-schneider",
+            "hamid-karimi"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "messy",
+          "modelParsed" : true,
+          "ms" : 2034.488625,
+          "read" : "find | - | - | - | - | - | taxes",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "messy-sink",
+          "ids" : [
+
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "messy",
+          "modelParsed" : true,
+          "ms" : 1418.236458,
+          "read" : "find | - | - | - | - | - | leak",
+          "recall" : 0
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "messy-haircut",
+          "ids" : [
+            "lou-marchetti",
+            "andre-baptiste",
+            "priscilla-okonkwo"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "messy",
+          "modelParsed" : true,
+          "ms" : 2277.454166,
+          "read" : "find | - | - | - | - | - | haircut",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "messy-tooth",
+          "ids" : [
+            "raymond-liu",
+            "susan-lin",
+            "raymond-zhou",
+            "meera-iyer",
+            "abby-lin-chen",
+            "yvonne-baptiste",
+            "winnie-chang"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "messy",
+          "modelParsed" : true,
+          "ms" : 2468.708417,
+          "read" : "find | - | - | - | - | - | dentist",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "messy-cello",
+          "ids" : [
+            "anselm-richter",
+            "zara-ahmed",
+            "maya-chen",
+            "rebecca-lindgren"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "messy",
+          "modelParsed" : true,
+          "ms" : 2273.408083,
+          "read" : "find | - | - | - | - | - | cello",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : false
+          },
+          "id" : "messy-bike",
+          "ids" : [
+
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "messy",
+          "modelParsed" : true,
+          "ms" : 1382.418958,
+          "read" : "find | - | - | - | - | - | bike,noise",
+          "recall" : 0
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "messy-wine",
+          "ids" : [
+            "rafael-cruz",
+            "oscar-whitfield",
+            "ethan-lee",
+            "camille-lefevre",
+            "ines-moreau",
+            "alec-brandt",
+            "clara-ibanez",
+            "harper-wells",
+            "hugo-beaumont",
+            "nadia-rahimi"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "messy",
+          "modelParsed" : true,
+          "ms" : 2268.275584,
+          "read" : "find | - | - | - | - | - | wine",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : false
+          },
+          "id" : "messy-pottery",
+          "ids" : [
+            "ayesha-malik",
+            "hannah-cohen"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "messy",
+          "modelParsed" : true,
+          "ms" : 2149.580667,
+          "read" : "find | - | - | - | - | - | pottery,throwing,clay",
+          "recall" : 0.2
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "messy-sourdough",
+          "ids" : [
+            "bea-lopez",
+            "anika-rao",
+            "calvin-reed",
+            "tina-chen"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "messy",
+          "modelParsed" : true,
+          "ms" : 2252.464084,
+          "read" : "find | - | - | - | - | - | sourdough",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "messy-lease",
+          "ids" : [
+            "cora-bellamy",
+            "marcus-ellison",
+            "keisha-williams",
+            "andrew-oyelaran",
+            "cousin-emily-chen",
+            "yasmin-nasser",
+            "joel-abramson",
+            "george-lambrou",
+            "chinwe-adeyemi",
+            "emily-schwartz"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "messy",
+          "modelParsed" : true,
+          "ms" : 2484.52025,
+          "read" : "find | - | - | - | - | - | law",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "messy-flowers",
+          "ids" : [
+            "phoebe-lawrence",
+            "brooke-hammond",
+            "francesca-marino",
+            "elena-sokolov"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "messy",
+          "modelParsed" : true,
+          "ms" : 2639.101375,
+          "read" : "find | - | - | - | - | - | flowers",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "messy-chess-kid",
+          "ids" : [
+            "oleg-ivanov",
+            "cyrus-vahedi",
+            "nate-bergstrom",
+            "nikhil-menon",
+            "yosef-cohen",
+            "ivan-popov",
+            "anton-petrov",
+            "dmitry-orlov",
+            "marisol-vega",
+            "otto-schneider"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "messy",
+          "modelParsed" : true,
+          "ms" : 2356.050333,
+          "read" : "find | - | - | - | - | - | chess",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "messy-resume",
+          "ids" : [
+            "sofia-ramirez",
+            "fiona-gallagher"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "messy",
+          "modelParsed" : true,
+          "ms" : 2477.709375,
+          "read" : "find | - | - | - | - | - | resume",
+          "recall" : 0.4
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "messy-back",
+          "ids" : [
+            "sophie-laurent"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "messy",
+          "modelParsed" : true,
+          "ms" : 2402.107916,
+          "read" : "find | - | - | - | - | - | physio",
+          "recall" : 0.25
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "messy-murals",
+          "ids" : [
+            "benji-stern",
+            "pedro-quintero",
+            "luz-hernandez",
+            "hailey-brooks",
+            "cleo-ramsey",
+            "pablo-herrera",
+            "katie-sullivan",
+            "camila-torres"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "messy",
+          "modelParsed" : true,
+          "ms" : 3128.974458,
+          "read" : "find | - | - | - | - | - | painting,murals",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "multi-sf-engineer",
+          "ids" : [
+            "ty-nakamura"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "multi",
+          "modelParsed" : true,
+          "ms" : 2238.380875,
+          "read" : "find | - | San Francisco | - | - | - | software,engineer",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "multi-boston-college",
+          "ids" : [
+            "harper-wells",
+            "hugh-calloway",
+            "june-park",
+            "dalia-mansour",
+            "grace-kim",
+            "nina-volkov"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "multi",
+          "modelParsed" : true,
+          "ms" : 2168.970125,
+          "read" : "find | - | Boston | college | friends | - | ",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "multi-config-designers",
+          "ids" : [
+            "daniel-okafor",
+            "priscilla-ang",
+            "gloria-tan"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "multi",
+          "modelParsed" : true,
+          "ms" : 2047.4436249999999,
+          "read" : "find | - | - | - | - | Config | design",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "multi-seattle-hiking",
+          "ids" : [
+            "emily-schwartz",
+            "tina-chen",
+            "tara-lindholm",
+            "fiona-chu"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "multi",
+          "modelParsed" : true,
+          "ms" : 2124.801833,
+          "read" : "find | - | Seattle | - | - | - | hiking",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "multi-seattle-nurses",
+          "ids" : [
+            "rachel-lin",
+            "aunt-lin-hua"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "multi",
+          "modelParsed" : true,
+          "ms" : 2058.041333,
+          "read" : "find | - | Seattle | - | - | - | nurses",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "multi-hs-runners",
+          "ids" : [
+            "owen-fitzgerald",
+            "tyler-hobbs",
+            "maddie-kowalczyk",
+            "jun-ito",
+            "emilia-novak",
+            "ravi-subramanian",
+            "kelsey-moran",
+            "dale-brandt",
+            "zach-feldman",
+            "dominic-russo"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "multi",
+          "modelParsed" : true,
+          "ms" : 2521.544125,
+          "read" : "find | - | - | high-school | friends | - | running,run club,marathon",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "multi-tokyo-chef",
+          "ids" : [
+            "kenji-watanabe",
+            "yuri-tanaka"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "multi",
+          "modelParsed" : true,
+          "ms" : 2145.542542,
+          "read" : "find | - | Tokyo | - | - | - | chef",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "multi-austin-first-job",
+          "ids" : [
+            "raj-patel",
+            "maribel-santos",
+            "tasha-greene"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "multi",
+          "modelParsed" : true,
+          "ms" : 2135.932541,
+          "read" : "find | - | Austin | first-job | - | - | ",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "multi-brooklyn-jazz",
+          "ids" : [
+            "marcus-ellison",
+            "otis-whitmore",
+            "adaeze-obi",
+            "marcus-tillman",
+            "emanuel-grant",
+            "alberto-vidal",
+            "wren-castellano",
+            "isaac-bell",
+            "andrew-oyelaran",
+            "tyrone-banks"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "multi",
+          "modelParsed" : true,
+          "ms" : 2184.392916,
+          "read" : "plan | drinks | Brooklyn | - | - | - | jazz",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : false,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "multi-houston-doctor",
+          "ids" : [
+            "hadiya-ali",
+            "arjun-kapoor",
+            "felipe-arce",
+            "sana-qureshi"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "multi",
+          "modelParsed" : true,
+          "ms" : 2230.900208,
+          "read" : "find | - | Houston | - | family | - | doctor",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "std-taxes",
+          "ids" : [
+            "miriam-adler",
+            "wendy-tsai",
+            "otto-schneider",
+            "hamid-karimi"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "standard",
+          "modelParsed" : true,
+          "ms" : 1994.813792,
+          "read" : "find | - | - | - | - | - | taxes",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "std-pickleball",
+          "ids" : [
+            "jamie-okada",
+            "jasmine-ford",
+            "marcus-bell",
+            "bernadette-fox",
+            "dana-reyes",
+            "bruce-takahashi",
+            "hiroshi-yamamoto",
+            "natalie-stone",
+            "gabe-silverman",
+            "ethan-rowe"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "standard",
+          "modelParsed" : true,
+          "ms" : 2326.069666,
+          "read" : "plan | pickleball | New York City | - | - | - | pickleball,tennis",
+          "recall" : 0.9
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "std-run",
+          "ids" : [
+            "rosa-delgado",
+            "bianca-costa",
+            "alex-ferrante",
+            "lena-fischer",
+            "tori-nguyen",
+            "kayla-simmons",
+            "neil-banerjee",
+            "joelle-mercier",
+            "kiara-mendes",
+            "julian-reyes"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "standard",
+          "modelParsed" : true,
+          "ms" : 2154.019042,
+          "read" : "plan | running | New York City | - | - | - | running,run club,marathon",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : false,
+            "metAt" : true,
+            "place" : true,
+            "plan" : false,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "std-bushwick-fashion",
+          "ids" : [
+            "marisol-vega",
+            "tamsin-okoro",
+            "chloe-bernard",
+            "jules-amato",
+            "dmitri-sokolov",
+            "ayo-bankole",
+            "gigi-laurent",
+            "tori-nguyen",
+            "imani-brooks",
+            "lola-marquez"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "standard",
+          "modelParsed" : true,
+          "ms" : 2581.284542,
+          "read" : "find | - | Bushwick | - | - | - | fashion",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : false,
+            "metAt" : true,
+            "place" : true,
+            "plan" : false,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "std-classical",
+          "ids" : [
+            "zara-ahmed",
+            "anselm-richter",
+            "lucien-bailey",
+            "maya-chen",
+            "marcus-ellison",
+            "rhiannon-davies",
+            "otis-whitmore",
+            "alberto-vidal",
+            "pearl-washington"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "standard",
+          "modelParsed" : true,
+          "ms" : 2533.609,
+          "read" : "find | - | Brooklyn | - | - | - | classical,music",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "std-supper-club",
+          "ids" : [
+            "francesca-marino",
+            "rafael-cruz",
+            "marcel-dupont",
+            "iris-tanaka",
+            "lia-fontana",
+            "elodie-marchand",
+            "ethan-lee",
+            "george-kim",
+            "jordan-smith"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "standard",
+          "modelParsed" : true,
+          "ms" : 2904.7602500000003,
+          "read" : "find | - | - | - | - | Supper club | ",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "std-college-nyc",
+          "ids" : [
+            "eli-novak",
+            "neil-banerjee",
+            "alex-ferrante",
+            "lena-fischer",
+            "rosa-delgado",
+            "chloe-bernard",
+            "emily-chung",
+            "ayo-bankole",
+            "monique-laurent",
+            "dev-malhotra"
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "standard",
+          "modelParsed" : true,
+          "ms" : 2402.407708,
+          "read" : "find | - | New York City | college | friends | - | ",
+          "recall" : 1
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "none-austin-taxes",
+          "ids" : [
+
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "nomatch",
+          "modelParsed" : true,
+          "ms" : 1159.479458,
+          "read" : "find | - | Austin | - | - | - | taxes"
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "none-beekeeping",
+          "ids" : [
+
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "nomatch",
+          "modelParsed" : true,
+          "ms" : 1117.423166,
+          "read" : "find | - | - | - | - | - | beekeeping"
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "none-falconer",
+          "ids" : [
+
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "nomatch",
+          "modelParsed" : true,
+          "ms" : 1097.5355,
+          "read" : "find | - | - | - | - | - | falconer"
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "none-alpacas",
+          "ids" : [
+
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "nomatch",
+          "modelParsed" : true,
+          "ms" : 1147.175625,
+          "read" : "find | - | - | - | - | - | alpacas"
+        },
+        {
+          "fields" : {
+            "activity" : true,
+            "metAt" : true,
+            "place" : true,
+            "plan" : true,
+            "relationship" : true,
+            "stage" : true,
+            "topics" : true
+          },
+          "id" : "none-taxidermist",
+          "ids" : [
+
+          ],
+          "invalid" : [
+
+          ],
+          "kind" : "nomatch",
+          "modelParsed" : true,
+          "ms" : 1211.776208,
+          "read" : "find | - | Brooklyn | - | - | - | taxidermist"
+        }
+      ]
+    },
+    {
+      "invalidIds" : 0,
+      "name" : "c: rules + MiniLM + OpenAI rank",
+      "notes" : [
+
+      ],
+      "rows" : [
+
+      ],
+      "skipped" : "no token for \/api\/ai: the Simulator has no App Attest, Debug builds carry no App Attest entitlement, PEEPL_DEBUG_TOKEN is empty and Production never accepts the debug token"
+    }
+  ]
+}

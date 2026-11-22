@@ -167,12 +167,35 @@ enum LocalAI {
         return clip("\(p.profession); lives in \(p.livesNow.city); into \(p.tags.prefix(4).joined(separator: ", ")); \(m.why)", 160)
     }
 
-    /// Picks, re-ranks and explains up to 10 candidates. Only ids from `candidates` ever come back; nil = use the candidates as they are.
-    static func explain(question: String, candidates: [Match], timeout: Double = 8) async -> [(id: String, why: String)]? {
-        #if canImport(FoundationModels)
-        guard isAvailable, !candidates.isEmpty else { return nil }
-        var pool = Array(candidates.prefix(10))
+    private static let explainInstructions = "You help a user pick people they know for a question. A candidate fits only if their facts show what the question asks for; related or similar is not enough. If no one fits, return no one. Never invent facts."
+
+    /// The only way to rank: the result holds exactly `matches` (retrieval's own, never near misses). The model's picks (1-based
+    /// numbers into the first 10) go first, deduped, in its order with its "why"; every unpicked match follows in retrieval order.
+    static func merge(picks: [(n: Int, why: String)]?, matches: [Match]) -> [(id: String, why: String)] {
+        let pool = Array(matches.prefix(10))
+        var seen = Set<String>(), out: [(id: String, why: String)] = []
+        for p in picks ?? [] where pool.indices.contains(p.n - 1) && seen.insert(pool[p.n - 1].id).inserted {
+            let why = p.why.trimmingCharacters(in: .whitespacesAndNewlines)
+            out.append((pool[p.n - 1].id, why.isEmpty ? pool[p.n - 1].why : why))
+        }
+        return out + matches.filter { seen.insert($0.id).inserted }.map { ($0.id, $0.why) }
+    }
+
+    /// Re-ranks and explains retrieval's matches. No matches -> [] and the model is not called; a model failure -> retrieval order.
+    /// `model` is a test seam: given the question and the first 10 matches it returns the picks.
+    static func explain(question: String, matches: [Match], timeout: Double = 8,
+                        model: ((String, [Match]) async -> [(n: Int, why: String)]?)? = nil) async -> [(id: String, why: String)] {
+        guard !matches.isEmpty else { return [] }
         let q = clip(question, 400)
+        let pool = Array(matches.prefix(10))
+        if let model { return merge(picks: await model(q, pool), matches: matches) }
+        return merge(picks: await modelPicks(q, pool, timeout: timeout), matches: matches)
+    }
+
+    private static func modelPicks(_ q: String, _ candidates: [Match], timeout: Double) async -> [(n: Int, why: String)]? {
+        #if canImport(FoundationModels)
+        guard isAvailable else { return nil }
+        var pool = candidates
         func prompt() -> String {
             "Question: \(q)\nCandidates:\n" + pool.enumerated().map { "\($0.offset + 1). \(facts($0.element))" }.joined(separator: "\n")
         }
@@ -183,15 +206,10 @@ enum LocalAI {
         }
         let text = prompt()
         guard let r = await within(timeout, {
-            let s = LanguageModelSession(instructions: "You help a user pick people they know for a question. A candidate fits only if their facts show what the question asks for; related or similar is not enough. If no one fits, return no one. Never invent facts.")
+            let s = LanguageModelSession(instructions: explainInstructions)
             return try await s.respond(to: text, generating: Picks.self, options: GenerationOptions(sampling: .greedy)).content
         }) else { return nil }
-        var seen = Set<Int>(), out: [(id: String, why: String)] = []
-        for p in r.fits where pool.indices.contains(p.n - 1) && seen.insert(p.n).inserted {
-            let why = p.why.trimmingCharacters(in: .whitespacesAndNewlines)
-            out.append((pool[p.n - 1].person.id, why.isEmpty ? pool[p.n - 1].why : why))
-        }
-        return out
+        return r.fits.map { ($0.n, $0.why) }
         #else
         return nil
         #endif
