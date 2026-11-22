@@ -8,8 +8,8 @@
       "notes" : [
 
       ],
-      "p50ms" : 109.435041,
-      "p95ms" : 260.94025,
+      "p50ms" : 109.607208,
+      "p95ms" : 258.180375,
       "perField" : {
         "activity" : 0.9166666666666666,
         "metAt" : 1,
@@ -39,7 +39,7 @@
 
           ],
           "kind" : "messy",
-          "ms" : 203.746458,
+          "ms" : 202.672083,
           "read" : "find | - | - | - | - | - | dogs,limping,since,yesterday,vet,phone",
           "recall" : 0
         },
@@ -61,7 +61,7 @@
 
           ],
           "kind" : "messy",
-          "ms" : 260.94025,
+          "ms" : 258.180375,
           "read" : "find | - | - | - | - | - | got,wedding,have,zero,photos,lined,photographer",
           "recall" : 0
         },
@@ -83,7 +83,7 @@
 
           ],
           "kind" : "messy",
-          "ms" : 201.663292,
+          "ms" : 202.470542,
           "read" : "find | - | - | - | - | - | thinking,starting,podcast,done,one,before",
           "recall" : 0
         },
@@ -105,7 +105,7 @@
 
           ],
           "kind" : "messy",
-          "ms" : 138.409666,
+          "ms" : 138.73875,
           "read" : "find | - | - | - | - | - | letter,translated,kinda",
           "recall" : 0
         },
@@ -127,7 +127,7 @@
 
           ],
           "kind" : "multi",
-          "ms" : 115.32325,
+          "ms" : 115.338375,
           "read" : "find | - | Chicago | - | - | - | real,estate,agent",
           "recall" : 1
         },
@@ -157,7 +157,7 @@
 
           ],
           "kind" : "multi",
-          "ms" : 83.431,
+          "ms" : 82.626166,
           "read" : "plan | game-night | Manhattan | - | - | - | games,board",
           "recall" : 1
         },
@@ -180,7 +180,7 @@
 
           ],
           "kind" : "multi",
-          "ms" : 51.810291,
+          "ms" : 52.301875,
           "read" : "find | - | - | college | friends | - | surf",
           "recall" : 1
         },
@@ -203,7 +203,7 @@
 
           ],
           "kind" : "multi",
-          "ms" : 54.16825,
+          "ms" : 53.848459,
           "read" : "find | - | Madison | - | - | - | veterinarian",
           "recall" : 1
         },
@@ -225,7 +225,7 @@
 
           ],
           "kind" : "nomatch",
-          "ms" : 109.435041,
+          "ms" : 109.607208,
           "read" : "knowledge | - | - | - | - | - | teach,scuba,diving"
         },
         {
@@ -246,7 +246,7 @@
 
           ],
           "kind" : "nomatch",
-          "ms" : 79.963417,
+          "ms" : 79.676292,
           "read" : "find | - | - | - | - | - | tattoo,artist"
         },
         {
@@ -267,7 +267,7 @@
 
           ],
           "kind" : "nomatch",
-          "ms" : 52.092875,
+          "ms" : 52.726709,
           "read" : "find | - | Seattle | - | - | - | pilot"
         },
         {
@@ -289,7 +289,7 @@
 
           ],
           "kind" : "standard",
-          "ms" : 48.459417,
+          "ms" : 49.06925,
           "read" : "find | - | - | - | - | - | firefighter",
           "recall" : 1
         }
@@ -301,11 +301,11 @@
       "name" : "b: rules + MiniLM + on-device model",
       "noMatchHonest" : "3\/3",
       "notes" : [
-        "first call (model load) took 1088 ms; not counted",
-        "model parsed 12\/12 questions; explain fell back on 0"
+        "first call (model load) took 1092 ms; not counted",
+        "model parsed 12\/12 questions"
       ],
-      "p50ms" : 2103.844084,
-      "p95ms" : 2522.191958,
+      "p50ms" : 2120.469875,
+      "p95ms" : 2554.439416,
       "perField" : {
         "activity" : 0.8333333333333334,
         "metAt" : 1,
@@ -339,7 +339,7 @@
           ],
           "kind" : "messy",
           "modelParsed" : true,
-          "ms" : 2234.612041,
+          "ms" : 2266.821958,
           "read" : "find | - | - | - | - | - | vet",
           "recall" : 1
         },
@@ -366,7 +366,7 @@
           ],
           "kind" : "messy",
           "modelParsed" : true,
-          "ms" : 2522.191958,
+          "ms" : 2554.439416,
           "read" : "plan | dinner | New York City | - | - | - | photography",
           "recall" : 0
         },
@@ -391,7 +391,7 @@
           ],
           "kind" : "messy",
           "modelParsed" : true,
-          "ms" : 2302.856875,
+          "ms" : 2309.644875,
           "read" : "find | - | - | - | - | - | podcast",
           "recall" : 1
         },
@@ -415,7 +415,7 @@
           ],
           "kind" : "messy",
           "modelParsed" : true,
-          "ms" : 1977.645667,
+          "ms" : 1985.1711249999998,
           "read" : "find | - | - | - | - | - | translator",
           "recall" : 0.6666666666666666
         },
@@ -438,7 +438,7 @@
           ],
           "kind" : "multi",
           "modelParsed" : true,
-          "ms" : 2103.844084,
+          "ms" : 2120.469875,
           "read" : "find | - | Chicago | - | - | - | real,estate",
           "recall" : 1
         },
@@ -470,7 +470,7 @@
           ],
           "kind" : "multi",
           "modelParsed" : true,
-          "ms" : 2446.487375,
+          "ms" : 2477.635291,
           "read" : "plan | game-night | Manhattan | - | - | - | games,board,game",
           "recall" : 0.8
         },
@@ -494,7 +494,7 @@
           ],
           "kind" : "multi",
           "modelParsed" : true,
-          "ms" : 2058.047208,
+          "ms" : 1988.312625,
           "read" : "find | - | - | college | friends | - | surfing",
           "recall" : 1
         },
@@ -518,7 +518,7 @@
           ],
           "kind" : "multi",
           "modelParsed" : true,
-          "ms" : 1990.49575,
+          "ms" : 1970.9218329999999,
           "read" : "find | - | Madison | - | - | - | veterinarian",
           "recall" : 1
         },
@@ -541,7 +541,7 @@
           ],
           "kind" : "nomatch",
           "modelParsed" : true,
-          "ms" : 1199.581208,
+          "ms" : 1205.39525,
           "read" : "find | - | - | - | - | - | scuba,diving"
         },
         {
@@ -563,7 +563,7 @@
           ],
           "kind" : "nomatch",
           "modelParsed" : true,
-          "ms" : 1111.084375,
+          "ms" : 1114.472708,
           "read" : "find | - | - | - | - | - | tattoo,artist"
         },
         {
@@ -585,7 +585,7 @@
           ],
           "kind" : "nomatch",
           "modelParsed" : true,
-          "ms" : 1167.355,
+          "ms" : 1171.2538749999999,
           "read" : "find | - | Seattle | - | - | - | pilot"
         },
         {
@@ -608,7 +608,7 @@
           ],
           "kind" : "standard",
           "modelParsed" : true,
-          "ms" : 2114.136958,
+          "ms" : 2141.799625,
           "read" : "find | - | - | - | - | - | firefighter",
           "recall" : 1
         }
@@ -635,8 +635,8 @@
       "notes" : [
 
       ],
-      "p50ms" : 89.277917,
-      "p95ms" : 252.278667,
+      "p50ms" : 89.372208,
+      "p95ms" : 245.079167,
       "perField" : {
         "activity" : 0.9,
         "metAt" : 1,
@@ -667,7 +667,7 @@
 
           ],
           "kind" : "demo",
-          "ms" : 17.377458,
+          "ms" : 15.180417,
           "read" : "plan | climbing | New York City | - | - | - | climbing,bouldering",
           "recall" : 1
         },
@@ -699,7 +699,7 @@
 
           ],
           "kind" : "demo",
-          "ms" : 38.881208,
+          "ms" : 38.193542,
           "read" : "plan | coffee | San Francisco | - | - | - | traveling",
           "recall" : 1
         },
@@ -722,7 +722,7 @@
 
           ],
           "kind" : "demo",
-          "ms" : 14.087375,
+          "ms" : 13.869667,
           "read" : "find | - | - | - | - | - | founder,hardware,engineer,introduce",
           "recall" : 1
         },
@@ -744,7 +744,7 @@
 
           ],
           "kind" : "messy",
-          "ms" : 362.726667,
+          "ms" : 326.072333,
           "read" : "find | - | - | - | - | - | ugh,taxes,due,have,clue",
           "recall" : 0
         },
@@ -766,7 +766,7 @@
 
           ],
           "kind" : "messy",
-          "ms" : 238.215625,
+          "ms" : 231.8545,
           "read" : "find | - | - | - | - | - | kitchen,sink,leaking,again,lol,even,call",
           "recall" : 0
         },
@@ -788,7 +788,7 @@
 
           ],
           "kind" : "messy",
-          "ms" : 175.869333,
+          "ms" : 171.578458,
           "read" : "find | - | - | - | - | - | haircut,sooo,bad,cuts,hair",
           "recall" : 0
         },
@@ -819,7 +819,7 @@
 
           ],
           "kind" : "messy",
-          "ms" : 115.465875,
+          "ms" : 113.99025,
           "read" : "find | - | - | - | - | - | tooth,killing,dentist",
           "recall" : 1
         },
@@ -841,7 +841,7 @@
 
           ],
           "kind" : "messy",
-          "ms" : 172.00025,
+          "ms" : 168.257625,
           "read" : "knowledge | - | - | - | - | - | teach,cello,total,beginner,here",
           "recall" : 0
         },
@@ -863,7 +863,7 @@
 
           ],
           "kind" : "messy",
-          "ms" : 258.988708,
+          "ms" : 254.165334,
           "read" : "knowledge | - | - | - | - | - | bikes,making,weird,clicking,noise,whod,fix",
           "recall" : 0
         },
@@ -889,7 +889,7 @@
 
           ],
           "kind" : "messy",
-          "ms" : 252.278667,
+          "ms" : 245.079167,
           "read" : "plan | dinner | New York City | - | - | - | wine,ppl,bottle,rec,going",
           "recall" : 0.4
         },
@@ -919,7 +919,7 @@
 
           ],
           "kind" : "messy",
-          "ms" : 118.709084,
+          "ms" : 113.280334,
           "read" : "find | - | - | - | - | - | pottery,throwing,clay",
           "recall" : 0.4
         },
@@ -943,7 +943,7 @@
 
           ],
           "kind" : "messy",
-          "ms" : 87.223042,
+          "ms" : 84.455667,
           "read" : "find | - | - | - | - | - | sourdough,again",
           "recall" : 1
         },
@@ -965,7 +965,7 @@
 
           ],
           "kind" : "messy",
-          "ms" : 207.394209,
+          "ms" : 195.083041,
           "read" : "find | - | - | - | - | - | got,lease,going,landlord,lawyers",
           "recall" : 0
         },
@@ -987,7 +987,7 @@
 
           ],
           "kind" : "messy",
-          "ms" : 91.885417,
+          "ms" : 89.463125,
           "read" : "find | - | - | - | - | - | flowers,sisters,wedding",
           "recall" : 0
         },
@@ -1009,7 +1009,7 @@
 
           ],
           "kind" : "messy",
-          "ms" : 171.890083,
+          "ms" : 167.41325,
           "read" : "knowledge | - | - | - | - | - | kid,learn,chess,teach,him",
           "recall" : 1
         },
@@ -1031,7 +1031,7 @@
 
           ],
           "kind" : "messy",
-          "ms" : 135.495166,
+          "ms" : 134.596458,
           "read" : "find | - | - | - | - | - | job,hunting,resume",
           "recall" : 0.2
         },
@@ -1053,7 +1053,7 @@
 
           ],
           "kind" : "messy",
-          "ms" : 199.648375,
+          "ms" : 199.781625,
           "read" : "find | - | - | - | - | - | backs,wrecked,since,physio,types",
           "recall" : 0
         },
@@ -1078,7 +1078,7 @@
 
           ],
           "kind" : "messy",
-          "ms" : 168.535167,
+          "ms" : 170.161167,
           "read" : "find | - | - | - | - | - | lookin,paints,walls,murals",
           "recall" : 1
         },
@@ -1100,7 +1100,7 @@
 
           ],
           "kind" : "multi",
-          "ms" : 81.058291,
+          "ms" : 84.004667,
           "read" : "find | - | San Francisco | - | - | - | software,engineer",
           "recall" : 1
         },
@@ -1127,7 +1127,7 @@
 
           ],
           "kind" : "multi",
-          "ms" : 9.96825,
+          "ms" : 10.208958,
           "read" : "find | - | Boston | college | friends | - | ",
           "recall" : 1
         },
@@ -1151,7 +1151,7 @@
 
           ],
           "kind" : "multi",
-          "ms" : 54.842667,
+          "ms" : 55.267125,
           "read" : "find | - | - | - | - | config | designers",
           "recall" : 1
         },
@@ -1176,7 +1176,7 @@
 
           ],
           "kind" : "multi",
-          "ms" : 53.922083,
+          "ms" : 53.77175,
           "read" : "plan | hiking | Seattle | - | - | - | hiking",
           "recall" : 1
         },
@@ -1199,7 +1199,7 @@
 
           ],
           "kind" : "multi",
-          "ms" : 55.724125,
+          "ms" : 54.239042,
           "read" : "find | - | Seattle | - | - | - | nurses",
           "recall" : 1
         },
@@ -1225,7 +1225,7 @@
 
           ],
           "kind" : "multi",
-          "ms" : 98.787708,
+          "ms" : 96.946625,
           "read" : "plan | running | New York City | high-school | friends | - | running,run club,marathon,still",
           "recall" : 0.1
         },
@@ -1248,7 +1248,7 @@
 
           ],
           "kind" : "multi",
-          "ms" : 54.6905,
+          "ms" : 52.819459,
           "read" : "find | - | Tokyo | - | - | - | chef",
           "recall" : 1
         },
@@ -1272,7 +1272,7 @@
 
           ],
           "kind" : "multi",
-          "ms" : 59.988667,
+          "ms" : 59.222167,
           "read" : "find | - | Austin | first-job | - | - | ",
           "recall" : 1
         },
@@ -1303,7 +1303,7 @@
 
           ],
           "kind" : "multi",
-          "ms" : 80.5885,
+          "ms" : 80.262041,
           "read" : "plan | drinks | Brooklyn | - | - | - | jazz",
           "recall" : 1
         },
@@ -1325,7 +1325,7 @@
 
           ],
           "kind" : "multi",
-          "ms" : 113.256208,
+          "ms" : 114.684125,
           "read" : "find | - | Houston | - | family | - | doctor,member,sick",
           "recall" : 0
         },
@@ -1350,7 +1350,7 @@
 
           ],
           "kind" : "standard",
-          "ms" : 89.277917,
+          "ms" : 89.372208,
           "read" : "knowledge | - | - | - | - | - | taxes",
           "recall" : 1
         },
@@ -1381,7 +1381,7 @@
 
           ],
           "kind" : "standard",
-          "ms" : 63.9105,
+          "ms" : 62.944541,
           "read" : "plan | pickleball | New York City | - | - | - | pickleball,tennis",
           "recall" : 0.9
         },
@@ -1412,7 +1412,7 @@
 
           ],
           "kind" : "standard",
-          "ms" : 68.547792,
+          "ms" : 67.291458,
           "read" : "plan | running | New York City | - | - | - | running,run club,marathon",
           "recall" : 1
         },
@@ -1443,7 +1443,7 @@
 
           ],
           "kind" : "standard",
-          "ms" : 204.651584,
+          "ms" : 206.113208,
           "read" : "plan | house-party | Bushwick | - | - | - | fashion",
           "recall" : 1
         },
@@ -1473,7 +1473,7 @@
 
           ],
           "kind" : "standard",
-          "ms" : 195.726625,
+          "ms" : 185.416625,
           "read" : "find | - | Brooklyn | - | - | - | classical,music",
           "recall" : 1
         },
@@ -1503,7 +1503,7 @@
 
           ],
           "kind" : "standard",
-          "ms" : 9.089916,
+          "ms" : 8.725667,
           "read" : "find | - | - | - | - | supper club | ",
           "recall" : 1
         },
@@ -1534,7 +1534,7 @@
 
           ],
           "kind" : "standard",
-          "ms" : 44.609791,
+          "ms" : 42.825583,
           "read" : "find | - | New York City | college | friends | - | ",
           "recall" : 1
         },
@@ -1556,7 +1556,7 @@
 
           ],
           "kind" : "nomatch",
-          "ms" : 127.023375,
+          "ms" : 120.955875,
           "read" : "knowledge | - | Austin | - | - | - | help,taxes"
         },
         {
@@ -1577,7 +1577,7 @@
 
           ],
           "kind" : "nomatch",
-          "ms" : 50.752875,
+          "ms" : 50.042417,
           "read" : "knowledge | - | - | - | - | - | beekeeping"
         },
         {
@@ -1598,7 +1598,7 @@
 
           ],
           "kind" : "nomatch",
-          "ms" : 48.812375,
+          "ms" : 48.222125,
           "read" : "find | - | - | - | - | - | falconer"
         },
         {
@@ -1619,7 +1619,7 @@
 
           ],
           "kind" : "nomatch",
-          "ms" : 86.139916,
+          "ms" : 84.605833,
           "read" : "find | - | - | - | - | - | breeds,alpacas"
         },
         {
@@ -1640,7 +1640,7 @@
 
           ],
           "kind" : "nomatch",
-          "ms" : 56.079917,
+          "ms" : 55.868292,
           "read" : "find | - | Brooklyn | - | - | - | taxidermist"
         }
       ]
@@ -1651,11 +1651,11 @@
       "name" : "b: rules + MiniLM + on-device model",
       "noMatchHonest" : "5\/5",
       "notes" : [
-        "first call (model load) took 3221 ms; not counted",
-        "model parsed 40\/40 questions; explain fell back on 0"
+        "first call (model load) took 1537 ms; not counted",
+        "model parsed 40\/40 questions"
       ],
-      "p50ms" : 2194.281625,
-      "p95ms" : 2596.5883750000003,
+      "p50ms" : 2230.900208,
+      "p95ms" : 2639.101375,
       "perField" : {
         "activity" : 0.95,
         "metAt" : 1,
@@ -1687,7 +1687,7 @@
           ],
           "kind" : "demo",
           "modelParsed" : true,
-          "ms" : 1087.249541,
+          "ms" : 2393.646833,
           "read" : "plan | climbing | New York City | - | - | - | climbing,bouldering",
           "recall" : 1
         },
@@ -1720,7 +1720,7 @@
           ],
           "kind" : "demo",
           "modelParsed" : true,
-          "ms" : 1193.029666,
+          "ms" : 1194.512625,
           "read" : "plan | coffee | San Francisco | - | - | - | ",
           "recall" : 1
         },
@@ -1744,7 +1744,7 @@
           ],
           "kind" : "demo",
           "modelParsed" : true,
-          "ms" : 1206.071417,
+          "ms" : 1196.336584,
           "read" : "find | - | - | - | - | - | hardware,engineer",
           "recall" : 1
         },
@@ -1770,7 +1770,7 @@
           ],
           "kind" : "messy",
           "modelParsed" : true,
-          "ms" : 2010.744875,
+          "ms" : 2034.488625,
           "read" : "find | - | - | - | - | - | taxes",
           "recall" : 1
         },
@@ -1793,7 +1793,7 @@
           ],
           "kind" : "messy",
           "modelParsed" : true,
-          "ms" : 1432.780458,
+          "ms" : 1418.236458,
           "read" : "find | - | - | - | - | - | leak",
           "recall" : 0
         },
@@ -1818,7 +1818,7 @@
           ],
           "kind" : "messy",
           "modelParsed" : true,
-          "ms" : 2246.44575,
+          "ms" : 2277.454166,
           "read" : "find | - | - | - | - | - | haircut",
           "recall" : 1
         },
@@ -1847,7 +1847,7 @@
           ],
           "kind" : "messy",
           "modelParsed" : true,
-          "ms" : 2466.1255,
+          "ms" : 2468.708417,
           "read" : "find | - | - | - | - | - | dentist",
           "recall" : 1
         },
@@ -1873,7 +1873,7 @@
           ],
           "kind" : "messy",
           "modelParsed" : true,
-          "ms" : 2270.0595,
+          "ms" : 2273.408083,
           "read" : "find | - | - | - | - | - | cello",
           "recall" : 1
         },
@@ -1896,7 +1896,7 @@
           ],
           "kind" : "messy",
           "modelParsed" : true,
-          "ms" : 1384.595917,
+          "ms" : 1382.418958,
           "read" : "find | - | - | - | - | - | bike,noise",
           "recall" : 0
         },
@@ -1928,7 +1928,7 @@
           ],
           "kind" : "messy",
           "modelParsed" : true,
-          "ms" : 2260.633625,
+          "ms" : 2268.275584,
           "read" : "find | - | - | - | - | - | wine",
           "recall" : 1
         },
@@ -1952,7 +1952,7 @@
           ],
           "kind" : "messy",
           "modelParsed" : true,
-          "ms" : 2158.106917,
+          "ms" : 2149.580667,
           "read" : "find | - | - | - | - | - | pottery,throwing,clay",
           "recall" : 0.2
         },
@@ -1978,7 +1978,7 @@
           ],
           "kind" : "messy",
           "modelParsed" : true,
-          "ms" : 2245.153791,
+          "ms" : 2252.464084,
           "read" : "find | - | - | - | - | - | sourdough",
           "recall" : 1
         },
@@ -2010,7 +2010,7 @@
           ],
           "kind" : "messy",
           "modelParsed" : true,
-          "ms" : 2486.8715,
+          "ms" : 2484.52025,
           "read" : "find | - | - | - | - | - | law",
           "recall" : 1
         },
@@ -2036,7 +2036,7 @@
           ],
           "kind" : "messy",
           "modelParsed" : true,
-          "ms" : 2596.5883750000003,
+          "ms" : 2639.101375,
           "read" : "find | - | - | - | - | - | flowers",
           "recall" : 1
         },
@@ -2068,7 +2068,7 @@
           ],
           "kind" : "messy",
           "modelParsed" : true,
-          "ms" : 2333.357375,
+          "ms" : 2356.050333,
           "read" : "find | - | - | - | - | - | chess",
           "recall" : 1
         },
@@ -2092,7 +2092,7 @@
           ],
           "kind" : "messy",
           "modelParsed" : true,
-          "ms" : 2457.795084,
+          "ms" : 2477.709375,
           "read" : "find | - | - | - | - | - | resume",
           "recall" : 0.4
         },
@@ -2115,7 +2115,7 @@
           ],
           "kind" : "messy",
           "modelParsed" : true,
-          "ms" : 2392.918583,
+          "ms" : 2402.107916,
           "read" : "find | - | - | - | - | - | physio",
           "recall" : 0.25
         },
@@ -2145,7 +2145,7 @@
           ],
           "kind" : "messy",
           "modelParsed" : true,
-          "ms" : 3115.044291,
+          "ms" : 3128.974458,
           "read" : "find | - | - | - | - | - | painting,murals",
           "recall" : 1
         },
@@ -2168,7 +2168,7 @@
           ],
           "kind" : "multi",
           "modelParsed" : true,
-          "ms" : 2199.190791,
+          "ms" : 2238.380875,
           "read" : "find | - | San Francisco | - | - | - | software,engineer",
           "recall" : 1
         },
@@ -2196,7 +2196,7 @@
           ],
           "kind" : "multi",
           "modelParsed" : true,
-          "ms" : 2328.361375,
+          "ms" : 2168.970125,
           "read" : "find | - | Boston | college | friends | - | ",
           "recall" : 1
         },
@@ -2221,7 +2221,7 @@
           ],
           "kind" : "multi",
           "modelParsed" : true,
-          "ms" : 2063.740791,
+          "ms" : 2047.4436249999999,
           "read" : "find | - | - | - | - | Config | design",
           "recall" : 1
         },
@@ -2247,7 +2247,7 @@
           ],
           "kind" : "multi",
           "modelParsed" : true,
-          "ms" : 2100.7778749999998,
+          "ms" : 2124.801833,
           "read" : "find | - | Seattle | - | - | - | hiking",
           "recall" : 1
         },
@@ -2271,7 +2271,7 @@
           ],
           "kind" : "multi",
           "modelParsed" : true,
-          "ms" : 2038.516791,
+          "ms" : 2058.041333,
           "read" : "find | - | Seattle | - | - | - | nurses",
           "recall" : 1
         },
@@ -2303,7 +2303,7 @@
           ],
           "kind" : "multi",
           "modelParsed" : true,
-          "ms" : 2504.022208,
+          "ms" : 2521.544125,
           "read" : "find | - | - | high-school | friends | - | running,run club,marathon",
           "recall" : 1
         },
@@ -2327,7 +2327,7 @@
           ],
           "kind" : "multi",
           "modelParsed" : true,
-          "ms" : 2140.971417,
+          "ms" : 2145.542542,
           "read" : "find | - | Tokyo | - | - | - | chef",
           "recall" : 1
         },
@@ -2352,7 +2352,7 @@
           ],
           "kind" : "multi",
           "modelParsed" : true,
-          "ms" : 2104.167667,
+          "ms" : 2135.932541,
           "read" : "find | - | Austin | first-job | - | - | ",
           "recall" : 1
         },
@@ -2384,7 +2384,7 @@
           ],
           "kind" : "multi",
           "modelParsed" : true,
-          "ms" : 2189.523542,
+          "ms" : 2184.392916,
           "read" : "plan | drinks | Brooklyn | - | - | - | jazz",
           "recall" : 1
         },
@@ -2410,7 +2410,7 @@
           ],
           "kind" : "multi",
           "modelParsed" : true,
-          "ms" : 2194.281625,
+          "ms" : 2230.900208,
           "read" : "find | - | Houston | - | family | - | doctor",
           "recall" : 1
         },
@@ -2436,7 +2436,7 @@
           ],
           "kind" : "standard",
           "modelParsed" : true,
-          "ms" : 1988.692,
+          "ms" : 1994.813792,
           "read" : "find | - | - | - | - | - | taxes",
           "recall" : 1
         },
@@ -2468,7 +2468,7 @@
           ],
           "kind" : "standard",
           "modelParsed" : true,
-          "ms" : 2282.302959,
+          "ms" : 2326.069666,
           "read" : "plan | pickleball | New York City | - | - | - | pickleball,tennis",
           "recall" : 0.9
         },
@@ -2500,7 +2500,7 @@
           ],
           "kind" : "standard",
           "modelParsed" : true,
-          "ms" : 2125.629042,
+          "ms" : 2154.019042,
           "read" : "plan | running | New York City | - | - | - | running,run club,marathon",
           "recall" : 1
         },
@@ -2532,7 +2532,7 @@
           ],
           "kind" : "standard",
           "modelParsed" : true,
-          "ms" : 2581.833208,
+          "ms" : 2581.284542,
           "read" : "find | - | Bushwick | - | - | - | fashion",
           "recall" : 1
         },
@@ -2563,7 +2563,7 @@
           ],
           "kind" : "standard",
           "modelParsed" : true,
-          "ms" : 2516.983417,
+          "ms" : 2533.609,
           "read" : "find | - | Brooklyn | - | - | - | classical,music",
           "recall" : 1
         },
@@ -2594,7 +2594,7 @@
           ],
           "kind" : "standard",
           "modelParsed" : true,
-          "ms" : 2894.314459,
+          "ms" : 2904.7602500000003,
           "read" : "find | - | - | - | - | Supper club | ",
           "recall" : 1
         },
@@ -2626,7 +2626,7 @@
           ],
           "kind" : "standard",
           "modelParsed" : true,
-          "ms" : 2402.664458,
+          "ms" : 2402.407708,
           "read" : "find | - | New York City | college | friends | - | ",
           "recall" : 1
         },
@@ -2649,7 +2649,7 @@
           ],
           "kind" : "nomatch",
           "modelParsed" : true,
-          "ms" : 1157.101334,
+          "ms" : 1159.479458,
           "read" : "find | - | Austin | - | - | - | taxes"
         },
         {
@@ -2671,7 +2671,7 @@
           ],
           "kind" : "nomatch",
           "modelParsed" : true,
-          "ms" : 1115.901333,
+          "ms" : 1117.423166,
           "read" : "find | - | - | - | - | - | beekeeping"
         },
         {
@@ -2693,7 +2693,7 @@
           ],
           "kind" : "nomatch",
           "modelParsed" : true,
-          "ms" : 1083.769292,
+          "ms" : 1097.5355,
           "read" : "find | - | - | - | - | - | falconer"
         },
         {
@@ -2715,7 +2715,7 @@
           ],
           "kind" : "nomatch",
           "modelParsed" : true,
-          "ms" : 1135.112042,
+          "ms" : 1147.175625,
           "read" : "find | - | - | - | - | - | alpacas"
         },
         {
@@ -2737,7 +2737,7 @@
           ],
           "kind" : "nomatch",
           "modelParsed" : true,
-          "ms" : 1199.854125,
+          "ms" : 1211.776208,
           "read" : "find | - | Brooklyn | - | - | - | taxidermist"
         }
       ]

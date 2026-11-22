@@ -116,7 +116,6 @@ final class FoundationModelsEvalTests: XCTestCase {
         let clock = ContinuousClock()
         let warm = await clock.measure { _ = await LocalAI.parseQuery("warm up", timeout: 30) }
         arm.notes.append("first call (model load) took \(Int(Self.ms(warm))) ms; not counted")
-        var fellBack = 0
         for q in questions {
             var ids: [String] = [], candidates: Set<String> = [], parsed: Constraints?
             let d = await clock.measure {
@@ -132,19 +131,14 @@ final class FoundationModelsEvalTests: XCTestCase {
                     hits = Semantic.bestHits(v, people: Self.people) { shipped[$0] ?? extra[$0] }
                 }
                 let out = Search.rankPeople(c, hits: hits, people: Self.people)
-                // No-match guard: only what retrieval counts as a match is a candidate; with none, the model is not asked.
-                let pool = Array(out.matches.prefix(10))
-                candidates = Set(pool.map(\.id))
-                let picked = pool.isEmpty ? nil : await LocalAI.explain(question: q.q, candidates: pool)
-                if picked == nil, !pool.isEmpty { fellBack += 1 }
-                ids = LocalAI.guarded(picked ?? [], matches: out.matches).map(\.id)
-                ids += out.matches.map(\.id).filter { !ids.contains($0) }
+                candidates = Set(out.matches.map(\.id))
+                ids = await LocalAI.explain(question: q.q, matches: out.matches).map(\.id)
             }
             let c = parsed ?? Query.parse(q.q)
             arm.rows.append(Row(id: q.id, kind: q.kind, fields: Self.fields(c, q.labels), read: Self.read(c), modelParsed: parsed != nil,
                                 ids: ids, recall: Self.recall(ids, q.gold), invalid: ids.filter { !candidates.contains($0) }, ms: Self.ms(d)))
         }
-        arm.notes.append("model parsed \(arm.rows.filter { $0.modelParsed == true }.count)/\(arm.rows.count) questions; explain fell back on \(fellBack)")
+        arm.notes.append("model parsed \(arm.rows.filter { $0.modelParsed == true }.count)/\(arm.rows.count) questions")
         Self.summarize(&arm)
         return arm
     }
@@ -179,14 +173,21 @@ final class FoundationModelsEvalTests: XCTestCase {
 
     // MARK: the test
 
-    /// The guard needs no model: a fake explain result with a non-match id loses that id, order and reasons of the rest stay.
-    func testGuardDropsNonMatches() {
-        let m = Search.rankPeople(Query.parse("someone who does pottery"), hits: [], people: Self.people).matches
-        let a = Match(person: Self.people[0], why: "x"), b = Match(person: Self.people[1], why: "y")
-        let out = LocalAI.guarded([(b.id, "why b"), ("not-a-match", "invented"), (a.id, "why a")], matches: [a, b])
-        XCTAssertEqual(out.map(\.id), [b.id, a.id])
-        XCTAssertTrue(LocalAI.guarded([(a.id, "near miss")], matches: []).isEmpty, "no match from retrieval means no result")
-        _ = m
+    /// The guard lives in LocalAI.explain / merge, so these need no model (a fake reply goes in through the seam).
+    func testExplainGuard() async {
+        let ms = (0..<4).map { Match(person: Self.people[$0], why: "w\($0)") }, id = { ms[$0].id }
+        func run(_ picks: [(n: Int, why: String)]?) async -> [String] {
+            await LocalAI.explain(question: "q", matches: ms) { _, _ in picks }.map(\.id)
+        }
+        // picks first in model order, a non-match number dropped, duplicates deduped, unpicked matches kept in retrieval order
+        let r = await LocalAI.explain(question: "q", matches: ms) { _, _ in [(3, "c"), (99, "x"), (0, "y"), (3, "again"), (1, "a")] }
+        XCTAssertEqual(r.map(\.id), [id(2), id(0), id(1), id(3)])
+        XCTAssertEqual(r.first?.why, "c")
+        let all = await run([(99, "x"), (-1, "y")]); XCTAssertEqual(all, ms.map(\.id), "all-invalid reply falls back to retrieval order")
+        let nilReply = await run(nil); XCTAssertEqual(nilReply, ms.map(\.id))
+        var called = false
+        let none = await LocalAI.explain(question: "q", matches: []) { _, _ in called = true; return [(1, "near miss")] }
+        XCTAssertTrue(none.isEmpty); XCTAssertFalse(called, "no matches: the model is not called")
     }
 
     func testEval() async throws {
@@ -270,11 +271,15 @@ final class FoundationModelsEvalTests: XCTestCase {
         }
         md += """
 
+            ## Running it
+
+            The eval is opt-in. On the Mac Simulator: `cd ios && xcodegen generate && TEST_RUNNER_PEEPL_RUN_EVAL=1 xcodebuild test -project Peepl.xcodeproj -scheme Peepl -destination 'platform=iOS Simulator,name=Peepl-W1' -derivedDataPath build -only-testing:PeeplTests/FoundationModelsEvalTests`
+
             ## Running it on an iPhone (real latency)
 
             1. iPhone 15 Pro or newer, Settings > Apple Intelligence & Siri on, and the model finished downloading.
             2. On the Mac: `cd ios && xcodegen generate`, open `Peepl.xcodeproj`, pick your team under Signing for the Peepl and PeeplTests targets (a free Apple ID works for Debug).
-            3. Plug the phone in, then: `xcodebuild test -project Peepl.xcodeproj -scheme Peepl -destination 'platform=iOS,name=<your iPhone>' -derivedDataPath build -allowProvisioningUpdates -only-testing:PeeplTests/FoundationModelsEvalTests` (or click the diamond next to `FoundationModelsEvalTests` in Xcode).
+            3. Plug the phone in, then: `TEST_RUNNER_PEEPL_RUN_EVAL=1 xcodebuild test -project Peepl.xcodeproj -scheme Peepl -destination 'platform=iOS,name=<your iPhone>' -derivedDataPath build -allowProvisioningUpdates -only-testing:PeeplTests/FoundationModelsEvalTests` (or click the diamond next to `FoundationModelsEvalTests` in Xcode).
             4. A phone can't write into the repo, so the report is attached to the test: `xcrun xcresulttool export attachments --path build/Logs/Test/<newest>.xcresult --output-path /tmp/w1-device`, then copy `w1b-eval.md` / `.json` to `.orchestration/reports/w1b-eval-device.md` / `.json`.
             5. Run it again with Apple Intelligence off (arm b must say skipped) and in airplane mode (arm b must still run).
             6. Arm c only runs with a token the server accepts: `TEST_RUNNER_PEEPL_EVAL_TOKEN=<debug token> xcodebuild test …` against a server with `APP_DEBUG_TOKEN` and `OPENAI_API_KEY` set (for example `npm run dev`; add `TEST_RUNNER_PEEPL_EVAL_BASE=<server url>`). Never set `APP_DEBUG_TOKEN` in Production.
