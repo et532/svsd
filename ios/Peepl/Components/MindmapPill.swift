@@ -20,7 +20,7 @@ struct MindmapPill: View {
             .background(.white.opacity(0.8), in: .capsule)
             .pastel(in: Capsule())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(PressStyle(scale: 0.96))
         .accessibilityLabel("View \(person.name)")
     }
 }

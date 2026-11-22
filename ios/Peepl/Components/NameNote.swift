@@ -82,7 +82,7 @@ struct NameNote: View {
                 Text(w.text).font(Theme.font(16)).foregroundStyle(Theme.ink).padding(.horizontal, 3).padding(.vertical, 1)
                     .overlay(RoundedRectangle(cornerRadius: 6).stroke(Theme.ink.opacity(0.25), lineWidth: 1))
             }
-            .buttonStyle(.plain).accessibilityLabel("Fix the name \(w.text)")
+            .buttonStyle(PressStyle(scale: 0.95)).accessibilityLabel("Fix the name \(w.text)")
         }
     }
 

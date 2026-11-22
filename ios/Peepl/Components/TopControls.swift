@@ -30,7 +30,7 @@ struct TopControls: View {
                     if tab == t { Circle().fill(Theme.pressed).matchedGeometryEffect(id: "blob", in: blob) }
                 }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(PressStyle(scale: 0.92))
         .accessibilityLabel(label)
     }
 }

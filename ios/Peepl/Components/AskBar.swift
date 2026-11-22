@@ -14,7 +14,7 @@ struct AskBar: View {
                     }
                     .foregroundStyle(.white).padding(.leading, 10).padding(.trailing, 14).frame(height: 34).background(Theme.night, in: .capsule)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(PressStyle(scale: 0.95))
                 .accessibilityLabel("Back to \(f.name)")
             }
             if let f = nav.showFilter {
@@ -23,7 +23,7 @@ struct AskBar: View {
                     Button { nav.showFilter = nil } label: {
                         Image(systemName: "xmark").font(Theme.font(12, .semibold)).foregroundStyle(Theme.ink)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(PressStyle(scale: 0.85))
                     .accessibilityLabel("Clear filter")
                 }
                 .padding(.horizontal, 16).frame(height: 36)
@@ -41,11 +41,11 @@ struct AskBar: View {
                     Text("Ask me about people").font(Theme.font(16)).foregroundStyle(Theme.inkMuted)
                         .frame(maxWidth: .infinity, alignment: .leading).frame(minHeight: 56).padding(.leading, 20).contentShape(.rect)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(PressStyle(scale: 0.98))
                 Button { nav.focus = nil; nav.revealOrigin = UnitPoint(x: 0.4, y: 0.95); nav.push(.find(voice: true)) } label: {
                     Image(systemName: "mic").font(Theme.font(20)).foregroundStyle(Theme.ink).frame(width: 60, height: 56).contentShape(.rect)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(PressStyle(scale: 0.9))
                 .accessibilityLabel("Ask by voice")
             }
             .pastel(in: Capsule())
@@ -54,7 +54,7 @@ struct AskBar: View {
                     .frame(width: 56, height: 56)
                     .pastel(in: Circle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(PressStyle(scale: 0.92))
             .accessibilityLabel("Add person")
         }
         .dynamicTypeSize(...DynamicTypeSize.xxxLarge)

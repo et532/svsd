@@ -45,19 +45,19 @@ struct Composer: View {
                     Image(systemName: "stop.fill").font(Theme.font(16)).foregroundStyle(.white)
                         .frame(width: 40, height: 40).background(Theme.night, in: .circle)
                 }
-                .buttonStyle(.plain).accessibilityLabel("Stop")
+                .buttonStyle(PressStyle(scale: 0.9)).accessibilityLabel("Stop")
             } else {
                 Button { listen() } label: {
                     Image(systemName: "mic").font(Theme.font(18)).foregroundStyle(Theme.ink).frame(width: 40, height: 40)
                 }
-                .buttonStyle(.plain).accessibilityLabel("Voice")
+                .buttonStyle(PressStyle(scale: 0.9)).accessibilityLabel("Voice")
             }
             if !trimmed.isEmpty {
                 Button { onSend(trimmed); text = ""; voice.reset(); plain = true } label: {
                     Image(systemName: "arrow.up").font(Theme.font(16, .semibold)).foregroundStyle(.white)
                         .frame(width: 40, height: 40).background(Theme.night, in: .circle)
                 }
-                .buttonStyle(.plain).accessibilityLabel("Send").transition(.scale.combined(with: .opacity))
+                .buttonStyle(PressStyle(scale: 0.9)).accessibilityLabel("Send").transition(.scale.combined(with: .opacity))
             }
         }
         }

@@ -124,7 +124,7 @@ private struct LayerHost: View {
                     Image(systemName: "xmark").font(Theme.font(16, .semibold))
                         .foregroundStyle(Theme.ink).frame(width: 44, height: 44).pastel(in: Circle())
                 }
-                .buttonStyle(.plain).padding(.leading, 16)
+                .buttonStyle(PressStyle(scale: 0.92)).padding(.leading, 16)
                 .accessibilityLabel("Back")
             }
         }

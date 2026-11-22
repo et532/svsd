@@ -52,7 +52,7 @@ struct FindView: View {
                                     Spacer()
                                 }
                                 .padding(16).glass(20)
-                            }.buttonStyle(.plain)
+                            }.buttonStyle(PressStyle(scale: 0.98))
                         }
                     }
                 }
@@ -76,7 +76,7 @@ struct FindView: View {
         Button(action: action) {
             Text(label).font(Theme.font(15, .medium)).foregroundStyle(Theme.ink)
                 .frame(maxWidth: .infinity).frame(height: 48).pastel(in: Capsule())
-        }.buttonStyle(.plain)
+        }.buttonStyle(PressStyle(scale: 0.97))
     }
 
     @ViewBuilder private func answer(_ result: AskResult) -> some View {
@@ -177,7 +177,7 @@ private struct FindCard: View {
                     Image(systemName: "chevron.right").font(Theme.font(13, .semibold)).foregroundStyle(.tertiary)
                 }
                 .contentShape(Rectangle())
-            }.buttonStyle(.plain)
+            }.buttonStyle(PressStyle(scale: 0.98))
             Divider()
             if let via = match.via { Text(via.uppercased()).font(Theme.font(11, .medium)).tracking(0.6).foregroundStyle(Theme.inkMuted) }
             Text(match.why).font(Theme.font(17, .light)).foregroundStyle(Theme.ink).fixedSize(horizontal: false, vertical: true)
@@ -189,15 +189,15 @@ private struct FindCard: View {
                     } label: {
                         Text(action.label).font(Theme.font(15, .medium)).foregroundStyle(Theme.ink)
                             .frame(maxWidth: .infinity).frame(height: 40).background(.white, in: .capsule)
-                    }.buttonStyle(.plain)
+                    }.buttonStyle(PressStyle(scale: 0.95))
                 } else {
                     TextField("", text: Binding(get: { text ?? "" }, set: { text = $0 }), prompt: Text(writing ? "Writing…" : ""), axis: .vertical)
                         .font(Theme.font(16)).foregroundStyle(Theme.ink).lineLimit(3...10).disabled(writing)
                         .padding(12).background(.white.opacity(0.8), in: .rect(cornerRadius: 16))
                         .accessibilityLabel("Message")
                     HStack(spacing: 8) {
-                        Button { UIPasteboard.general.string = text; sent(action) } label: { pill("Copy Text") }.buttonStyle(.plain)
-                        ShareLink(item: text ?? "") { pill("Share") }.buttonStyle(.plain)
+                        Button { UIPasteboard.general.string = text; sent(action) } label: { pill("Copy Text") }.buttonStyle(PressStyle(scale: 0.95))
+                        ShareLink(item: text ?? "") { pill("Share") }.buttonStyle(PressStyle(scale: 0.95))
                             .simultaneousGesture(TapGesture().onEnded { sent(action) })
                     }
                     .disabled(writing || (text ?? "").isEmpty)
