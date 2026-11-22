@@ -438,14 +438,14 @@ Draft message   -> Foundation Models; fallback: template drafts
 
 ## 12.5 What changes in earlier sections
 
-- **M6.1 and section 7 decision 1 (endpoint auth)** and **section 11 A to D, G**: conditional on the OpenAI opt-in shipping.
-- **M6.4 / 11 D:** if the opt-in does not ship in the MVP, the App Privacy label is "Data Not Collected" and the privacy policy is short; there is nothing to consent to.
+- **M6.1 and section 7 decision 1 (endpoint auth)** and **section 11 A to D, G**: the opt-in ships (12.6 Q1, 2026-11-22), so these are prerequisites for any public OpenAI use (need Vince: Supabase project, Apple Developer enrollment).
+- **M6.4 / 11 D:** the opt-in ships, so the App Privacy label and privacy manifest declare the optional data (notes and questions sent for AI), a consent step precedes the first OpenAI use (rel-d) and a privacy policy page is needed (rel-e).
 - **M6.3 / 11 F (backup):** W8 is the MVP version of F; iCloud sync stays out of scope (S2).
 - **Section 6 rule 1** is already updated above.
 
 ## 12.6 Open questions for Vince
 
-1. After the W1 spike: does the OpenAI opt-in ship in the MVP at all, or is it deferred (recommended: defer, keep `AIClient` dormant, skip accounts and quotas until a friend asks for better answers)?
+1. **ANSWERED 2026-11-22 (Vince): the OpenAI opt-in ships in the MVP, default off.** (Question was: after the W1 spike, does the OpenAI opt-in ship in the MVP at all, or is it deferred (recommended: defer, keep `AIClient` dormant, skip accounts and quotas until a friend asks for better answers)?)
 2. Nudge defaults (30 / 60 / 120 days) and whether weekly notifications are in the MVP.
 3. Should the sample-people demo mode run the on-device AI too, or keep scripted answers so demos never depend on the device?
 
@@ -465,6 +465,4 @@ Draft message   -> Foundation Models; fallback: template drafts
 - [ ] Back up -> email -> Restore on a second device brings everyone across; Restore asks before replacing.
 - [ ] `CLAUDE.md`, `DECISIONS.md` and this file agree.
 
-**rel-c (privacy manifest) is ON HOLD:** the orchestrator rejected emptying `PrivacyInfo.xcprivacy` because the OpenAI opt-in ships in the app and optional collection must still be declared; it waits for Vince's answer to 12.6 Q1.
-
-**rel-small (2026-11-22, Simulator tests only):** section 11 F4 (launch backup reminder) and F5 (temp backup file removed after the share sheet closes) done as rel-a; H1 / H4 done as rel-b (version 0.9.0 build 1, `ITSAppUsesNonExemptEncryption` NO; Release build Info.plist checked). Accepted gaps: `lastBackupAt` is recorded when the export file is made, not when sharing finishes; if export's validation throws, the temp file is not removed; a release install that loads the sample people later gets one reminder about them.
+**rel-c (privacy manifest) is no longer on hold, but changed (2026-11-22):** keep the optional OtherUserContent declaration and only verify / fix it (brief rewritten). New: rel-d (consent sheet) and rel-e (draft privacy page); queue in `.orchestration/briefs/rel2-queue.md`.
