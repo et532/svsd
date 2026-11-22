@@ -19,3 +19,6 @@
 - Delete the app to delete data: standard iOS behaviour, not verifiable in code.
 - vercel.json has no cleanUrls or rewrites, so the URL is /privacy.html; /privacy is not guaranteed. `npm run build` put privacy.html in dist/ (dist removed afterward).
 
+- Draft may include another person's name: when goal is nil, AIClient.swift:136 sends action.draft, which Ask.swift:328, :359, :364 build with other people's names (intro, trip).
+- App Attest: AppAttest.swift:29-42 (device key id, attestation, challenge sent to /api/ai/attest-challenge and /attest, returns token with exp); server/ai.ts:205-219 verifies and signs a token; stateless, server/appAttest.ts:5.
+- Server sees IP and limits per IP and per device token: server/ai.ts:101, :206, :230. Counters in memory (ai.ts:68-80). No console/log calls in server code (checked above); Vercel platform logs not claimed. The page says "does not write the address to a database or a log" (code only).

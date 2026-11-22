@@ -43,8 +43,10 @@
 <ul>
   <li>Add: the note text you write about a person. A note you type can contain names;</li>
   <li>Find: your question, plus for up to 12 candidate people these facts: job, where they live, where they are from, where you met, tags, the first 240 characters of their story, and their 2 most recent moments (up to 120 characters each). Names and ids are not sent for search, although a story or moment you wrote may contain names;</li>
-  <li>Draft a message: the person's first name, the same facts as above (job, where they live, where they are from, where you met, tags, story, 2 recent moments), the kind of message, and what the message should say. When the draft comes from a Find result, that includes your question and why the person fits.</li>
+  <li>Draft a message: the person's first name, the same facts as above (job, where they live, where they are from, where you met, tags, story, 2 recent moments), the kind of message, and what the message should say. When the draft comes from a Find result, that includes your question and why the person fits. For an introduction or a trip, the message text can also include another person's name.</li>
 </ul>
+<p>To prove the request comes from a genuine Peepl install, the app uses Apple's App Attest while the switch is on. It sends Peepl's server a device key id and an attestation from Apple, and gets back a short-lived token. This identifies the install, not you.</p>
+<p>Peepl's server sees your internet (IP) address on each request and uses it, together with that token, to limit how often requests can be made. These limits are counters held in the server's memory. Peepl's server code does not write the address to a database or a log.</p>
 <p>The server forwards these to OpenAI to get the answer and passes the answer back. It limits how often one internet address can call it. Peepl's server code does not write your notes to a database or a log. Turn the switch off and nothing goes to OpenAI.</p>
 <p>[VINCE: confirm OpenAI data-use wording from https://openai.com/policies]</p>
 
