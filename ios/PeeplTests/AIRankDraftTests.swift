@@ -6,11 +6,13 @@ private struct FakeEmbedder: Embedder {
 }
 
 final class AIRankDraftTests: XCTestCase {
+    override func tearDown() { AIClient.enabled = false }
     override func setUp() {
         let cfg = URLSessionConfiguration.ephemeral
         cfg.protocolClasses = [StubProtocol.self]
         AIClient.session = URLSession(configuration: cfg)
         AIClient.reset()
+        AIClient.enabled = true
         AppAttest.override = { "test-token" }
         StubProtocol.requests = 0
     }
