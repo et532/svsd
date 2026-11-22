@@ -113,5 +113,9 @@ const shown = inApp ? pickDiverse(allSeeded, 200, keep) : allSeeded
 const basePeople: Person[] = linkAll([...shown, jordanLee])
 
 // ?mock=200 swaps in that many fabricated people (see mockPeople.ts) to stress-test the mindmap.
-const mockCount = Math.min(500, Number(new URLSearchParams(typeof window === 'undefined' ? '' : window.location.search).get('mock')) || 0)
-export const samplePeople: Person[] = mockCount ? makeMockPeople(mockCount) : basePeople
+const params = new URLSearchParams(typeof window === 'undefined' ? '' : window.location.search)
+const mockCount = Math.min(500, Number(params.get('mock')) || 0)
+// The app starts with nobody, only the people you add (user's call 2026-11-22). /?samples (or /?all) shows the sample
+// people as a demo that is never saved (see peopleStore). Scripts and tests still get all 500.
+const withSamples = typeof window === 'undefined' || params.has('samples') || params.has('all')
+export const samplePeople: Person[] = mockCount ? makeMockPeople(mockCount) : withSamples ? basePeople : []

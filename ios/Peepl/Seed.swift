@@ -32,41 +32,29 @@ enum Seed {
         Set(Diverse.pick(all.filter { $0.id != "jordan-lee" }, n: 200, keep: Diverse.keep).map(\.id)).union(["jordan-lee"])
     }
 
-    /// First launch: the sample people. Never again after that, so someone who deletes everybody stays at zero.
+    /// Every build starts with nobody (user's call 2026-11-22: test with your own people); the empty state offers loadSamples.
+    /// Once per install, sample people left from an older build go, unless you have added to them; your own people stay.
     static func loadIfEmpty(_ context: ModelContext, defaults: UserDefaults = .standard) {
-        #if !DEBUG
-        return // shipping builds start empty; the empty state offers loadSamples
-        #else
-        // Launch arguments, UI tests only: -PeeplNoSeed YES starts with nobody; -PeeplInMemory YES (see PeeplApp) seeds every launch.
-        let args = UserDefaults.standard, memory = args.bool(forKey: "PeeplInMemory")
-        if args.bool(forKey: "PeeplNoSeed") { return }
-        let count = (try? context.fetchCount(FetchDescriptor<Person>())) ?? 0
-        let fresh = count == 0 && (memory || !defaults.bool(forKey: "peepl.seeded"))
-        let trim = count > 0 && !defaults.bool(forKey: "peepl.diverse200")
-        if !memory { defaults.set(true, forKey: "peepl.seeded"); defaults.set(true, forKey: "peepl.diverse200") }
-        guard fresh || trim,
-              let url = Bundle.main.url(forResource: "seed", withExtension: "json"),
-              let data = try? Data(contentsOf: url),
-              let people = try? JSONDecoder().decode([PersonDTO].self, from: data),
-              let infos = try? JSONDecoder().decode([PersonInfo].self, from: data) else { return }
-        let shown = shownIds(infos)
-        if fresh {
-            for dto in people where shown.contains(dto.id) {
-                let p = dto.model()
-                p.knows = p.knows.filter(shown.contains) // links to people left out are dropped
-                context.insert(p)
-            }
-            try? context.save()
-        } else {
-            // Once, for an install seeded with all 500: the sample people left out go, unless you have added to them.
-            let have = Dictionary(((try? context.fetch(FetchDescriptor<Person>())) ?? []).map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
-            PeopleStore.delete(people.compactMap { dto in
-                guard !shown.contains(dto.id), let p = have[dto.id], p.lastContacted == dto.lastContacted,
-                      p.moments.count == (dto.moments ?? []).count, p.todos.count == (dto.todos ?? []).count else { return nil }
-                return p
-            }, in: context)
+        #if DEBUG
+        // UI tests only: -PeeplInMemory YES (see PeeplApp) seeds a throwaway store every launch, unless -PeeplNoSeed YES.
+        let args = UserDefaults.standard
+        if args.bool(forKey: "PeeplInMemory") {
+            if !args.bool(forKey: "PeeplNoSeed") { loadSamples(context) }
+            return
         }
         #endif
+        guard !defaults.bool(forKey: "peepl.samplesCleared") else { return }
+        defaults.set(true, forKey: "peepl.samplesCleared")
+        guard ((try? context.fetchCount(FetchDescriptor<Person>())) ?? 0) > 0,
+              let url = Bundle.main.url(forResource: "seed", withExtension: "json"),
+              let data = try? Data(contentsOf: url),
+              let samples = try? JSONDecoder().decode([PersonDTO].self, from: data) else { return }
+        let have = Dictionary(((try? context.fetch(FetchDescriptor<Person>())) ?? []).map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+        PeopleStore.delete(samples.compactMap { dto in
+            guard let p = have[dto.id], p.lastContacted == dto.lastContacted,
+                  p.moments.count == (dto.moments ?? []).count, p.todos.count == (dto.todos ?? []).count else { return nil }
+            return p
+        }, in: context)
     }
 
     /// Inserts the diverse-200 + Jordan Lee samples in any build; does nothing if anyone exists.

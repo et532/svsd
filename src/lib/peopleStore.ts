@@ -2,13 +2,14 @@ import { useSyncExternalStore } from 'react'
 import { samplePeople, type Person } from '../data/people'
 import { readDb, writeDb } from './localDb'
 
-// Everyone in the app: the sample people plus anyone added with the + button, with changes from
-// logging moments and ticking things off. Additions and changes are saved to local-data/people.json by the
-// local backend (and mirrored in localStorage), so they survive a reload. Mock mode (?mock=200) never saves.
+// Everyone in the app: anyone added with the + button (plus the sample people in a demo mode), with changes from
+// logging moments and ticking things off. Saved in this browser's IndexedDB (mirrored in localStorage), so they
+// survive a reload.
 
 const KEY = 'peepl.people.v1'
 // (the typeof checks let tests and scripts import this in Node)
-const mock = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('mock')
+// Demo modes (?mock=200, ?samples, ?all) never save, so sample people don't mix into your own.
+const mock = typeof window !== 'undefined' && ['mock', 'samples', 'all'].some((k) => new URLSearchParams(window.location.search).has(k))
 
 type Saved = { added: Person[]; changed: Record<string, Partial<Person>> }
 

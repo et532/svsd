@@ -13,7 +13,7 @@ export function ListScreen({ people, onOpen }: Props) {
   if (sorted.length === 0) {
     return (
       <div className="screen list-screen">
-        <p className="empty">No one to show.</p>
+        <p className="empty">No one here yet. Tap + to add the first person you meet.</p>
       </div>
     )
   }

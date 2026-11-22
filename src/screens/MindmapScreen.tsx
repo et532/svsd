@@ -733,8 +733,10 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
   // React's onWheel is passive, so attach the wheel listener by hand to stop the page scrolling. Each notch feeds a
   // target scale that the view glides toward every frame (eased), so zooming reads as one smooth motion instead of a
   // stair-step per notch; the world point under the cursor stays pinned while it changes.
+  const empty = people.length === 0
   useEffect(() => {
-    const el = rootRef.current!
+    const el = rootRef.current
+    if (!el) return // nobody yet, so no map to zoom; runs again once someone is added
     const z = wheelZoom.current
     const onWheel = (e: WheelEvent) => {
       e.preventDefault()
@@ -783,7 +785,7 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
       cancelAnimationFrame(z.raf)
       z.raf = 0
     }
-  }, [])
+  }, [empty])
 
   const person = people.find((p) => p.id === selected)
   const dimmed = (id: string) => (focus ? groupOf.get(id) !== focus : false)
@@ -796,10 +798,10 @@ export function MindmapScreen({ people, focusId = null, onView, groupBy = 'none'
         ? ' is-far'
         : ''
 
-  if (people.length === 0)
+  if (empty)
     return (
       <div className="screen mindmap-screen">
-        <p className="empty">No one to show.</p>
+        <p className="empty">No one here yet. Tap + to add the first person you meet.</p>
       </div>
     )
 
