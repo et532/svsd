@@ -20,7 +20,7 @@ struct SettingsView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \Person.name) private var people: [Person]
-    @State private var exporting = false
+    @State private var shareURL: URL?
     @State private var importing = false
     private var version: String {
         let i = Bundle.main.infoDictionary
@@ -31,7 +31,9 @@ struct SettingsView: View {
         NavigationStack {
             List {
                 Section("Your data") {
-                    Button("Back up") { exporting = true }
+                    Button("Back up") {
+                        do { shareURL = try BackupFile.export(people: people) } catch { nav.say("Could not make the backup: \(error.localizedDescription)") }
+                    }
                     Button("Restore") { importing = true }
                     Text("Everyone you add stays on this device. Back up saves them to one file.").font(.footnote).foregroundStyle(.secondary)
                 }
@@ -46,14 +48,8 @@ struct SettingsView: View {
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
-            .fileExporter(isPresented: $exporting, document: BackupFile(people: people), contentType: .json, defaultFilename: "Peepl backup") { _ in }
-            .fileImporter(isPresented: $importing, allowedContentTypes: [.json]) { result in
-                guard case .success(let url) = result, url.startAccessingSecurityScopedResource() else { nav.say("Couldn't read that file"); return }
-                defer { url.stopAccessingSecurityScopedResource() }
-                if let data = try? Data(contentsOf: url), let b = try? JSONDecoder().decode(BackupFile.self, from: data) {
-                    nav.say("Restored \(b.restore(into: context)) people")
-                } else { nav.say("Couldn't read that file") }
-            }
+            .sheet(item: $shareURL) { ShareSheet(url: $0) }
+            .backupImporter(isPresented: $importing)
         }
     }
 }

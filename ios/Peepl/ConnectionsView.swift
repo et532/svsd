@@ -108,6 +108,7 @@ private struct Row: View {
 struct EmptyPeople: View {
     @Environment(Nav.self) private var nav
     @Environment(\.modelContext) private var context
+    @State private var importing = false
     var body: some View {
         VStack(spacing: 10) {
             Text("No one here yet").font(Theme.font(20, .medium)).foregroundStyle(Theme.ink)
@@ -122,7 +123,12 @@ struct EmptyPeople: View {
                 Text("Try with sample people").font(Theme.font(14)).foregroundStyle(Theme.inkMuted)
             }
             .buttonStyle(PressStyle(scale: 0.95)).padding(.top, 4)
+            Button { importing = true } label: {
+                Text("Restore from a backup file").font(Theme.font(14)).foregroundStyle(Theme.inkMuted)
+            }
+            .buttonStyle(PressStyle(scale: 0.95)).padding(.top, 4)
         }
         .frame(maxWidth: .infinity)
+        .backupImporter(isPresented: $importing)
     }
 }
