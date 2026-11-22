@@ -2,6 +2,7 @@ import XCTest
 @testable import Peepl
 
 final class AppAttestTests: XCTestCase {
+    override func tearDown() { AIClient.enabled = false }
     func testTokenIsReusedUntilFiveMinutesBeforeExpiry() {
         let now = Date()
         XCTAssertTrue(AppAttest.isFresh(now.addingTimeInterval(600), now: now))
@@ -14,6 +15,7 @@ final class AppAttestTests: XCTestCase {
         cfg.protocolClasses = [StubProtocol.self]
         AIClient.session = URLSession(configuration: cfg)
         AIClient.reset()
+        AIClient.enabled = true
         var n = 0
         AppAttest.override = { n += 1; return "t\(n)" }
         var seen: [String?] = []

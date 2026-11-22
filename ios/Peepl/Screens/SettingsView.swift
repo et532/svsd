@@ -20,6 +20,7 @@ struct SettingsView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \Person.name) private var people: [Person]
+    @AppStorage(AIClient.enabledKey) private var openAI = false
     @State private var shareURL: URL?
     @State private var importing = false
     private var version: String {
@@ -37,12 +38,17 @@ struct SettingsView: View {
                     Button("Restore") { importing = true }
                     Text("Everyone you add stays on this device. Back up saves them to one file.").font(.footnote).foregroundStyle(.secondary)
                 }
+                Section {
+                    Toggle("Use OpenAI", isOn: $openAI)
+                } header: { Text("AI help from OpenAI") } footer: {
+                    Text("Off: everything stays on this phone and Peepl uses its built-in search and templates. On: the notes you add, your search questions with a few facts about candidate people, and message drafts are sent to OpenAI. Names and ids of people are not sent for search, but notes you type can contain names. Nothing is shared with other users.")
+                }
                 Section("Notifications & permissions") {
                     Button("Open iOS Settings") { if let u = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(u) } }
                 }
                 Section("About") {
                     LabeledContent("Version", value: version)
-                    Text("Notes you add and questions you ask are sent to OpenAI to fill in profiles and find people. Nothing is shared with other users.").font(.footnote).foregroundStyle(.secondary)
+                    Text("Nothing leaves this phone unless you turn on AI help from OpenAI above. Nothing is shared with other users.").font(.footnote).foregroundStyle(.secondary)
                 }
             }
             .navigationTitle("Settings")

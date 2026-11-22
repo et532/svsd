@@ -7,6 +7,13 @@ enum AIClient {
     /// Tests call this to forget a 503 / 404 from an earlier case.
     static func reset() { off = false }
 
+    /// Settings switch: nothing leaves the phone unless this is on. Default off.
+    static let enabledKey = "peepl.openaiEnabled"
+    static var enabled: Bool {
+        get { UserDefaults.standard.bool(forKey: enabledKey) }
+        set { UserDefaults.standard.set(newValue, forKey: enabledKey) }
+    }
+
     static var base: String {
         // -PeeplAPIBase <url>: UI tests point it at nothing, so they never use the network
         (UserDefaults.standard.string(forKey: "PeeplAPIBase") ?? Bundle.main.object(forInfoDictionaryKey: "PeeplAPIBase") as? String).flatMap { $0.isEmpty ? nil : $0 }
@@ -15,7 +22,7 @@ enum AIClient {
 
     /// POST JSON with the App Attest bearer token; one fresh token and retry on 401. nil = offline (no token, no answer).
     static func send(_ path: String, _ body: [String: Any], timeout: TimeInterval) async -> (Data, HTTPURLResponse)? {
-        guard let url = URL(string: base + "/api/ai/" + path) else { return nil }
+        guard enabled, let url = URL(string: base + "/api/ai/" + path) else { return nil }
         for attempt in 0..<2 {
             guard let token = await AppAttest.token(refresh: attempt > 0) else { return nil }
             var req = URLRequest(url: url, timeoutInterval: timeout)
@@ -38,7 +45,7 @@ enum AIClient {
 
     static func parse(_ note: String) async -> Draft? {
         let t = note.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !off, !t.isEmpty, let (data, http) = await send("parse", ["text": t], timeout: 10) else { return nil }
+        guard enabled, !off, !t.isEmpty, let (data, http) = await send("parse", ["text": t], timeout: 10) else { return nil }
         if http.statusCode == 503 || http.statusCode == 404 { off = true; return nil }
         guard (200..<300).contains(http.statusCode),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
@@ -85,7 +92,7 @@ extension AIClient {
 
     /// POST /api/ai/<task>; nil on any failure. 503 / 404 turn the AI off for the session.
     private static func post(_ task: String, _ body: [String: Any], timeout: TimeInterval) async -> [String: Any]? {
-        guard !off, let (data, http) = await send(task, body, timeout: timeout) else { return nil }
+        guard enabled, !off, let (data, http) = await send(task, body, timeout: timeout) else { return nil }
         if http.statusCode == 503 || http.statusCode == 404 { off = true; return nil }
         guard (200..<300).contains(http.statusCode) else { return nil }
         return try? JSONSerialization.jsonObject(with: data) as? [String: Any]
@@ -93,7 +100,7 @@ extension AIClient {
 
     static func rank(_ query: String, result: AskResult, people: [PersonInfo], embedder: Embedder) async -> AskResult {
         // A relaxed answer (groups + note) already explains itself; the AI's flat list would drop that.
-        guard case .people(let a) = result, a.groups == nil else { return result }
+        guard enabled, case .people(let a) = result, a.groups == nil else { return result }
         var seen = Set(a.matches.map(\.person.id))
         var pool: [Match] = []
         for m in (a.near ?? []) + (await Semantic.closestMatches(query, people: people, n: 12, embedder: embedder))
@@ -124,6 +131,7 @@ extension AIClient {
 
     static func draft(_ person: PersonInfo, action: Action) async -> String {
         let first = person.firstName
+        guard enabled else { return action.draft.isEmpty ? "Hey \(first)! Hope you’re doing well. Want to catch up soon?" : action.draft }
         var p = facts(person); p["name"] = first
         let out = await post("draft", ["person": p, "kind": action.kind.rawValue, "goal": action.goal ?? action.draft], timeout: 15)
         let text = (out?["text"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
