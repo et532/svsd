@@ -52,12 +52,12 @@ struct ProfileView: View {
                     let m = PeopleStore.addMoment(to: person, note: text, in: context)
                     openMoment = m.id
                     nav.say("New moment saved")
-                }, people: everyone, tall: true)
+                }, people: everyone)
                 .padding(.horizontal, 16).padding(.bottom, 8)
                 .background(alignment: .bottom) {
                     // a soft darkening behind the input, so it reads as something to tap
-                    LinearGradient(colors: [.clear, Color(hex: "3b2a5e").opacity(0.22)], startPoint: .top, endPoint: .bottom)
-                        .frame(height: 190).ignoresSafeArea(edges: .bottom).allowsHitTesting(false)
+                    LinearGradient(colors: [.clear, Color(hex: "3b2a5e").opacity(0.45)], startPoint: .top, endPoint: .bottom)
+                        .frame(height: 170).ignoresSafeArea(edges: .bottom).allowsHitTesting(false)
                 }
             }
         }
@@ -148,7 +148,7 @@ struct ProfileView: View {
             HStack {
                 iconButton("chevron.left", label: "Back", id: nil, glass: 1 - p) { nav.pop() }
                 Spacer()
-                iconButton("trash", label: "Delete person", id: "More", glass: 1 - p) { confirmDelete = true }
+                iconButton("trash", label: "Delete person", id: "More", glass: 1 - p, tint: Color(hex: "d62839")) { confirmDelete = true }
             }
             .padding(.horizontal, 12)
         }
@@ -161,10 +161,10 @@ struct ProfileView: View {
     }
 
     /// Pastel circle behind the icon on the expanded banner (`glass` 1), plain icon once the bar has collapsed (0).
-    private func iconButton(_ icon: String, label: String, id: String?, glass: CGFloat, action: @escaping () -> Void) -> some View {
+    private func iconButton(_ icon: String, label: String, id: String?, glass: CGFloat, tint: Color = Theme.ink, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: icon).font(Theme.font(18, .semibold))
-                .foregroundStyle(Theme.ink.mix(with: .white, by: 1 - glass)) // dark on the pastel circle, white once it is gone
+                .foregroundStyle(tint.mix(with: .white, by: 1 - glass)) // dark on the pastel circle, white once it is gone
                 .frame(width: 44, height: 44).contentShape(.rect)
                 .background { Circle().fill(Color(hex: "faf7ff").opacity(0.94)).opacity(glass) }
         }
