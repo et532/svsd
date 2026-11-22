@@ -31,6 +31,9 @@ targets:
         TARGETED_DEVICE_FAMILY: "1"
         PEEPL_API_BASE: https://peepl-steel.vercel.app
         PEEPL_DEBUG_TOKEN: ""
+    configs:
+      Release:
+        # App Attest needs a paid developer account; Debug builds (free Apple ID) go without it
         CODE_SIGN_ENTITLEMENTS: Peepl/Peepl.entitlements
   PeeplTests:
     type: bundle.unit-test
