@@ -1,0 +1,10 @@
+# Task rel-b: export-compliance flag and build numbers (PLAN 11 H)
+Owner: lead   Builder: sonnet   Branch task/rel-b
+Verified: ios/project.yml has no `ITSAppUsesNonExemptEncryption`, no `MARKETING_VERSION`, no `CURRENT_PROJECT_VERSION` (the Settings version line reads CFBundleShortVersionString / CFBundleVersion, falling back to 1.0 / 1).
+Goal: add `INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO` (generated plist; HTTPS only, no custom crypto) and `MARKETING_VERSION: "0.9.0"` and `CURRENT_PROJECT_VERSION: "1"` under Peepl target base settings so TestFlight uploads stop asking the export question. Pick 0.9.0 as the pre-release version; mention in the report that Vince can change it.
+Files you may touch: ios/project.yml only. (Plus a new ios/PeeplTests/BuildInfoTests.swift that asserts Bundle.main infoDictionary has ITSAppUsesNonExemptEncryption == false, CFBundleShortVersionString == "0.9.0" and CFBundleVersion == "1".)
+Do not touch: any Swift under ios/Peepl, entitlements, signing, PEEPL_* settings.
+Acceptance: xcodegen generate; full suite green (report counts); `plutil -p` of the built Peepl.app/Info.plist (in ios/build) shows the three keys.
+Builder rules: read .orchestration/briefs/_rules.txt. From ios/: `xcodegen generate` after adding or removing files; worktree-local `-derivedDataPath build`; create your OWN simulator (`xcrun simctl create Peepl-<id> <iPhone device type> <iOS runtime>`; list with `xcrun simctl list devicetypes runtimes`), test with `xcodebuild test -project Peepl.xcodeproj -scheme Peepl -destination "platform=iOS Simulator,name=Peepl-<id>" -derivedDataPath build`, and delete it (`xcrun simctl delete`) when done; on "signal kill" reboot the sim and retry once. Never commit ios/build, Peepl.xcodeproj or secrets. Branch task/<id> cut from main (`git checkout -B task/<id> main`); commit only the listed files.
+Validator should also check: project.yml diff is only those three settings; Release config still builds the plist (run `xcodebuild build -configuration Release -destination generic/platform=iOS CODE_SIGNING_ALLOWED=NO` if feasible, else say it was not run).
+If blocked: stop and report.
