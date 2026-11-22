@@ -9,13 +9,15 @@ struct OnboardingDemoStep: View {
         switch step {
         case 2: DemoStage(script: .step2) { Step2Demo(stage: $0) }
         case 3: DemoStage(script: .step3) { Step3Demo(stage: $0) }
+        case 5: DemoStage(script: .step5) { Step5Demo(stage: $0) }
+        case 6: DemoStage(script: .step6) { Step6Demo(stage: $0) }
         default: DemoStage(script: .step4) { Step4Demo(stage: $0) }
         }
     }
 }
 
 /// Runs a script and hands the current stage to its content; under Reduce Motion it is the final frame at once.
-private struct DemoStage<Content: View>: View {
+struct DemoStage<Content: View>: View {
     let script: DemoScript
     @ViewBuilder let content: (Int) -> Content
     @State private var stage = 0
@@ -43,7 +45,7 @@ private struct Narration: View {
 }
 
 /// Designed at 340pt wide; scales down on narrower screens. Type is capped so a big Dynamic Type size can't overflow it.
-private struct DemoPanel<Content: View>: View {
+struct DemoPanel<Content: View>: View {
     let height: CGFloat
     let label: String
     @ViewBuilder let content: Content
