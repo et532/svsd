@@ -11,22 +11,22 @@ Target user: one person with a few hundred contacts, on their own iPhone, who wa
 
 Platform: **iOS 26+, iPhone only, portrait**, Xcode 27.2, SwiftUI + SwiftData, native Liquid Glass (`.glassEffect`).
 
-## 2. Status (2026-11-16)
+## 2. Status (2026-11-22)
 
-Milestones M0 and M1 are done. M1 added the test target (24 tests), `Logic/` capture parsing, `Services/` AI client, tab shell, profile and Add + Composer. Open M1 items: the Add screen echoed the typed note twice in a manager screenshot (probably simulator text injection, unconfirmed); the "Which Jordan" picker and profile "Add a moment" were covered by tests only, not driven in the UI. Nothing is committed. Next: M2 / M3 / M4.
+All iOS work so far is checked in the Simulator only (`xcodebuild test`, 163 tests pass on `main`); **nothing has been viewed on a real iPhone**. Details per milestone are in sections 5 and 12.
 
-Animation plan (`ios/ANIMATION_PLAN.md`): M1 Foundation done 2026-11-22 (`Motion.swift`, shared `Components/Shimmer.swift`; validator PASS, simulator-SDK build only). Next: apply `PressStyle` and the P0 items.
-
-| Built | Where |
+| Done | Notes |
 |---|---|
-| XcodeGen project (`ios/project.yml`), bundle id `com.vincelin.peepl` | `ios/` |
-| SwiftData models `Person`, `Moment`, `Todo`, `Place` | `ios/Peepl/Models.swift` |
-| Seed loader: 500 sample people from `seed.json` on first launch | `ios/Peepl/Seed.swift`, `scripts/export-ios-seed.ts` |
-| Theme tokens + `.glass()` modifier | `ios/Peepl/Theme.swift` |
-| Blob avatars (same hash as web `blobs.ts`, 18 photos) | `ios/Peepl/Blobs.swift`, `ios/Peepl/Resources/Blobs/` |
-| Connections list (A-Z, glass rows) + placeholder profile | `ios/Peepl/ConnectionsView.swift` |
+| M1 core loop: list, profile, typed Add, moments, to-dos, SwiftData | 2026-11-16 |
+| M2 mindmap, M3 Find (rules + MiniLM), M4 voice (Apple Speech, name fixes) | on `main`; open: 2-4 s freeze on the mindmap tab switch |
+| M5 polish: Geist, auras, circular reveal, haptics, icon, diverse 200, empty state with "Try with sample people" | release build starts empty |
+| Animation plan M1-M4 and iOS fixes M5a / M5b (`ios/ANIMATION_PLAN.md`) | device checks listed in section 10 notes |
+| MVP-1 (W6 OpenAI switch, default off; W7 losing-touch nudge; W8 share-sheet backup with Merge / Replace) | 2026-11-22 |
+| W1 eval and MVP-3 (W2-W5): on-device Foundation Models for Find, Add parse and drafts, with rule / regex / template fallbacks | real model output never viewed in the UI |
+| rel items: rel-a backup reminder, rel-b export-compliance key and version 0.9.0, rel-c privacy manifest, rel-d consent sheet, rel-e privacy page | privacy page live at `https://peepl-steel.vercel.app/privacy.html` (deployed 2026-11-22) |
+| App Attest client and server auth for `/api/ai/*` | only verifiable on a real device with a paid developer account |
 
-Not built: real profile, Add, moments, mindmap, Find, voice, aura backgrounds, Geist fonts, backup, release work.
+Open: anything that needs a device (mic, haptics, share sheet, Foundation Models output, performance), section 11 accounts / quota (only if the OpenAI opt-in goes public), TestFlight.
 
 Build and run:
 ```bash
@@ -467,6 +467,6 @@ Draft message   -> Foundation Models; fallback: template drafts
 
 **rel-c (privacy manifest) is no longer on hold, but changed (2026-11-22):** keep the optional OtherUserContent declaration and only verify / fix it (brief rewritten). New: rel-d (consent sheet) and rel-e (draft privacy page); queue in `.orchestration/briefs/rel2-queue.md`.
 
-**rel2 (2026-11-22, Simulator tests only):** 11 D1 privacy page DRAFTED at `public/privacy.html` (served at /privacy.html once deployed; NOT deployed; has `[VINCE: support email]` and `[VINCE: confirm OpenAI data-use wording]` placeholders). 11 D2 consent sheet done locally (the switch needs consent at the current `consentVersion`; no request of any kind, App Attest included, without it; a server-side consent gate still needs accounts). 11 D4 privacy manifest verified (OtherUserContent, not linked, no tracking, UserDefaults CA92.1; `CACurrentMediaTime` is not on Apple's required-reason list, so no declaration). Accepted gaps: the consent sheet omits the message kind / goal, the IP address and App Attest (the policy page covers them); the Settings toggle flow and sheet visuals are untested in the UI.
+**rel2 (2026-11-22, Simulator tests only):** 11 D1 privacy page DRAFTED at `public/privacy.html` (served at /privacy.html; NOT deployed at the time, deployed later the same day, see the 11 D1 update below; has `[VINCE: support email]` and `[VINCE: confirm OpenAI data-use wording]` placeholders). 11 D2 consent sheet done locally (the switch needs consent at the current `consentVersion`; no request of any kind, App Attest included, without it; a server-side consent gate still needs accounts). 11 D4 privacy manifest verified (OtherUserContent, not linked, no tracking, UserDefaults CA92.1; `CACurrentMediaTime` is not on Apple's required-reason list, so no declaration). Accepted gaps: the consent sheet omits the message kind / goal, the IP address and App Attest (the policy page covers them); the Settings toggle flow and sheet visuals are untested in the UI.
 
-**11 D1 update (2026-11-22):** privacy page placeholders filled (support email, OpenAI policy pointer sentence); still not deployed.
+**11 D1 update (2026-11-22):** privacy page placeholders filled (support email, OpenAI policy pointer sentence); deployed 2026-11-22 at `https://peepl-steel.vercel.app/privacy.html`.
