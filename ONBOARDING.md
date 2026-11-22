@@ -196,7 +196,7 @@ House tokens:
 **Rules**
 - One hero motion per act.
 - Everything is interruptible: springs pick up from the current velocity.
-- Demos auto-play once, then loop the last 3-4 s, or hold with a "Replay" option.
+- Demos auto-play once, then loop the last 3-4 s, or hold with a "Replay" option (does not apply to onboarding: no replay button; demos play once and hold the last frame).
 - Never block "Continue" on an animation.
 - Plop values come from:
   - Apple's guidance: bounce ≤ 0.4.
