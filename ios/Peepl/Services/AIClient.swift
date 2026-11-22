@@ -10,7 +10,7 @@ enum AIClient {
     /// Settings switch: nothing leaves the phone unless this is on. Default off.
     static let enabledKey = "peepl.openaiEnabled"
     static var enabled: Bool {
-        get { UserDefaults.standard.bool(forKey: enabledKey) }
+        get { UserDefaults.standard.bool(forKey: enabledKey) && Consent.agreed }
         set { UserDefaults.standard.set(newValue, forKey: enabledKey) }
     }
 

@@ -33,6 +33,7 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \Person.name) private var people: [Person]
     @AppStorage(AIClient.enabledKey) private var openAI = false
+    @State private var askConsent = false
     @State private var shareURL: URL?
     @State private var lastShared: URL?
     @State private var importing = false
@@ -60,7 +61,11 @@ struct SettingsView: View {
                     Text(LocalAI.statusLine(reason: aiReason).detail)
                 }
                 Section {
-                    Toggle("Use OpenAI", isOn: $openAI)
+                    Toggle("Use OpenAI", isOn: Binding(
+                        get: { openAI },
+                        set: { on in
+                            if !on { openAI = false } else if Consent.agreed { openAI = true } else { askConsent = true }
+                        }))
                 } header: { Text("AI help from OpenAI") } footer: {
                     Text("Off: everything stays on this phone and Peepl uses its built-in search and templates. On: the notes you add, your search questions with a few facts about candidate people, and message drafts are sent to OpenAI. Names and ids of people are not sent for search, but notes you type can contain names. Nothing is shared with other users.")
                 }
@@ -71,6 +76,10 @@ struct SettingsView: View {
                     LabeledContent("Version", value: version)
                     Text("Nothing leaves this phone unless you turn on AI help from OpenAI above. Nothing is shared with other users.").font(.footnote).foregroundStyle(.secondary)
                 }
+            }
+            .onAppear { if openAI && !Consent.agreed { openAI = false } }
+            .sheet(isPresented: $askConsent) {
+                ConsentView(onAgree: { Consent.agree(); openAI = true; askConsent = false }, onCancel: { askConsent = false })
             }
             .onChange(of: scenePhase) { _, p in if p == .active { aiReason = LocalAI.unavailableReason } }
             .navigationTitle("Settings")

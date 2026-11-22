@@ -44,7 +44,7 @@ final class AIOptInTests: XCTestCase {
     }
 
     func testOnSendsRequest() async {
-        AIClient.enabled = true
+        Consent.agree(); AIClient.enabled = true
         _ = await AIClient.parse("Met Sam Park at a gym")
         XCTAssertEqual(StubProtocol.requests, 1)
     }

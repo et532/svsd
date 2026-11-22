@@ -39,7 +39,7 @@ final class LocalAIDraftTests: XCTestCase {
     }
 
     func testSwitchOnKeepsOpenAIPath() async {
-        AIClient.enabled = true
+        Consent.agree(); AIClient.enabled = true
         var local = 0
         let name = person.firstName
         let m = await LocalAI.message(person, action: action, openAI: { _, _ in "from openai" }, local: { _, _ in local += 1; return "x \(name)" })
