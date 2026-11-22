@@ -130,11 +130,16 @@ extension AIClient {
     }
 
     static func draft(_ person: PersonInfo, action: Action) async -> String {
-        let first = person.firstName
-        guard enabled else { return action.draft.isEmpty ? "Hey \(first)! Hope you’re doing well. Want to catch up soon?" : action.draft }
-        var p = facts(person); p["name"] = first
+        if let text = await draftText(person, action: action) { return text }
+        return !action.draft.isEmpty ? action.draft : "Hey \(person.firstName)! Hope you’re doing well. Want to catch up soon?"
+    }
+
+    /// The server's draft, or nil (switch off, offline, error, empty) so a caller can try the next step.
+    static func draftText(_ person: PersonInfo, action: Action) async -> String? {
+        guard enabled else { return nil }
+        var p = facts(person); p["name"] = person.firstName
         let out = await post("draft", ["person": p, "kind": action.kind.rawValue, "goal": action.goal ?? action.draft], timeout: 15)
         let text = (out?["text"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        return !text.isEmpty ? text : !action.draft.isEmpty ? action.draft : "Hey \(first)! Hope you’re doing well. Want to catch up soon?"
+        return text.isEmpty ? nil : text
     }
 }

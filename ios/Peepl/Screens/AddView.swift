@@ -155,11 +155,11 @@ struct AddView: View {
         phase = .creating(text)
         let notes = mutualOf == nil ? Capture.splitPeople(text) : []
         if notes.count > 1 {
-            Task { phase = .doneMany(await AddMany.create(notes, people: people, in: context, aiFor: { AIClient.enabled ? await AIClient.parse($0) : await LocalAI.parseNote($0) })) }
+            Task { phase = .doneMany(await AddMany.create(notes, people: people, in: context, aiFor: { await LocalAI.readNote($0) })) }
             return
         }
         Task {
-            let ai = AIClient.enabled ? await AIClient.parse(text) : await LocalAI.parseNote(text)
+            let ai = await LocalAI.readNote(text)
             let d = Capture.parsePerson(text, people: people).merged(with: ai)
             let r = PeopleStore.createPerson(d, note: text, in: context, mutualOf: mutualOf)
             phase = .done(r.person)
