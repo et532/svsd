@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Peepl privacy</title>
+<style>
+  body { font: 17px/1.55 -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; color: #111113; background: #f4f4f4; margin: 0; padding: 24px 20px 48px; }
+  main { max-width: 640px; margin: 0 auto; }
+  h1 { font-size: 30px; line-height: 1.15; letter-spacing: -0.03em; margin: 0 0 4px; }
+  h2 { font-size: 20px; margin: 32px 0 8px; }
+  p, li { margin: 0 0 12px; }
+  ul { padding-left: 22px; margin: 0 0 12px; }
+  .meta { color: #666; font-size: 14px; }
+  @media (prefers-color-scheme: dark) {
+    body { color: #f2f2f4; background: #111113; }
+    .meta { color: #a0a0a8; }
+  }
+</style>
+</head>
+<body>
+<main>
+<h1>Peepl privacy</h1>
+<p class="meta">Version 1 &middot; 2026-11-22</p>
+
+<p>Peepl is a private log of the people you meet. It is for you only. There is no account and no social side.</p>
+
+<h2>Where your data lives</h2>
+<p>Everyone you add, with their moments and to-dos, is stored on your phone. Peepl keeps no cloud copy and has no sync. It has no analytics, no ads and no tracking, and nothing is shared with other users.</p>
+
+<h2>Back up and moving to a new phone</h2>
+<p>Settings, then Back up, makes one file of your people. You choose where it goes (email, AirDrop, Files). Peepl does not keep it. You look after your backup files, and you can delete them yourself.</p>
+
+<h2>Voice</h2>
+<p>When you tap the mic, Peepl uses Apple's speech recognition. It asks for on-device recognition whenever your phone supports it for your language, so the audio stays on the phone. If your phone does not support that, Apple's recognition may send the audio to Apple's servers, under Apple's privacy terms. Peepl does not send your voice to its own server or to OpenAI.</p>
+
+<h2>Search, adding and message drafts</h2>
+<p>Find, Add and draft messages use Apple's on-device model when your phone has Apple Intelligence turned on. This runs on the phone. Without it, Peepl falls back to its built-in search and templates, which also run on the phone.</p>
+
+<h2>Optional: Use OpenAI</h2>
+<p>Settings has a switch, "Use OpenAI". It is off by default. While it is on, and only then, Peepl sends these to OpenAI, through Peepl's own server:</p>
+<ul>
+  <li>the notes you write when you add a person;</li>
+  <li>your Find questions, with up to 12 candidate people's profile facts (job, city, tags, a short story and recent moments). Names and ids are not sent for search, but a note you type can contain names;</li>
+  <li>requests to draft a message to someone.</li>
+</ul>
+<p>The server forwards these to OpenAI to get the answer and passes the answer back. It limits how often one internet address can call it. Peepl's server code does not write your notes to a database or a log. Turn the switch off and nothing goes to OpenAI.</p>
+<p>[VINCE: confirm OpenAI data-use wording from https://openai.com/policies]</p>
+
+<h2>Crash reports</h2>
+<p>Peepl does not collect crash reports. If you use TestFlight or the App Store, Apple may give the developer crash information under your Apple settings.</p>
+
+<h2>Deleting your data</h2>
+<p>Delete the app and its data goes with it. Backup files you made are yours; delete them wherever you saved them. If you used OpenAI, Peepl keeps no copy on its side.</p>
+
+<h2>Contact</h2>
+<p>[VINCE: support email]</p>
+</main>
+</body>
+</html>
