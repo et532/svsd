@@ -55,7 +55,6 @@ struct MindmapView: View {
     private var map: some View {
         GeometryReader { geo in
             ZStack {
-                Color(hex: "ededed")
                 if people.isEmpty {
                     EmptyPeople()
                 } else {

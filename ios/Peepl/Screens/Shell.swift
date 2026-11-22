@@ -54,8 +54,12 @@ struct RootView: View {
 
     var body: some View {
         ZStack {
-            // matches the page, so the edge a receding page exposes is not white
-            (nav.tab == .mindmap ? Color(hex: "ededed") : Theme.bg).ignoresSafeArea()
+            // page background lives outside the receding container, so it never scales, shifts or dims and reaches every edge
+            Group {
+                if nav.tab == .mindmap { Color(hex: "ededed") } else { AuraBackground(light: true) }
+            }
+            .ignoresSafeArea().transition(.opacity)
+            .animation(Motion.animation(Motion.smooth, reduce: reduce), value: nav.tab)
             // Depth: with a profile on top, everything under it recedes (Add / Find use the circle reveal instead).
             ZStack {
             Group {
