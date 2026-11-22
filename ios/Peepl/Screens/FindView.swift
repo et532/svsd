@@ -7,6 +7,7 @@ struct FindView: View {
     @Environment(Nav.self) private var nav
     @Environment(\.modelContext) private var context
     @Query private var people: [Person]
+    @Environment(\.accessibilityReduceMotion) private var reduce
 
     @State private var pending: String?
     @State private var asked: Asked?
@@ -34,14 +35,12 @@ struct FindView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     if let pending {
-                        title(pending)
-                        Thinking()
+                        Group { title(pending); Thinking() }.transition(.opacity)
                     } else if let asked {
-                        title(asked.text)
-                        answer(asked.result)
+                        Group { title(asked.text); answer(asked.result) }.transition(.opacity)
                     } else {
-                        title("Search for someone by…")
-                        ForEach(Self.ways, id: \.1) { way in
+                        Group { title("Search for someone by…")
+                        ForEach(Array(Self.ways.enumerated()), id: \.element.1) { i, way in
                             Button { ask(way.2, query: way.3) } label: {
                                 HStack(spacing: 14) {
                                     Image(systemName: way.0).font(Theme.font(20)).foregroundStyle(Theme.ink).frame(width: 28)
@@ -52,8 +51,8 @@ struct FindView: View {
                                     Spacer()
                                 }
                                 .padding(16).glass(20)
-                            }.buttonStyle(PressStyle(scale: 0.98))
-                        }
+                            }.buttonStyle(PressStyle(scale: 0.98)).appear(i)
+                        } }.transition(.opacity)
                     }
                 }
                 .padding(.horizontal, 20).padding(.top, 80).padding(.bottom, 24)
@@ -95,20 +94,20 @@ struct FindView: View {
             ForEach(a.groups ?? [MatchGroup(label: "", matches: a.matches)], id: \.label) { g in
                 group(g.label, Array(g.matches.prefix(6)))
             }
-            if a.matches.count > 6 { note("and \(a.matches.count - 6) more") }
+            if a.matches.count > 6 { note("and \(a.matches.count - 6) more").appear(min(a.matches.count, 6)) }
             wide("Show \(a.matches.count == 1 ? "them" : "all \(a.matches.count)") \(nav.tab == .mindmap ? "on the mindmap" : "in your list")") {
                 nav.showFilter = PeopleFilter(ids: a.matches.map(\.id),
                                               label: a.title.replacingOccurrences(of: #"^\d+ (people|person) · "#, with: "", options: .regularExpression))
                 nav.focus = nil
                 nav.pop()
-            }
+            }.appear(min(a.matches.count, 6) + 1)
         }
     }
 
     @ViewBuilder private func group(_ label: String, _ matches: [Match]) -> some View {
         if !label.isEmpty { Text(label.uppercased()).font(Theme.font(12, .medium)).tracking(0.6).foregroundStyle(Theme.inkMuted) }
-        ForEach(matches) { m in
-            FindCard(match: m, open: { nav.push(.profile(m.id)) }, sent: sent)
+        ForEach(Array(matches.enumerated()), id: \.element.id) { i, m in
+            FindCard(match: m, open: { nav.push(.profile(m.id)) }, sent: sent).appear(i)
         }
     }
 
@@ -117,7 +116,7 @@ struct FindView: View {
         seq += 1
         let mine = seq, asking = query ?? text
         let infos = people.map(PersonInfo.init)
-        asked = nil; pending = text
+        withAnimation(Motion.animation(Motion.smooth, reduce: reduce)) { asked = nil; pending = text }
         Task {
             // Off the main thread: the model load, the embedding and the ranking.
             async let found = Task.detached { () -> AskResult in
@@ -130,7 +129,7 @@ struct FindView: View {
             try? await Task.sleep(for: Self.minThink) // a very quick answer is held for a beat so it doesn't flash
             let result = await found
             guard mine == seq else { return }
-            pending = nil; asked = Asked(text: text, result: result)
+            withAnimation(Motion.animation(Motion.smooth, reduce: reduce)) { pending = nil; asked = Asked(text: text, result: result) }
             // Actions hand off to the right screen after a beat, so you see what's happening
             let go: (() -> Void)? = switch result {
             case .add: { nav.replaceTop(.add(mutualOf: nil)) }
@@ -161,6 +160,10 @@ private struct FindCard: View {
     let sent: (Action) -> Void
     @State private var text: String? // the draft, once opened inline
     @State private var writing = false
+    @State private var copied = 0
+    @State private var showCopied = false
+    @State private var pulse = false
+    @Environment(\.accessibilityReduceMotion) private var reduce
 
     var body: some View {
         let p = match.person
@@ -184,23 +187,39 @@ private struct FindCard: View {
             if let action = match.action {
                 if text == nil {
                     Button {
-                        text = ""; writing = true
-                        Task { text = await AIClient.draft(p, action: action); writing = false }
+                        withAnimation(Motion.animation(Motion.smooth, reduce: reduce)) { text = ""; writing = true }
+                        Task {
+                            let d = await AIClient.draft(p, action: action)
+                            withAnimation(Motion.animation(Motion.smooth, reduce: reduce)) { text = d; writing = false }
+                        }
                     } label: {
                         Text(action.label).font(Theme.font(15, .medium)).foregroundStyle(Theme.ink)
                             .frame(maxWidth: .infinity).frame(height: 40).background(.white, in: .capsule)
                     }.buttonStyle(PressStyle(scale: 0.95))
+                    .transition(.scale(scale: 0.95, anchor: .top).combined(with: .opacity))
                 } else {
-                    TextField("", text: Binding(get: { text ?? "" }, set: { text = $0 }), prompt: Text(writing ? "Writing…" : ""), axis: .vertical)
+                    TextField("", text: Binding(get: { text ?? "" }, set: { text = $0 }), prompt: Text(writing ? "Writing…" : "").foregroundColor(Theme.inkMuted.opacity(pulse ? 1 : 0.4)), axis: .vertical)
                         .font(Theme.font(16)).foregroundStyle(Theme.ink).lineLimit(3...10).disabled(writing)
                         .padding(12).background(.white.opacity(0.8), in: .rect(cornerRadius: 16))
+                        .overlay { if writing && !reduce { Shimmer().opacity(0.35).clipShape(.rect(cornerRadius: 16)).allowsHitTesting(false) } }
+                        .onChange(of: writing) { _, w in
+                            // pulse the prompt only while writing; none under Reduce Motion
+                            if w && !reduce { withAnimation(.easeInOut(duration: 0.8).repeatForever()) { pulse = true } }
+                            else { withAnimation(.default) { pulse = false } }
+                        }
                         .accessibilityLabel("Message")
+                        .transition(.scale(scale: 0.95, anchor: .top).combined(with: .opacity))
                     HStack(spacing: 8) {
-                        Button { UIPasteboard.general.string = text; sent(action) } label: { pill("Copy Text") }.buttonStyle(PressStyle(scale: 0.95))
+                        Button {
+                            UIPasteboard.general.string = text; sent(action); copied += 1
+                            withAnimation(Motion.animation(Motion.snap, reduce: reduce)) { showCopied = true }
+                            Task { try? await Task.sleep(for: .milliseconds(1500)); withAnimation(Motion.animation(Motion.snap, reduce: reduce)) { showCopied = false } }
+                        } label: { pill(showCopied ? "Copied ✓" : "Copy Text").contentTransition(.opacity) }.buttonStyle(PressStyle(scale: 0.95))
                         ShareLink(item: text ?? "") { pill("Share") }.buttonStyle(PressStyle(scale: 0.95))
                             .simultaneousGesture(TapGesture().onEnded { sent(action) })
                     }
                     .disabled(writing || (text ?? "").isEmpty)
+                    .sensoryFeedback(.success, trigger: copied)
                 }
             }
         }
@@ -217,9 +236,12 @@ private struct FindCard: View {
 private struct Thinking: View {
     private static let steps = ["Reading your notes…", "Looking through your people…", "Picking the best matches…"]
     @State private var step = 0
+    @Environment(\.accessibilityReduceMotion) private var reduce
 
     var body: some View {
         Text(Self.steps[step]).font(Theme.font(16)).foregroundStyle(Theme.inkMuted)
+            .id(step).transition(.opacity.combined(with: .offset(y: reduce ? 0 : 6)))
+            .animation(Motion.animation(Motion.snap, reduce: reduce), value: step)
             .task {
                 while step < Self.steps.count - 1 {
                     try? await Task.sleep(for: .milliseconds(530))
@@ -227,8 +249,8 @@ private struct Thinking: View {
                     step += 1
                 }
             }
-        ForEach(0..<2, id: \.self) { _ in
-            Shimmer().frame(height: 120).clipShape(.rect(cornerRadius: 20))
+        ForEach(0..<2, id: \.self) { i in
+            Shimmer().frame(height: 120).clipShape(.rect(cornerRadius: 20)).appear(i)
         }
         .accessibilityHidden(true)
     }
