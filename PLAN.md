@@ -408,11 +408,11 @@ Draft message   -> Foundation Models; fallback: template drafts
 
 | ID | Work | Files (likely) | Notes |
 |---|---|---|---|
-| W1 | **Spike and eval harness** (do first, gates the rest) | `PeeplTests/` new `FoundationModelsEvalTests`, `Logic/LocalAI.swift` | 12.4. Runs on a real eligible iPhone; the Simulator only works if the Mac has Apple Intelligence. |
+| W1 (DONE 2026-11-22: guard enforced in `LocalAI.explain(question:matches:)`; eval is opt-in via `TEST_RUNNER_PEEPL_RUN_EVAL=1`; report `.orchestration/reports/w1b-eval.md`) | **Spike and eval harness** (do first, gates the rest) | `PeeplTests/` new `FoundationModelsEvalTests`, `Logic/LocalAI.swift` | 12.4. Runs on a real eligible iPhone; the Simulator only works if the Mac has Apple Intelligence. |
 | W2 | Query understanding with `@Generable` | `Logic/LocalAI.swift`, `Logic/Query.swift` | Maps onto `Constraints`; rules remain the fallback and the baseline. |
 | W3 | Explain and re-rank top candidates | `Logic/LocalAI.swift`, `Logic/Search.swift` | Replaces `AIClient.rank` as the default. |
 | W4 | Add parse and message drafts on device | `Logic/Capture.swift`, `Logic/LocalAI.swift` | Same validity rules as 12.2. |
-| W5 | Availability, status line, fallback UX | `Screens/SettingsView.swift` | No dead ends: every AI action has a working local result. |
+| W5 (DONE 2026-11-22 as mvp3-d: Settings status line, 138 tests) | Availability, status line, fallback UX | `Screens/SettingsView.swift` | No dead ends: every AI action has a working local result. |
 | W6 (SHIPPED 2026-11-22, 135 tests pass, validator PASS; simulator tests only, Settings UI not seen on screen) | OpenAI opt-in toggle, default off, plain-language disclosure | `Services/AIClient.swift`, `Screens/SettingsView.swift` | Gate every `AIClient` call on the toggle. |
 | W7 (SHIPPED 2026-11-22, thresholds 30/60/120 adopted, no notifications; 5 unit tests; Connections / profile UI compiled but not seen on screen) | **Losing-touch nudge** | `Screens/Shell.swift` / Connections, `Services/Nudges.swift` | Uses `lastContacted` and `closeness`. Default thresholds (proposed): closeness 3 = 30 days, 2 = 60, 1 or unset = 120. Shows a "Reach out" section and a dot on the row; tapping "Talked today" or saving a moment resets it. Optional weekly local notification via `UNUserNotificationCenter` (no server, off until the user agrees). Snooze per person. |
 | W8 (SHIPPED 2026-11-22, 8 BackupTests incl. 500-person restore; share sheet, confirm dialog and file picker NOT verified on a device; launch reminder toast and migration check from 11 F left out) | **Backup as email-able file** | `Services/Backup.swift`, `Screens/SettingsView.swift` | Swap the save-to-Files exporter for a share sheet (Mail, AirDrop, Files); dated filename; Restore asks first and offers **merge** vs replace (today it wipes silently; this is section 11 F2). |
@@ -433,6 +433,8 @@ Draft message   -> Foundation Models; fallback: template drafts
 4. **A/B compare.** Run the same question set through (a) fallback only, (b) fallback + Foundation Models, (c) OpenAI (today's `gpt-4.1-mini` path) and record all three in `.orchestration/reports/`, so the decision to make on-device the default is based on numbers.
 5. **Regression:** the existing 105 unit tests stay green with the model disabled.
 6. **Not testable here:** I have not run Foundation Models on a device. The quality numbers above do not exist yet.
+
+**12.4 result (2026-11-22, Mac Simulator, W1b):** arm a (rules + MiniLM) recall@10 66% on the original 40 and 56% on the 12 held-out. Arm b (plus on-device model, no-match guard in code): original 40 fields 98%, recall 88%, no-match 5/5, invalid 0, p50 2.2 s; held-out 12 (not used for tuning) fields 93%, recall 83%, no-match 3/3, invalid 0, p50 2.1 s. Gate: all marks met except p50 under 2 s on the Mac Simulator (real iPhone not measured), handled by the 12.4 latency rule: Find shows the instant rules result first and upgrades when the model answers. Arm c (OpenAI) skipped, no token. Run the eval with `TEST_RUNNER_PEEPL_RUN_EVAL=1`.
 
 ## 12.5 What changes in earlier sections
 
