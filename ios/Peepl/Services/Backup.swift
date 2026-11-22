@@ -50,14 +50,24 @@ struct BackupFile: Codable {
         return f
     }
 
-    /// Write `Peepl backup YYYY-MM-DD.json` to a temp file, then re-read and validate it before it is shared.
+    /// The temp file `export` writes: `Peepl backup YYYY-MM-DD.json`.
+    static func exportURL(_ now: Date = Date()) -> URL {
+        let day = DateFormatter(); day.locale = Locale(identifier: "en_US_POSIX"); day.dateFormat = "yyyy-MM-dd"
+        return FileManager.default.temporaryDirectory.appendingPathComponent("Peepl backup \(day.string(from: now)).json")
+    }
+
+    /// Write the temp file, then re-read and validate it before it is shared. A file that fails the check is removed.
     static func export(people: [Person]) throws -> URL {
         let file = BackupFile(people: people)
         let enc = JSONEncoder(); enc.outputFormatting = [.prettyPrinted, .sortedKeys]
-        let day = DateFormatter(); day.locale = Locale(identifier: "en_US_POSIX"); day.dateFormat = "yyyy-MM-dd"
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("Peepl backup \(day.string(from: Date())).json")
+        let url = exportURL()
         try enc.encode(file).write(to: url, options: .atomic)
-        guard try read(Data(contentsOf: url)).people.count == people.count else { throw Failure(errorDescription: "The backup didn't check out.") }
+        do {
+            guard try read(Data(contentsOf: url)).people.count == people.count else { throw Failure(errorDescription: "The backup didn't check out.") }
+        } catch {
+            try? FileManager.default.removeItem(at: url)
+            throw error
+        }
         return url
     }
 
