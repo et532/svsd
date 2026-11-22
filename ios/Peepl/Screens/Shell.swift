@@ -26,7 +26,8 @@ struct PeopleFilter: Equatable { var ids: [String]; var label: String }
     private var toastTask: Task<Void, Never>?
 
     func push(_ l: Layer) { if layers.last != l { layers.append(l) } } // a double tap must not stack the same screen twice
-    func pop() { _ = layers.popLast() }
+    /// Resigning in the same transaction as the removal makes the system keyboard slide down with the layer's shrink, not after it.
+    func pop() { UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil); _ = layers.popLast() }
     func replaceTop(_ l: Layer) { if layers.isEmpty { layers.append(l) } else { layers[layers.count - 1] = l } }
     func viewConnections(_ p: Person) { layers = []; tab = .mindmap; focus = (p.id, p.firstName) }
     /// A person is being deleted: nothing may still point at them.
@@ -72,7 +73,7 @@ struct RootView: View {
             }
             .animation(Motion.animation(Motion.smooth, reduce: reduce), value: nav.tab)
             VStack { TopControls(tab: Binding(get: { nav.tab }, set: { nav.focus = nil; nav.tab = $0 })).frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 16); Spacer() }
-            VStack { Spacer(); AskBar() }
+            VStack { Spacer(); AskBar() }.ignoresSafeArea(.keyboard) // stays put under Add / Find instead of riding the keyboard
             }
             // the mindmap's orbs are drawn in its Canvas inside this container, so it must not scale or shift there (an edge would show); Connections' ground is separate
             .scaleEffect(reduce || nav.tab == .mindmap ? 1 : 1 - 0.04 * depth)
