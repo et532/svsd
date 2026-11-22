@@ -201,6 +201,7 @@ enum LocalAI {
         let read = if let parse { await parse(question) } else { await parseQuery(question) }
         guard let c = read else { return nil }
         guard case .people(let b) = await Search.answer(question, constraints: c, people: people, embedder: embedder), b.groups == nil else { return nil }
+        if b.matches.isEmpty, !a.matches.isEmpty { return nil } // never replace a real answer with "no one"
         let order = await explain(question: question, matches: b.matches, model: model)
         let out = reorder(b, order)
         return out == a ? nil : .people(out)

@@ -41,6 +41,22 @@ final class LocalAIUpgradeTests: XCTestCase {
         XCTAssertEqual(b.title, a.title)
     }
 
+    func testEmptyRerunKeepsInstantAndOtherEmptyCases() async {
+        guard case .people(let a) = await instant(), !a.matches.isEmpty else { return XCTFail("need matches") }
+        let none = Query.parse(q)
+        // (1) re-run finds nobody but the instant answer had people: keep the instant answer
+        let r1 = await LocalAI.upgrade(question: q, instant: .people(a), people: [], embedder: embedder, parse: { _ in none })
+        XCTAssertNil(r1)
+        // (2) both empty: no upgrade, stays "no one matches"
+        var empty = a; empty.matches = []
+        let r2 = await LocalAI.upgrade(question: q, instant: .people(empty), people: [], embedder: embedder, parse: { _ in none })
+        if case .people(let e)? = r2 { XCTAssertTrue(e.matches.isEmpty) } // still "no one matches"
+        // (3) instant empty, re-run has people: shown
+        let r3 = await LocalAI.upgrade(question: q, instant: .people(empty), people: Self.people, embedder: embedder, parse: { Query.parse($0) })
+        guard case .people(let c)? = r3 else { return XCTFail("expected re-run matches") }
+        XCTAssertFalse(c.matches.isEmpty)
+    }
+
     func testReorderDropsUnknownIds() {
         let a = PeopleAnswer(title: "t", matches: [])
         XCTAssertEqual(LocalAI.reorder(a, [("nobody", "x")]).matches.count, 0)
