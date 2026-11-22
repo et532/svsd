@@ -15,7 +15,7 @@ final class AppAttestTests: XCTestCase {
         cfg.protocolClasses = [StubProtocol.self]
         AIClient.session = URLSession(configuration: cfg)
         AIClient.reset()
-        AIClient.enabled = true
+        Consent.agree(); AIClient.enabled = true
         var n = 0
         AppAttest.override = { n += 1; return "t\(n)" }
         var seen: [String?] = []
