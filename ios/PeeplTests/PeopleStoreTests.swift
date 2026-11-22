@@ -108,4 +108,29 @@ final class PeopleStoreTests: XCTestCase {
         let p = try XCTUnwrap(try ctx.fetch(FetchDescriptor<Person>()).first)
         XCTAssertEqual(p.orderedTodos.map(\.text), ["one", "two"])
     }
+
+    func testPastMeetingSetsFirstMomentDate() throws {
+        let ctx = ModelContext(try makeContainer())
+        let n = "Met Sam Rivera three years ago at a pickleball meetup"
+        let p = PeopleStore.createPerson(Capture.parsePerson(n, people: []), note: n, in: ctx).person
+        let year = Calendar.current.component(.year, from: Date()) - 3
+        XCTAssertEqual(p.moments.first(where: \.firstMeeting)?.date, "\(year)")
+        XCTAssertEqual(p.lastContacted, Capture.today())
+        XCTAssertEqual(MetDate.label(for: p), "Met \(year)")
+    }
+
+    func testLifeStageShowsOnlyWithoutADate() throws {
+        let ctx = ModelContext(try makeContainer())
+        let n = "Met Pat Lowe in college, designer at Kiln"
+        let p = PeopleStore.createPerson(Capture.parsePerson(n, people: []), note: n, in: ctx).person
+        XCTAssertEqual(p.lifeStage, "college")
+        XCTAssertEqual(MetDate.label(for: p), "Met in college")
+        // sample-style person: college life stage but a dated first moment keeps the date
+        p.lastContacted = "2026-10-01"
+        p.moments.first(where: \.firstMeeting)?.date = "2014-09-01"
+        XCTAssertEqual(MetDate.label(for: p), "Met Sep 2014")
+        // plain note: date label
+        let q = make(ctx).person
+        XCTAssertEqual(MetDate.label(for: q), MetDate.label(Capture.today(), lifeStage: nil))
+    }
 }

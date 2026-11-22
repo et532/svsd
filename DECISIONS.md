@@ -73,3 +73,7 @@ Newest at the bottom. Anyone (human or agent) may edit this file. One line each:
 - 2026-11-22 (Vince): Pip's step 5 line is "Misheard a name? Tap it later to fix it."
 - 2026-11-22 (Vince): **iOS Contacts import is out of scope for now**; it is its own flow, not part of onboarding.
 - 2026-11-22 (Vince): **"Yesterday" and "last night" are not saved as today**: they set the previous calendar day (local time; last night after midnight before 5 am too). This morning / today / tonight = today, the day before yesterday = 2 days back, last week = 7 days back (shown by month), last month = month precision.
+
+- 2026-11-22 (Vince): **Life stage shows only when no meeting date is known** ("Met in college" / "high school" / "grad school" / "childhood"); when a date exists the date label shows, so sample people keep their dates. Supersedes the "life stage first" line in `ONBOARDING.md` 6c.
+- 2026-11-22 (Vince): **Importing from iOS Contacts is out of scope** for now.
+- 2026-11-22 (Vince): **Onboarding v5 polish:** step 6 has no empty beat, more room under the header, and Theo's reason explains why SF.

@@ -26,11 +26,7 @@ struct ProfileView: View {
     private var moments: [Moment] { person.moments.sorted { $0.date > $1.date } }
     private var mutuals: [Person] { person.knows.compactMap { id in everyone.first { $0.id == id } } }
     private var metDate: String {
-        let iso = person.moments.first(where: \.firstMeeting)?.date ?? person.lastContacted
-        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; f.locale = Locale(identifier: "en_US_POSIX")
-        guard let d = f.date(from: String(iso.prefix(10))) else { return "" }
-        f.dateFormat = "MMM yyyy"
-        return "Met " + f.string(from: d)
+        MetDate.label(for: person)
     }
 
     var body: some View {

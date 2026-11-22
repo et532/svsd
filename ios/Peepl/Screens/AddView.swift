@@ -200,7 +200,7 @@ struct ResultCard: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(person.name).font(Theme.font(20, .medium)).foregroundStyle(.white)
                 if !sub.isEmpty { Text(sub).font(Theme.font(13)).foregroundStyle(.white.opacity(0.85)) }
-                Text("Met \(monthYear(Capture.today()))").font(Theme.font(13)).foregroundStyle(Color(hex: "cccccc"))
+                Text(MetDate.label(for: person)).font(Theme.font(13)).foregroundStyle(Color(hex: "cccccc"))
             }
             Spacer()
             Image(systemName: "chevron.right").foregroundStyle(.white)
