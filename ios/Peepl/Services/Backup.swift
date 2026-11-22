@@ -178,6 +178,9 @@ enum BackupReminder {
         store.set(iso.string(from: now), forKey: "lastBackupAt"); store.set(count, forKey: "backupBaselineCount")
     }
 
+    /// Count `count` people as already known (sample people just loaded), without calling it a backup.
+    static func resetBaseline(count: Int) { store.set(count, forKey: "backupBaselineCount") }
+
     /// Call once at launch after the list has loaded. A fresh install counts from its first launch, so it isn't nagged at once.
     static func shouldRemind(count: Int, now: Date = Date()) -> Bool {
         if store.object(forKey: "backupBaselineCount") == nil { store.set(count, forKey: "backupBaselineCount") }

@@ -70,6 +70,7 @@ enum Seed {
     }
 
     /// Inserts the diverse-200 + Jordan Lee samples in any build; does nothing if anyone exists.
+    /// The backup reminder's baseline moves to the new count, so the samples don't read as 200 people added since the last backup.
     static func loadSamples(_ context: ModelContext) {
         guard ((try? context.fetchCount(FetchDescriptor<Person>())) ?? 0) == 0,
               let url = Bundle.main.url(forResource: "seed", withExtension: "json"),
@@ -83,5 +84,6 @@ enum Seed {
             context.insert(p)
         }
         try? context.save()
+        BackupReminder.resetBaseline(count: (try? context.fetchCount(FetchDescriptor<Person>())) ?? 0)
     }
 }
