@@ -4,6 +4,8 @@ import SwiftUI
 struct AskBar: View {
     @Environment(Nav.self) private var nav
     @Environment(\.accessibilityReduceMotion) private var reduce
+    // Add / Find cover the bar; fading it in with the layer's timing means it is already arriving as the reveal shrinks away.
+    private var covered: Bool { nav.layers.contains { if case .profile = $0 { false } else { true } } }
     private var slide: AnyTransition { reduce ? .opacity : .move(edge: .bottom).combined(with: .opacity) }
 
     var body: some View {
@@ -40,6 +42,8 @@ struct AskBar: View {
             LinearGradient(colors: [.clear, Color(hex: "3b2a5e").opacity(0.45)], startPoint: .top, endPoint: .bottom)
                 .frame(height: 170).ignoresSafeArea(edges: .bottom).allowsHitTesting(false)
         }
+        .opacity(covered ? 0 : 1).offset(y: covered && !reduce ? 24 : 0).allowsHitTesting(!covered)
+        .animation(Motion.animation(Motion.layer, reduce: reduce), value: covered)
         .animation(Motion.animation(Motion.snap, reduce: reduce), value: nav.focus?.id)
         .animation(Motion.animation(Motion.snap, reduce: reduce), value: nav.showFilter)
     }
