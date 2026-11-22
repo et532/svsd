@@ -130,6 +130,16 @@ struct FindView: View {
             let result = await found
             guard mine == seq else { return }
             withAnimation(Motion.animation(Motion.smooth, reduce: reduce)) { pending = nil; asked = Asked(text: text, result: result) }
+            // On-device model: swap in its order and wording when (and only if) it answers; the answer above never waits for it.
+            if !AIClient.enabled, LocalAI.isAvailable, case .people = result {
+                Task.detached {
+                    guard let up = await LocalAI.upgrade(question: asking, instant: result, people: infos, embedder: Embedders.current) else { return }
+                    await MainActor.run {
+                        guard mine == seq else { return }
+                        withAnimation(Motion.animation(Motion.smooth, reduce: reduce)) { asked = Asked(text: text, result: up) }
+                    }
+                }
+            }
             // Actions hand off to the right screen after a beat, so you see what's happening
             let go: (() -> Void)? = switch result {
             case .add: { nav.replaceTop(.add(mutualOf: nil)) }
