@@ -167,6 +167,12 @@ enum LocalAI {
         return clip("\(p.profession); lives in \(p.livesNow.city); into \(p.tags.prefix(4).joined(separator: ", ")); \(m.why)", 160)
     }
 
+    /// No-match guard: the model may only reorder and explain what retrieval already counts as a match; anything else is dropped.
+    static func guarded(_ picks: [(id: String, why: String)], matches: [Match]) -> [(id: String, why: String)] {
+        let ok = Set(matches.map(\.id))
+        return picks.filter { ok.contains($0.id) }
+    }
+
     /// Picks, re-ranks and explains up to 10 candidates. Only ids from `candidates` ever come back; nil = use the candidates as they are.
     static func explain(question: String, candidates: [Match], timeout: Double = 8) async -> [(id: String, why: String)]? {
         #if canImport(FoundationModels)
