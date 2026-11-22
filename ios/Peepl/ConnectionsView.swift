@@ -8,6 +8,8 @@ struct ConnectionsView: View {
     @Query(sort: \Person.name) private var allPeople: [Person]
     @State private var exporting = false
     @State private var importing = false
+    @State private var intro = true   // the first-load stagger plays once, not on every scroll or filter change
+    @Environment(\.accessibilityReduceMotion) private var reduce
     private var people: [Person] {
         guard let f = nav.showFilter else { return allPeople }
         let ids = Set(f.ids); return allPeople.filter { ids.contains($0.id) }
@@ -28,18 +30,24 @@ struct ConnectionsView: View {
                         } label: {
                             Image(systemName: "ellipsis").font(Theme.font(18)).foregroundStyle(Theme.ink).frame(width: 44, height: 44).contentShape(.rect)
                         }
+                        .buttonStyle(PressStyle(scale: 0.95))
                         .accessibilityLabel("More")
                     }
                     .padding(.bottom, 12)
-                    if allPeople.isEmpty { EmptyPeople().padding(.top, 120) }
-                    ForEach(people) { p in
-                        Button { nav.push(.profile(p.id)) } label: { Row(person: p) }.buttonStyle(PressStyle(scale: 0.98))
+                    if allPeople.isEmpty { EmptyPeople().padding(.top, 120).transition(.opacity.combined(with: .scale(scale: 0.96))) }
+                    ForEach(Array(people.enumerated()), id: \.element.id) { i, p in
+                        let row = Button { nav.push(.profile(p.id)) } label: { Row(person: p) }.buttonStyle(PressStyle(scale: 0.98))
+                        if intro && i < 10 { row.appear(i) } else { row }
                     }
                 }
+                .animation(Motion.animation(Motion.smooth, reduce: reduce), value: people.map(\.id))
+                .animation(Motion.animation(Motion.smooth, reduce: reduce), value: allPeople.isEmpty)
+                .task { try? await Task.sleep(for: .seconds(1)); intro = false }
                 .padding(.horizontal, 16)
                 .padding(.top, 78)
                 .padding(.bottom, 100)
             }
+            .scrollEdgeEffectStyle(.soft, for: [.top, .bottom])
             .background(AuraBackground(light: true))
             .fileExporter(isPresented: $exporting, document: BackupFile(people: allPeople), contentType: .json, defaultFilename: "Peepl backup") { _ in }
             .fileImporter(isPresented: $importing, allowedContentTypes: [.json]) { result in

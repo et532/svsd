@@ -16,6 +16,8 @@ struct MindmapView: View {
     @State private var selectedId: String?
     @State private var lastMagnification = 1.0
     @State private var pillWidth: CGFloat = 0
+    @State private var limitHits = 0
+    @Environment(\.accessibilityReduceMotion) private var reduce
 
     private func sync() {
         model.sync(ids: people.map(\.id), pairs: MindmapMath.links(people.map { ($0.id, $0.knows) }),
@@ -44,6 +46,9 @@ struct MindmapView: View {
             map
             VStack { HStack { Spacer(); MindmapFilters(selection: $groupBy) }.padding(.horizontal, 16); Spacer() }
         }
+        .sensoryFeedback(.selection, trigger: selectedId)
+        .sensoryFeedback(.selection, trigger: groupBy)
+        .sensoryFeedback(.impact(weight: .light), trigger: limitHits)
         .onChange(of: groupBy) { _, g in model.setGroupBy(g); selectedId = nil; paused = false }
     }
 
@@ -62,12 +67,14 @@ struct MindmapView: View {
                             if let id = selectedId, let person = people.first(where: { $0.id == id }),
                                let at = model.place(id, size: size) {
                                 // top-anchored: 14 pt under the disc, ~52 pt tall pill
-                                MindmapPill(person: person).fixedSize()
+                                MindmapPill(person: person).id(person.id).fixedSize()
                                     .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { pillWidth = $0 }
                                     // keep the whole pill on screen (16 pt margin)
                                     .position(x: min(max(at.p.x, pillWidth / 2 + 16), size.width - pillWidth / 2 - 16), y: at.p.y + at.r + 14 + 26)
+                                    .transition(.opacity)
                             }
                         }
+                        .animation(Motion.animation(Motion.pop, reduce: reduce), value: selectedId)
                     }
                 }
             }
@@ -95,6 +102,7 @@ struct MindmapView: View {
                 let a = CGPoint(x: v.startAnchor.x * size.width, y: v.startAnchor.y * size.height)
                 model.zoom(at: a, factor: v.magnification / lastMagnification, size: size)
                 lastMagnification = v.magnification
+                limitHits = model.limitHits
                 paused = false
             }
             .onEnded { _ in model.settle(size); paused = false }
@@ -119,7 +127,8 @@ struct MindmapView: View {
             var path = Path(); path.move(to: pa); path.addLine(to: pb)
             let solid = !a.group.isEmpty && a.group == b.group && a.group != MindmapMath.other
             let near = sel && m.depth[a.id] != nil && m.depth[b.id] != nil
-            ctx.opacity = (sel && !near) || (focus != nil && (a.group != focus || b.group != focus)) ? 0.08 : 1
+            let dimmed = focus != nil && (a.group != focus || b.group != focus)
+            ctx.opacity = dimmed ? 0.08 : near ? 1 : 1 - 0.92 * m.selFade
             ctx.stroke(path, with: .color(.white), style: StrokeStyle(lineWidth: near ? 3.2 : 1, dash: solid ? [] : [4, 3]))
         }
 
@@ -129,7 +138,7 @@ struct MindmapView: View {
             guard screen.contains(p) else { continue }
             let r = m.radii[n.id] ?? 8
             let d = m.depth[n.id]
-            ctx.opacity = focus != nil && n.group != focus ? 0.08 : !sel ? 1 : d == 0 ? 1 : d == 1 ? 0.55 : 0.08
+            ctx.opacity = m.dots[i].op
             let dr = MindmapMath.disc(r) * k, dotR = MindmapMath.dot(r) * k
             let disc = Path(ellipseIn: CGRect(x: p.x - dr, y: p.y - dr, width: dr * 2, height: dr * 2))
             // 50% white x 60% layer opacity, folded into the colors (a layer per disc costs an offscreen pass each)
@@ -146,7 +155,7 @@ struct MindmapView: View {
         }
         for g in m.ovals.keys {
             guard let r = m.labelRect(g, size: sz) else { continue }
-            ctx.opacity = focus != nil && focus != g ? 0.2 : 1
+            ctx.opacity = (focus != nil && focus != g ? 0.2 : 1) * m.labelOp
             ctx.draw(Text(g).font(Theme.font(13, .medium)).tracking(-0.52).foregroundColor(Theme.ink.opacity(0.7)), at: CGPoint(x: r.midX, y: r.midY))
         }
         ctx.opacity = 1

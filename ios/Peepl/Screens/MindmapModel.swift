@@ -48,9 +48,12 @@ final class MindmapModel {
     private var signature = ""
     private var fitted = false
     // float / parallax (per dot, indexed like graph.nodes) and momentum
-    struct Dot { var ux = 0.0, uy = 0.0, vx = 0.0, vy = 0.0, f = 0.0, d = 0.0 }
+    struct Dot { var ux = 0.0, uy = 0.0, vx = 0.0, vy = 0.0, f = 0.0, d = 0.0, op = 1.0 }
     var dots: [Dot] = []
-    private var floating = false, gliding = false
+    private var floating = false, gliding = false, fading = false
+    private(set) var selFade = 0.0, labelOp = 0.0   // eased 0...1: selection dim on links, group-name visibility
+    private(set) var limitHits = 0                  // pinch pushed past a zoom limit (once per overshoot)
+    private var overLimit = false
     private var glideV = (x: 0.0, y: 0.0)
     private var panV = (x: 0.0, y: 0.0, t: 0.0)
     private var prevView = (x: 0.0, y: 0.0, k: 1.0), prevT = 0.0
@@ -86,7 +89,7 @@ final class MindmapModel {
         dots = graph.nodes.map { let r = radii[$0.id] ?? 12; return Dot(f: MindmapMath.floatOf($0.id, r: r), d: MindmapMath.depthOf($0.id, r: r)) }
     }
 
-    var settled: Bool { graph.alpha <= 0.01 && fitted && anim == nil && !gliding && !floating && !blending }
+    var settled: Bool { graph.alpha <= 0.01 && fitted && anim == nil && !gliding && !floating && !blending && !fading }
 
     func frame(now: TimeInterval, size: CGSize) {
         let dt = prevT > 0 ? min(0.05, now - prevT) : 0
@@ -106,6 +109,7 @@ final class MindmapModel {
         }
         if gliding { glide(dt, size) }
         stepFloat(dt)
+        stepFade(dt)
         lastSize = size
         stepOrbs(now: now, size: size)
         guard meter else { return }
@@ -157,7 +161,8 @@ final class MindmapModel {
 
     private func stepOrbs(now: TimeInterval, size: CGSize) {
         let w = size.width, h = size.height
-        ovals = groupBy == .none ? [:] : MindmapMath.groupOvals(graph.nodes, radii: radii)
+        // ungrouped: keep the old names until they have faded out
+        if groupBy != .none { ovals = MindmapMath.groupOvals(graph.nodes, radii: radii) } else if labelOp <= 0 { ovals = [:] }
         if blendDur > 0 && blendStart == nil { blendStart = now }
         let t = blendDur > 0 ? min(1, (now - (blendStart ?? now)) / blendDur) : 1
         blending = t < 1
@@ -170,6 +175,25 @@ final class MindmapModel {
             }
             orbCur[i] = t < 1 && i < orbFrom.count ? Self.mix(orbFrom[i], target, Self.ease(t)) : target
         }
+    }
+
+    /// Ease each dot's opacity (selection / isolated group dim, ~0.25 s), the link dim and the group names; instant under Reduce Motion.
+    private func stepFade(_ dt: Double) {
+        let a = reduceMotion ? 1 : 1 - exp(-dt / 0.08)
+        var busy = false
+        for i in dots.indices {
+            let n = graph.nodes[i], d = depth[n.id]
+            let t = focus != nil && n.group != focus ? 0.08 : selected == nil ? 1 : d == 0 ? 1 : d == 1 ? 0.55 : 0.08
+            dots[i].op += (t - dots[i].op) * a
+            if abs(t - dots[i].op) < 0.005 { dots[i].op = t } else { busy = true }
+        }
+        let ts = selected == nil ? 0.0 : 1.0
+        selFade += (ts - selFade) * a
+        if abs(ts - selFade) < 0.005 { selFade = ts } else { busy = true }
+        let tl = groupBy == .none ? 0.0 : 1.0
+        labelOp = reduceMotion ? tl : labelOp + max(-1, min(1, tl - labelOp)) * min(1, dt / 0.25)
+        if abs(tl - labelOp) < 0.01 { labelOp = tl } else { busy = true }
+        fading = busy
     }
 
     /// A group's name is drawn at its oval's center; this is the same box for drawing and hit testing.
@@ -283,7 +307,9 @@ final class MindmapModel {
     func zoom(at p: CGPoint, factor: Double, size: CGSize) {
         var f = factor
         let lo = MindmapMath.minK(fitK: fitK), hi = MindmapMath.maxK
-        if (k <= lo && f < 1) || (k >= hi && f > 1) { f = pow(f, 0.3) }
+        let over = (k <= lo && f < 1) || (k >= hi && f > 1)
+        if over { f = pow(f, 0.3); if !overLimit { limitHits += 1 } }
+        overLimit = over
         let nk = min(hi * 1.25, max(lo * 0.7, k * f))
         let px = p.x - size.width / 2, py = p.y - size.height / 2
         x = px - (px - x) / k * nk
@@ -366,5 +392,5 @@ final class MindmapModel {
         return .some(id)
     }
 
-    func pinchBegan() { pinched = true; if let g = grab { graph.nodes[g].pinned = false; grab = nil } }
+    func pinchBegan() { pinched = true; overLimit = false; if let g = grab { graph.nodes[g].pinned = false; grab = nil } }
 }

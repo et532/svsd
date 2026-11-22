@@ -4,6 +4,8 @@ import SwiftUI
 struct MindmapPill: View {
     let person: Person
     @Environment(Nav.self) private var nav
+    @Environment(\.accessibilityReduceMotion) private var reduce
+    @State private var shown = false
 
     var body: some View {
         let sub = [person.profession, person.livesNow.city].filter { !$0.isEmpty && $0 != "Unknown" }.joined(separator: " · ")
@@ -21,6 +23,9 @@ struct MindmapPill: View {
             .pastel(in: Capsule())
         }
         .buttonStyle(PressStyle(scale: 0.96))
+        .scaleEffect(shown || reduce ? 1 : 0.92, anchor: .top)
+        .opacity(shown ? 1 : 0)
+        .onAppear { withAnimation(Motion.animation(Motion.pop, reduce: reduce)) { shown = true } }
         .accessibilityLabel("View \(person.name)")
     }
 }
