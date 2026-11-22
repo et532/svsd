@@ -8,9 +8,9 @@
 - On-device model for Find/Add/drafts: LocalAI.swift:10-18 (availability), AddView.swift:158,162 (LocalAI.parseNote when OpenAI off), FindView.swift:134 (LocalAI.upgrade), LocalAI.swift:338-346 (draft chain).
 - OpenAI switch off by default: AIClient.swift:10-15, SettingsView.swift:35, :63.
 - Only while on: AIClient.swift:25, :48, :95, :103, :134 (all guard `enabled`).
-- Add notes sent: AIClient.swift:48 ("text").
-- Find: up to 12 candidates; facts = job, lives, from, met, tags, story (240 chars), 2 recent moments, no id or name: AIClient.swift:88-91, :106-109. The question text is sent too (:109).
-- Draft: AIClient.swift:135-136 sends the person's FIRST NAME plus the same facts and a goal. The page says "requests to draft a message" without naming this; see questions.
+- Add (parse) payload is only {"text": note}: AIClient.swift:48.
+- Find (rank) payload: query + up to 12 candidates {i, job, lives, from, met, tags, story (240), recent (2 x 120)}, no id or name field: AIClient.swift:88-91, :106-109.
+- Draft payload: name (first name only), job, lives, from, met, tags, story (240), recent (2 x 120), kind, goal; a Find-made goal includes the question and why: AIClient.swift:122-123, :135-136. All listed on the page.
 - Via Peepl's server: AIClient.swift:20, :25.
 - Server rate limit per IP: server/ai.ts:66-80, :101, :206, :230 (in memory).
 - Server code does not log notes: no console/log calls in server/ai.ts, server/appAttest.ts, api/ai/*.ts. Vercel platform logs are not covered by code and are not claimed.
@@ -19,5 +19,3 @@
 - Delete the app to delete data: standard iOS behaviour, not verifiable in code.
 - vercel.json has no cleanUrls or rewrites, so the URL is /privacy.html; /privacy is not guaranteed. `npm run build` put privacy.html in dist/ (dist removed afterward).
 
-## Disagreements with the brief
-- Brief says the switch has "a consent step". No consent dialog exists on this branch (grep for consent: none in Swift). The page says "while it is on" and does not claim a consent step.
