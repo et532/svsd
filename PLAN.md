@@ -470,3 +470,12 @@ Draft message   -> Foundation Models; fallback: template drafts
 **rel2 (2026-11-22, Simulator tests only):** 11 D1 privacy page DRAFTED at `public/privacy.html` (served at /privacy.html once deployed; NOT deployed; has `[VINCE: support email]` and `[VINCE: confirm OpenAI data-use wording]` placeholders). 11 D2 consent sheet done locally (the switch needs consent at the current `consentVersion`; no request of any kind, App Attest included, without it; a server-side consent gate still needs accounts). 11 D4 privacy manifest verified (OtherUserContent, not linked, no tracking, UserDefaults CA92.1; `CACurrentMediaTime` is not on Apple's required-reason list, so no declaration). Accepted gaps: the consent sheet omits the message kind / goal, the IP address and App Attest (the policy page covers them); the Settings toggle flow and sheet visuals are untested in the UI.
 
 **11 D1 update (2026-11-22):** privacy page placeholders filled (support email, OpenAI policy pointer sentence); still not deployed.
+
+## 13. Onboarding
+
+Spec: `ONBOARDING.md`. iOS only, no account, skippable.
+
+- [x] **O1 Spec** written and validated (2026-11-22).
+- [ ] **O2 open-design mockups** of the 7 screens / states in the spec's Mockup brief; Vince approves.
+- [ ] **O3 SwiftUI build**, sequential: T1 flow shell + static screens + gate + RootView hook; T2 Try it step + mic primer; T3 in-app tips + Settings replay + UI / unit tests.
+- [ ] **O4 Verify + docs:** run all tests with the skip flag, check Dynamic Type / VoiceOver / Reduce Motion, update `CLAUDE.md`, `PLAN.md`, `DECISIONS.md`.
