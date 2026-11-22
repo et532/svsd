@@ -15,6 +15,8 @@ Platform: **iOS 26+, iPhone only, portrait**, Xcode 27.2, SwiftUI + SwiftData, n
 
 Milestones M0 and M1 are done. M1 added the test target (24 tests), `Logic/` capture parsing, `Services/` AI client, tab shell, profile and Add + Composer. Open M1 items: the Add screen echoed the typed note twice in a manager screenshot (probably simulator text injection, unconfirmed); the "Which Jordan" picker and profile "Add a moment" were covered by tests only, not driven in the UI. Nothing is committed. Next: M2 / M3 / M4.
 
+Animation plan (`ios/ANIMATION_PLAN.md`): M1 Foundation done 2026-11-22 (`Motion.swift`, shared `Components/Shimmer.swift`; validator PASS, simulator-SDK build only). Next: apply `PressStyle` and the P0 items.
+
 | Built | Where |
 |---|---|
 | XcodeGen project (`ios/project.yml`), bundle id `com.vincelin.peepl` | `ios/` |
@@ -160,3 +162,7 @@ Items 4 and 5 are product-minor; Fable may decide and log them if the human is u
 ## 10. Definition of done (whole migration)
 
 All screens from the web app exist natively; typed and voice capture work; Find returns correct, explained results; mindmap is smooth at 200 people on a real iPhone; data survives relaunch and can be exported; the AI endpoint authenticates the app; the Supabase hole is closed; privacy policy and labels are in place; a TestFlight build installs on the human's phone.
+
+### Animation plan (ios/ANIMATION_PLAN.md)
+- Foundation (Motion.swift, Shimmer) merged. Animation M2 (PressStyle on every interactive button, 35 sites) merged 2026-11-21, validator PASS, generic simulator build OK. Next: later animation milestones.
+- Animation M3 (shell, Add + Composer, Find, Profile, Connections + Mindmap) merged 2026-11-21, validators PASS (Profile after a Reduce Motion fix), generic simulator builds OK, nothing run on a device. Left for M4: depth effect and swipe-follow (2.1), shrink-into-button dismiss (2.4), PastelAura (6.6/7.9/5.9), hero avatar match (5.1).
