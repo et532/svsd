@@ -40,6 +40,14 @@ struct AddView: View {
     private enum Phase { case idle, choosing([Person]), creating(String), done(Person), doneMany([Person]) }
     @State private var phase = Phase.idle
     @State private var note = ""
+    @Namespace private var ns
+    @Environment(\.accessibilityReduceMotion) private var reduce
+
+    /// `Phase` carries values and is not Equatable, so animations key on this.
+    private var phaseKey: Int {
+        switch phase { case .idle: 0; case .choosing: 1; case .creating: 2; case .done: 3; case .doneMany: 4 }
+    }
+    private var enter: AnyTransition { reduce ? .opacity : .opacity.combined(with: .offset(y: 12)) }
 
     private var heading: String {
         if let id = mutualOf, let p = people.first(where: { $0.id == id }) { return "Who does \(p.firstName) know?" }
@@ -53,43 +61,51 @@ struct AddView: View {
                 VStack(alignment: .leading, spacing: 16) {
                     switch phase {
                     case .idle:
-                        title(heading).padding(.top, 60) // Figma 2.2b: the heading sits a third of the way down
+                        title(heading).padding(.top, 60).transition(enter) // Figma 2.2b: the heading sits a third of the way down
                     case .choosing(let c):
                         bubble
                         title("Which \(c[0].firstName) did you catch up with?")
-                        ForEach(c) { p in
+                        ForEach(Array(c.enumerated()), id: \.element.id) { i, p in
                             Button { saveMoment(p) } label: { candidateRow(p) }.buttonStyle(PressStyle(scale: 0.98))
+                                .modifier(Arrive(i, step: 0.05))
                         }
                         Button { startNew() } label: {
                             Text("Neither, add a new profile").font(Theme.font(15, .medium)).foregroundStyle(.white)
                                 .padding(.horizontal, 18).padding(.vertical, 12).background(Theme.night, in: .capsule)
-                        }.buttonStyle(PressStyle(scale: 0.96))
+                        }.buttonStyle(PressStyle(scale: 0.96)).modifier(Arrive(c.count, step: 0.05))
                     case .creating:
                         bubble
                         let notes = mutualOf == nil ? Capture.splitPeople(note) : []
                         if notes.count > 1 {
                             title("Creating \(notes.count) new profiles for \(AddMany.list(notes.map(\.name)))…")
-                            ForEach(notes, id: \.name) { _ in Shimmer().frame(height: 96).clipShape(.rect(cornerRadius: 24)) }
+                            ForEach(notes, id: \.name) { _ in
+                                Shimmer().frame(height: 96).clipShape(.rect(cornerRadius: 24)).transition(enter)
+                            }
                         } else {
                             title("Creating a new profile for \(Capture.parsePerson(note, people: people).name ?? "them")…")
                             Shimmer().frame(height: 96).clipShape(.rect(cornerRadius: 24))
+                                .matchedGeometryEffect(id: "result", in: ns).transition(enter)
                         }
                     case .done(let p):
                         bubble
                         Button { nav.replaceTop(.profile(p.id)) } label: { ResultCard(person: p) }.buttonStyle(PressStyle(scale: 0.98))
+                            .modifier(Arrive(0, scale: 0.96, spring: true)).matchedGeometryEffect(id: "result", in: ns)
                     case .doneMany(let ps):
                         bubble
-                        ForEach(ps) { p in
+                        ForEach(Array(ps.enumerated()), id: \.element.id) { i, p in
                             Button { nav.replaceTop(.profile(p.id)) } label: { ResultCard(person: p) }.buttonStyle(PressStyle(scale: 0.98))
+                                .modifier(Arrive(i, step: 0.08, scale: 0.96, spring: true))
                         }
                         Text("\(AddMany.list(ps.map(\.firstName))) were met together, so they're linked as mutuals.")
-                            .font(Theme.font(13)).foregroundStyle(Theme.inkMuted)
+                            .font(Theme.font(13)).foregroundStyle(Theme.inkMuted).modifier(Arrive(ps.count, step: 0.08))
                     }
                 }
                 .padding(.horizontal, 20).padding(.top, 80).padding(.bottom, 24)
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .animation(Motion.animation(Motion.smooth, reduce: reduce), value: phaseKey)
             }
         }
+        .sensoryFeedback(.success, trigger: phaseKey) { _, new in new >= 3 } // the result card landed
         .safeAreaInset(edge: .bottom) {
             Composer(placeholder: "Who did you meet?", autofocus: true, onSend: send, people: people).padding(.horizontal, 16).padding(.bottom, 8)
         }
@@ -97,11 +113,13 @@ struct AddView: View {
 
     private func title(_ s: String) -> some View {
         Text(s).font(Theme.font(28, .light)).tracking(-1.1).foregroundStyle(Theme.ink)
+            .contentTransition(.opacity).animation(Motion.animation(Motion.smooth, reduce: reduce), value: s)
     }
 
     private var bubble: some View {
         Text(note).font(Theme.font(16)).foregroundStyle(Theme.ink).padding(14)
             .background(.white.opacity(0.7), in: .rect(cornerRadius: 20)).frame(maxWidth: .infinity, alignment: .trailing)
+            .transition(reduce ? .opacity : .move(edge: .bottom).combined(with: .scale(scale: 0.9, anchor: .bottomTrailing)).combined(with: .opacity))
     }
 
     private func candidateRow(_ p: Person) -> some View {
@@ -154,6 +172,21 @@ private func monthYear(_ iso: String) -> String {
     let p = iso.split(separator: "-")
     guard p.count >= 2, let m = Int(p[1]), (1...12).contains(m) else { return iso }
     return "\(Calendar.current.shortMonthSymbols[m - 1]) \(p[0])"
+}
+
+/// Entrance for one item of a stagger; shows at once under Reduce Motion.
+private struct Arrive: ViewModifier {
+    let index: Int, step: Double, scale: CGFloat, spring: Bool
+    @State private var shown = false
+    @Environment(\.accessibilityReduceMotion) private var reduce
+    init(_ i: Int, step: Double = 0.05, scale: CGFloat = 1, spring: Bool = false) { index = i; self.step = step; self.scale = scale; self.spring = spring }
+    func body(content: Content) -> some View {
+        content
+            .opacity(shown || reduce ? 1 : 0)
+            .scaleEffect(shown || reduce ? 1 : scale)
+            .offset(y: shown || reduce || scale != 1 ? 0 : 12)
+            .onAppear { withAnimation((spring ? Motion.pop : Motion.smooth).delay(Double(index) * step)) { shown = true } }
+    }
 }
 
 private struct ResultCard: View {
