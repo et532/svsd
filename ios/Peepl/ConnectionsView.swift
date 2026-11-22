@@ -33,7 +33,7 @@ struct ConnectionsView: View {
                     .padding(.bottom, 12)
                     if allPeople.isEmpty { EmptyPeople().padding(.top, 120) }
                     ForEach(people) { p in
-                        Button { nav.push(.profile(p.id)) } label: { Row(person: p) }.buttonStyle(.plain)
+                        Button { nav.push(.profile(p.id)) } label: { Row(person: p) }.buttonStyle(PressStyle(scale: 0.98))
                     }
                 }
                 .padding(.horizontal, 16)
@@ -85,11 +85,11 @@ struct EmptyPeople: View {
                 Text("Add someone").font(Theme.font(15, .medium)).foregroundStyle(.white)
                     .padding(.horizontal, 18).frame(height: 44).background(Theme.night, in: .capsule)
             }
-            .buttonStyle(.plain).padding(.top, 6)
+            .buttonStyle(PressStyle(scale: 0.95)).padding(.top, 6)
             Button { Seed.loadSamples(context) } label: {
                 Text("Try with sample people").font(Theme.font(14)).foregroundStyle(Theme.inkMuted)
             }
-            .buttonStyle(.plain).padding(.top, 4)
+            .buttonStyle(PressStyle(scale: 0.95)).padding(.top, 4)
         }
         .frame(maxWidth: .infinity)
     }

@@ -168,7 +168,7 @@ struct ProfileView: View {
                 .frame(width: 44, height: 44).contentShape(.rect)
                 .background { Circle().fill(Color(hex: "faf7ff").opacity(0.94)).opacity(glass) }
         }
-        .buttonStyle(.plain).accessibilityLabel(label).accessibilityIdentifier(id ?? label)
+        .buttonStyle(PressStyle(scale: 0.92)).accessibilityLabel(label).accessibilityIdentifier(id ?? label)
     }
 
     private func chip(_ t: String, ghost: Bool = false) -> some View {
@@ -187,13 +187,13 @@ struct ProfileView: View {
                     InlineField(placeholder: "New tag", size: 12, onDone: addTag).frame(width: 110)
                         .padding(.horizontal, 10).padding(.vertical, 5).overlay(Capsule().stroke(Theme.ink, lineWidth: 1))
                 } else {
-                    Button { addingTag = true } label: { chip("+ tag", ghost: true) }.buttonStyle(.plain).accessibilityLabel("Add tag")
+                    Button { addingTag = true } label: { chip("+ tag", ghost: true) }.buttonStyle(PressStyle(scale: 0.94)).accessibilityLabel("Add tag")
                 }
             }
             if addingTag, !tagIdeas.isEmpty {
                 FlowLayout(spacing: 6) {
                     ForEach(tagIdeas, id: \.self) { t in
-                        Button { addTag(t) } label: { chip(t, ghost: true) }.buttonStyle(.plain)
+                        Button { addTag(t) } label: { chip(t, ghost: true) }.buttonStyle(PressStyle(scale: 0.94))
                     }
                 }
             }
@@ -212,7 +212,7 @@ struct ProfileView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .opacity(t.done ? 0.45 : 1).padding(.horizontal, 16).padding(.vertical, 14).contentShape(.rect)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(PressStyle(scale: 0.99))
                     .accessibilityLabel(t.text).accessibilityValue(t.done ? "Done" : "To do")
                     .sensoryFeedback(.selection, trigger: t.done)
                     Divider().padding(.leading, 16)
@@ -228,7 +228,7 @@ struct ProfileView: View {
                         }
                         .foregroundStyle(Theme.inkMuted).padding(16).contentShape(.rect)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(PressStyle(scale: 0.95))
                 }
             }
             .glass(16)
@@ -260,7 +260,7 @@ struct ProfileView: View {
                 header("Mutuals")
                 Spacer()
                 Button("View connections") { nav.viewConnections(person) }
-                    .font(Theme.font(13, .medium)).foregroundStyle(Theme.inkMuted).buttonStyle(.plain)
+                    .font(Theme.font(13, .medium)).foregroundStyle(Theme.inkMuted).buttonStyle(PressStyle(scale: 0.95))
             }
             ScrollView(.horizontal) {
                 HStack(alignment: .top, spacing: 16) {
@@ -272,7 +272,7 @@ struct ProfileView: View {
                         }
                         .contentShape(.rect)
                     }
-                    .buttonStyle(.plain).accessibilityLabel("Add mutual")
+                    .buttonStyle(PressStyle(scale: 0.92)).accessibilityLabel("Add mutual")
                     ForEach(mutuals) { m in
                         Button { nav.push(.profile(m.id)) } label: {
                             VStack(spacing: 4) {
@@ -283,7 +283,7 @@ struct ProfileView: View {
                                 }
                             }
                         }
-                        .buttonStyle(.plain).accessibilityLabel(m.name)
+                        .buttonStyle(PressStyle(scale: 0.92)).accessibilityLabel(m.name)
                     }
                 }
                 .padding(.vertical, 2)
@@ -310,7 +310,7 @@ struct ProfileView: View {
                         }
                         .contentShape(.rect)
                     }
-                    .buttonStyle(.plain).accessibilityValue(open ? "Open" : "Closed")
+                    .buttonStyle(PressStyle(scale: 0.98)).accessibilityValue(open ? "Open" : "Closed")
                     if open {
                         if let text = m.text, text != m.title {
                             Text(text).font(Theme.font(14)).foregroundStyle(Theme.inkMuted).frame(maxWidth: .infinity, alignment: .leading)
@@ -399,7 +399,7 @@ private struct VoiceNote: View {
                         Image(systemName: playing ? "pause.fill" : "play.fill").font(Theme.font(12)).foregroundStyle(.white)
                             .frame(width: 32, height: 32).background(Theme.night, in: .circle)
                     }
-                    .buttonStyle(.plain).accessibilityLabel(playing ? "Pause voice note" : "Play voice note")
+                    .buttonStyle(PressStyle(scale: 0.9)).accessibilityLabel(playing ? "Pause voice note" : "Play voice note")
                     HStack(spacing: 2) {
                         ForEach(Self.wave.indices, id: \.self) { i in
                             Capsule().fill(i < at ? Theme.ink : Theme.inkMuted.opacity(0.3)).frame(width: 2.5, height: Self.wave[i])

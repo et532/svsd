@@ -58,12 +58,12 @@ struct AddView: View {
                         bubble
                         title("Which \(c[0].firstName) did you catch up with?")
                         ForEach(c) { p in
-                            Button { saveMoment(p) } label: { candidateRow(p) }.buttonStyle(.plain)
+                            Button { saveMoment(p) } label: { candidateRow(p) }.buttonStyle(PressStyle(scale: 0.98))
                         }
                         Button { startNew() } label: {
                             Text("Neither, add a new profile").font(Theme.font(15, .medium)).foregroundStyle(.white)
                                 .padding(.horizontal, 18).padding(.vertical, 12).background(Theme.night, in: .capsule)
-                        }.buttonStyle(.plain)
+                        }.buttonStyle(PressStyle(scale: 0.96))
                     case .creating:
                         bubble
                         let notes = mutualOf == nil ? Capture.splitPeople(note) : []
@@ -76,11 +76,11 @@ struct AddView: View {
                         }
                     case .done(let p):
                         bubble
-                        Button { nav.replaceTop(.profile(p.id)) } label: { ResultCard(person: p) }.buttonStyle(.plain)
+                        Button { nav.replaceTop(.profile(p.id)) } label: { ResultCard(person: p) }.buttonStyle(PressStyle(scale: 0.98))
                     case .doneMany(let ps):
                         bubble
                         ForEach(ps) { p in
-                            Button { nav.replaceTop(.profile(p.id)) } label: { ResultCard(person: p) }.buttonStyle(.plain)
+                            Button { nav.replaceTop(.profile(p.id)) } label: { ResultCard(person: p) }.buttonStyle(PressStyle(scale: 0.98))
                         }
                         Text("\(AddMany.list(ps.map(\.firstName))) were met together, so they're linked as mutuals.")
                             .font(Theme.font(13)).foregroundStyle(Theme.inkMuted)
