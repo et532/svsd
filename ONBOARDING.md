@@ -161,7 +161,48 @@ Find cards keep the tuple shape in `FindView.swift` (icon, label, shown text, qu
 
 ## 4. Motion, haptics, accessibility
 
-- Motion source of truth: the motion research note `/private/tmp/claude-501/-Users-vincelin-Documents-Peepl/7b8d9791-c11e-4b81-b7ec-c09430351096/scratchpad/research/motion.md`. It did NOT exist when this spec was written (checked 2026-11-22), so the values below are interim. When the note exists, it wins; builders read it first and update `Motion.swift` tokens, not call sites.
+- Motion source of truth: the "Peepl motion spec" below (copied from the motion research note, 2026-11-22, so the repo does not depend on a temp file). It wins over the interim rules that follow; where they differ, use the table and update `Motion.swift` tokens, not call sites.
+
+### Peepl motion spec
+
+House tokens:
+- **Ease-in-out (default for things that move):** `--ease-io: cubic-bezier(0.45,0,0.55,1)` (gentle). For larger moves use `cubic-bezier(0.65,0,0.35,1)`.
+- **Entrance:** M3 emphasized-decelerate `(0.05,0.7,0.1,1)`.
+- **Exit:** emphasized-accelerate `(0.3,0,0.8,0.15)`.
+- **Springs:** use the SwiftUI form. On the web, `--ios-spring` / CSS `linear()` approximates `.smooth`.
+- **Reduce Motion (global):** keep fades, cut translations, scales and loops. Opacity changes finish in 150-200 ms. Haptics stay.
+
+| Element | Animation | Easing / spring (SwiftUI) | Duration | Delay / stagger | Reduce motion |
+|---|---|---|---|---|---|
+| Page transition (step to step) | Outgoing slides x -30% and fades to 0. Incoming slides from +100%. Shared elements (avatar, card) use a matched-geometry hero. | `.smooth(duration: 0.5)`; web `(0.2,0,0,1)` | 500 ms | Incoming content starts 80 ms in | 250 ms crossfade |
+| Act / background change | Aura orbs crossfade colors and drift to new spots. Grain stays put. | `--ease-io`; `.easeInOut(duration: 1.2)` | 1000-1200 ms | Starts with the page transition | Instant color swap, or a 300 ms fade |
+| Text entrance (headline, body) | Per line: opacity 0→1, y +12 pt→0, blur 4→0 (optional). | `(0.05,0.7,0.1,1)`; `.smooth(duration: 0.45)` | 450 ms | 60 ms between lines; body starts 120 ms after headline | Opacity only, 200 ms |
+| Word-by-word reveal (headline accent, transcript) | Each word goes from opacity 0 and y +6 to visible. | `.easeOut(duration: 0.25)` per word | 250 ms per word | 35-50 ms between words (headline). At speech pace about 330 ms per word (≈180 wpm) for the voice demo. | Whole line fades in, 200 ms |
+| Card entrance (example, result cards) | y +24→0, scale 0.97→1, opacity 0→1 | `.snappy(duration: 0.45)` (small bounce) | 450 ms | 70 ms between cards, max 5 cards | Fade, 200 ms |
+| 3D tilted screen: entrance | Phone or screen comes from rotateX 25°, rotateY -20°, z -200, opacity 0 to its rest pose rotateX 10°, rotateY -14°, rotateZ 2°. Perspective 1400 px (SwiftUI `.rotation3DEffect(..., perspective: 0.6)`). Layered cards in front sit at translateZ +40/+80 and move 1.3× faster (parallax). Contact shadow scales 0.8→1 and its opacity goes 0→0.25. | `.smooth(duration: 0.9, extraBounce: 0.05)`; web `(0.2,0,0,1)` | 900 ms | Layers 80 ms apart, back to front | Flat screen at rest pose, 250 ms fade |
+| 3D tilted screen: idle float | translateY ±5 pt, rotateY ±1.5°, rotateX ±1°, shadow breathes ±0.03 alpha | `--ease-io`; `.easeInOut(duration: 3.5).repeatForever(autoreverses: true)` | 7 s loop (3.5 s each way) | Each layer offset by 0.4 s so they don't move in sync | No loop (static) |
+| Auto-typing demo | Characters appear with a blinking caret. Pauses at punctuation. | Linear per character; caret blinks 530 ms on and off | 45 ms per character ±15 ms jitter. Pause 300 ms at `,` and 500 ms at `.` | Starts 400 ms after the screen settles | Full text fades in at once |
+| Voice waveform | 20-28 rounded bars, each height = smoothed amplitude (demo uses a scripted envelope). When idle, a 0.15-amplitude sine "breath". | Each bar eases to its target. `.easeInOut(duration: 0.08)`; idle `.easeInOut(1.2).repeatForever` | 80 ms smoothing; 1.2 s idle loop | 15 ms phase offset per bar (wave travels left to right) | Static mid-height bars plus a pulsing mic dot, opacity only |
+| Name-fix highlight | Outline draws in around the misheard word: opacity 0→1, scale 1.06→1. On fix, old letters crossfade to new ones and the outline flashes a tint, then settles. | In: `(0.2,0,0,1)` 200 ms. Fix: `.snappy(duration: 0.3)` | 200 / 300 ms | Outlines appear 60 ms apart, after the transcript finishes | Outline appears at once, plain text swap |
+| Profile card assembly | Avatar scales 0.6→1. Name, job and city fly from the transcript into the card (`matchedGeometryEffect`). Tags pop in. The card background fills from the avatar's color. | Avatar `.bouncy(duration: 0.5)` (0.3). Fields `.smooth(duration: 0.55)`. Tags `.snappy(0.35)` | 500-550 ms | Avatar at 0, name +120 ms, meta +180, tags 40 ms apart from +260 | Card fades in whole, 250 ms |
+| Chip select | Fill color changes, check icon scales 0→1, chip scales 0.96→1.0 | `.snappy(duration: 0.3)`; color `(0.2,0,0,1)` | 300 ms (color 200 ms) | None | Color change only |
+| Progress bar fill | Width (as `scaleX` from the left) eases to the new step. Leading edge glows. | `--ease-io`; `.easeInOut(duration: 0.6)` | 600 ms | Starts with the page transition | Jumps, or a 150 ms fade |
+| Button press | Press: scale 0.96 and fill darkens 4%. Release: spring back. | Down `(0.2,0,0,1)` 100 ms; up `.spring(duration: 0.35, bounce: 0.2)` | 100 / 350 ms | None; starts on touch down | Darken only, no scale |
+| Ripple-plop on mindmap | 1) Disc scales 0→1.15→1 (rest at 1) with opacity 0→1 in the first 120 ms. 2) A ring at the dot: scale 0.5→2.6, stroke 2→0.5 pt, opacity 0.5→0. A second ring follows. 3) Neighbors within 2 disc radii move outward 6-10 pt (falls off with distance) and spring back. 4) Link lines draw from the dot (trim 0→1). 5) Haptic `.impact(.soft)` on land. | 1) `.bouncy(duration: 0.55, extraBounce: 0.05)` (≈0.35) 2) `(0.2,0,0,1)` 3) `.spring(duration: 0.6, bounce: 0.25)` 4) `--ease-io` | 1) 550 ms 2) 700 ms 3) 600 ms 4) 400 ms | Ring 1 at +60 ms, ring 2 at +180 ms. Neighbor nudge +80 ms, plus 30 ms per 100 pt of distance. Links +200 ms | Dot fades in, 200 ms; one static ring fades out, 300 ms; no nudge |
+| Checklist item tick | Circle fills from the center, checkmark stroke draws (trim), circle scales 1→1.15→1, text gets struck through and dims to 50%. Haptic `.success`. | Fill `(0.2,0,0,1)` 150 ms; stroke `--ease-io` 250 ms; scale `.bouncy(duration: 0.4)`; strike `(0.2,0,0,1)` 250 ms | about 500 ms total | Stroke +100 ms after fill; strike +150 ms | Check appears plus dim, 150 ms fade |
+
+**Number count-up** (for example, "remember 150 people"): `.contentTransition(.numericText())` driven by `.easeOut(duration: 1.0)`. On the web, a rAF tween with `(0.2,0,0,1)` over 800-1200 ms. Under Reduce Motion, show the final number.
+
+**Rules**
+- One hero motion per act.
+- Everything is interruptible: springs pick up from the current velocity.
+- Demos auto-play once, then loop the last 3-4 s, or hold with a "Replay" option.
+- Never block "Continue" on an animation.
+- Plop values come from:
+  - Apple's guidance: bounce ≤ 0.4.
+  - The Material ripple model: a circle expanding from the touch point that fades out (https://m3.material.io/foundations/interaction/states).
+  - Pin-drop and home-screen-icon "settle" behavior, which I observed and is not documented.
+
 - Interim rules: every content piece animates (text, cards, dots, chips, buttons), mostly ease-in-out, premium and effortless: nothing snaps, nothing bounces except the deliberate overshoots (plop, `Motion.pop`). New tokens in `Motion.swift`: `Motion.ease = Animation.timingCurve(0.42, 0, 0.58, 1, duration: 0.4)`, `Motion.easeSlow = ... duration: 0.6`, `Motion.easeFast = ... duration: 0.25`. Existing `Motion.snap` (0.28 s snappy) for toggles and ticks, `Motion.pop` for pop-ins, `Motion.layer` for step slide (forward and back), `.appear(i)` stagger from `Motion.swift` (step 0.04 to 0.06 s, cap 10). Text appears by word or line with 6pt rise and fade; stagger never exceeds 0.2 s per item.
 - Step transitions: forward slides content 24pt and cross-fades (0.5 s); back reverses. The header does not move.
 - Reduce Motion: use `Motion.animation(_, reduce:)`; no orb drift, no 3D tilt loop, no looping or timed demos (show the final frame, cross-fade between), Next shown at once, progress bar jumps.
@@ -351,5 +392,5 @@ Mock these screens and states with the Peepl tokens (Geist, pastel glass, night 
 - Voice caveat in 3.8 (on-device recognition not always available). Decide whether the privacy page and Settings About text should say so.
 - Whether the Welcome orbs should match the pitch deck exactly or the app aura palette.
 - "yesterday" and "last night" currently store today's date per the decision (day-exact, no subtraction). Subtracting one day would be more accurate; say if you want it.
-- Motion tokens are interim until `motion.md` exists (section 4).
+- Motion tokens: the interim ease tokens in section 4 should be reconciled with the motion spec table (house curves `(0.45,0,0.55,1)` / `(0.65,0,0.35,1)`).
 - Seed `lifeStage` values double as display text for `college` and `high-school` (6c); say if sample people should keep showing the dated "Met" line instead.
