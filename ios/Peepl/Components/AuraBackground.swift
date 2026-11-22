@@ -8,7 +8,7 @@ struct AuraBackground: View {
 
     var body: some View {
         let ground = light ? Color(hex: "f4f4f4") : Color(hex: "ededed")
-        TimelineView(.animation(paused: reduceMotion)) { tl in
+        TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion)) { tl in
             Canvas { ctx, size in
                 // grain sits under the orbs, over the ground (web: Texture/Grain)
                 ctx.fill(Path(CGRect(origin: .zero, size: size)), with: .tiledImage(Self.grain, sourceRect: CGRect(x: 0, y: 0, width: 1, height: 1), scale: 1))

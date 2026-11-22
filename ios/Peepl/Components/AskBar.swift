@@ -3,6 +3,8 @@ import SwiftUI
 // Bottom bar: "Ask me about people" glass pill (-> Find) and a round add-person button (-> Add).
 struct AskBar: View {
     @Environment(Nav.self) private var nav
+    @Environment(\.accessibilityReduceMotion) private var reduce
+    private var slide: AnyTransition { reduce ? .opacity : .move(edge: .bottom).combined(with: .opacity) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -16,6 +18,7 @@ struct AskBar: View {
                 }
                 .buttonStyle(PressStyle(scale: 0.95))
                 .accessibilityLabel("Back to \(f.name)")
+                .transition(slide)
             }
             if let f = nav.showFilter {
                 HStack(spacing: 8) {
@@ -28,10 +31,13 @@ struct AskBar: View {
                 }
                 .padding(.horizontal, 16).frame(height: 36)
                 .pastel(in: Capsule())
+                .transition(slide)
             }
             bar
         }
         .padding(.horizontal, 16)
+        .animation(Motion.animation(Motion.snap, reduce: reduce), value: nav.focus?.id)
+        .animation(Motion.animation(Motion.snap, reduce: reduce), value: nav.showFilter)
     }
 
     private var bar: some View {
