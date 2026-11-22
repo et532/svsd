@@ -1,0 +1,3 @@
+# Task m2-press: PressStyle on all interactive buttons
+Branch task/m2-press (worktree .claude/worktrees/m2-press). Goal: every interactive `.buttonStyle(.plain)` in ios/Peepl becomes `.buttonStyle(PressStyle(scale: X))` per ios/ANIMATION_PLAN.md section 1 table (rows/cards 0.98, pills/chips/text 0.95, round 0.92) and per-item values in sections 2-8. No other changes; diff must be mechanical.
+Acceptance: grep -rn "buttonStyle(.plain)" ios/Peepl leaves only justified non-interactive uses; in ios/: xcodegen generate && xcodebuild build -project Peepl.xcodeproj -scheme Peepl -destination 'generic/platform=iOS Simulator' -derivedDataPath build succeeds. Branch must descend from main 9f50fff.

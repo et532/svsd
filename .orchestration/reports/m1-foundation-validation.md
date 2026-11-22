@@ -1,0 +1,4 @@
+# Validation m1-foundation: PASS
+Checks run: xcodegen generate + xcodebuild (generic iOS Simulator) in scratch worktree: BUILD SUCCEEDED. Motion.swift matches plan section 1 verbatim plus the 9.2 helper `animation(_:reduce:)`. Shimmer.swift matches 9.1 verbatim (internal struct). Private Shimmer removed from AddView (its two uses now resolve to the shared one). FindView: `dim` state, its animation and onAppear removed; placeholder cards now `Shimmer().frame(height: 120).clipShape(.rect(cornerRadius: 20))`. PressStyle defined but not applied anywhere. No tests run (none possible, no simulator runtime).
+Files touched vs allowed: ok (Motion.swift, Components/Shimmer.swift, AddView.swift, FindView.swift only).
+Problems: none. Note: AddView's shimmer cards change from opacity pulse to moving highlight, as intended. Not verified visually.
