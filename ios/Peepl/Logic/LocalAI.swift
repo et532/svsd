@@ -192,6 +192,29 @@ enum LocalAI {
         return merge(picks: await modelPicks(q, pool, timeout: timeout), matches: matches)
     }
 
+    /// The instant answer with the model's order and "why" text, or nil (unavailable, special / grouped / non-people answer,
+    /// model failed, nothing changed). Retrieval decides who is in it; the model only reorders and explains.
+    static func upgrade(question: String, instant: AskResult, people: [PersonInfo], embedder: Embedder,
+                        parse: ((String) async -> Constraints?)? = nil,
+                        model: ((String, [Match]) async -> [(n: Int, why: String)]?)? = nil) async -> AskResult? {
+        guard parse != nil || isAvailable, case .people(let a) = instant, a.groups == nil, !Ask.isSpecial(Ask.interpret(question, people: people)) else { return nil }
+        let read = if let parse { await parse(question) } else { await parseQuery(question) }
+        guard let c = read else { return nil }
+        guard case .people(let b) = await Search.answer(question, constraints: c, people: people, embedder: embedder), b.groups == nil else { return nil }
+        if b.matches.isEmpty, !a.matches.isEmpty { return nil } // never replace a real answer with "no one"
+        let order = await explain(question: question, matches: b.matches, model: model)
+        let out = reorder(b, order)
+        return out == a ? nil : .people(out)
+    }
+
+    /// `answer` with its matches in `order`; ids not in the answer are dropped, title / near / note stay retrieval's.
+    static func reorder(_ answer: PeopleAnswer, _ order: [(id: String, why: String)]) -> PeopleAnswer {
+        let byId = Dictionary(answer.matches.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+        var out = answer
+        out.matches = order.compactMap { o in byId[o.id].map { var m = $0; m.why = o.why; return m } }
+        return out
+    }
+
     private static func modelPicks(_ q: String, _ candidates: [Match], timeout: Double) async -> [(n: Int, why: String)]? {
         #if canImport(FoundationModels)
         guard isAvailable else { return nil }

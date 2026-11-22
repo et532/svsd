@@ -226,9 +226,13 @@ enum Search {
 
     /// web rank/search.ts answer(): the rule-based special answers stay as they are; a plain "find people like this" goes through the ranking.
     static func answer(_ query: String, people: [PersonInfo], embedder: Embedder, now: Date = Date()) async -> AskResult {
+        await answer(query, constraints: Query.parse(query), people: people, embedder: embedder, now: now)
+    }
+
+    /// Same as `answer`, but with constraints already read (by the rules or the on-device model).
+    static func answer(_ query: String, constraints c: Constraints, people: [PersonInfo], embedder: Embedder, now: Date = Date()) async -> AskResult {
         let rules = Ask.interpret(query, people: people, now: now)
         if Ask.isSpecial(rules) { return rules }
-        let c = Query.parse(query)
         var hits: [Hit] = []
         if !c.embedText.isEmpty, let q = try? await embedder.embed([c.embedText]).first {
             let shipped = Semantic.shipped()
