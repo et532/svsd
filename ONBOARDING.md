@@ -1,6 +1,6 @@
-# Peepl onboarding spec (O1, v4)
+# Peepl onboarding spec (O1, v5)
 
-Status: v4 (user decisions, 2026-11-22). iOS only, no account, skippable. 8 onboarding steps in 3 acts, then a first-run flow inside the real app. Spec only; builders implement it in SwiftUI after the open-design mockups (O2) are approved. Where a mockup and this file disagree on layout, the mockup wins; copy, keys, gate logic and parsing rules here win. v4 replaces v3 (6 screens plus a "Try it" step): there are no interactive tasks in onboarding any more. The real how-to happens in the real app straight after (section 6).
+Status: v5 (user decisions, 2026-11-22; v5 changes: steps 5 and 6 show the real UI as 3D panels with no phone frame, a three-segment progress bar, past-date rules for yesterday / last night and friends, Contacts import out of scope). iOS only, no account, skippable. 8 onboarding steps in 3 acts, then a first-run flow inside the real app. Spec only; builders implement it in SwiftUI after the open-design mockups (O2) are approved. Where a mockup and this file disagree on layout, the mockup wins; copy, keys, gate logic and parsing rules here win. v4 replaces v3 (6 screens plus a "Try it" step): there are no interactive tasks in onboarding any more. The real how-to happens in the real app straight after (section 6).
 
 ## 1. Principles and research
 
@@ -49,15 +49,15 @@ show onboarding = !defaults.bool("peepl.onboardingDone")
 
 ### 3.0 Common shell (all steps)
 
-- Header, one row, 56pt tall under the status bar: Back (left, chevron plus "Back", `Theme.font(15, .medium)`, hidden on step 1), then the act title centered above the bar, Skip (right, hidden on steps 1 and 8). There is NO "Part 1 of 3" text and NO replay button anywhere.
+- Header, one row, 56pt tall under the status bar: Back (left, chevron plus "Back", `Theme.font(15, .medium)`, hidden on step 1), then the act title centered above the progress bar, Skip (right, hidden on steps 1 and 8). There is NO "Part 1 of 3" text and NO replay button anywhere.
 - Act titles (mono 12, uppercase tracking): steps 1 to 4 "The story", steps 5 and 6 "Learn by doing", steps 7 and 8 "Make it yours". The title cross-fades (0.3 s ease-in-out) only when the act changes.
-- Progress bar: a 4pt capsule track between Back and Skip, as long as the space allows (the whole header width minus the two buttons and 12pt gaps). The fill is `Theme.night` on light steps, white on step 1. Value = step / 8, animated 0.5 s ease-in-out (`Motion.easeSlow`, section 4). Under Reduce Motion it jumps.
+- Progress bar: three 4pt capsule segments, one per act (The story 4 steps, Learn by doing 2, Make it yours 2), with 4pt gaps between them, spanning from Back to Skip (the whole header width minus the two buttons and 12pt gaps; segment widths are proportional to their step counts, 4 : 2 : 2). Each segment fills incrementally per step within its act: step s of an act with n steps fills s / n of that segment (step 1 = 1/4 of the first segment, step 4 = full; steps 5 and 6 = 1/2 and full; steps 7 and 8 = 1/2 and full); earlier segments are full, later ones empty. The fill is `Theme.night` on light steps, white on step 1 (track at 20% of the fill color). The fill animates with the motion spec's "Progress bar fill" row (scaleX from the left, `--ease-io`, 0.6 s, `Motion.easeSlow`, section 4), starting with the page transition; going Back reverses it. Under Reduce Motion it jumps (or a 150 ms fade). The act title stays; there is no "Part x of 3".
 - Next: the primary button (full width, 56pt, `Theme.night` fill, white text, bottom padding safe area plus 16) is not shown for the first 1 second of each step. At 1.0 s it fades and rises 8pt over 0.3 s ease-in-out and becomes tappable. Timer restarts on every step change, on Back, and on replay. Auto demos keep running regardless. With VoiceOver on, or Reduce Motion on, it is shown at once. Primary labels: steps 1 "Get started", 2 to 6 "Next", 7 "Next", 8 "Add your first friend" (replay: "Done").
 - Ground: `PastelAura` / `AuraBackground` on light steps (2 to 8), dark `Theme.night` with three blurred orbs on step 1. Cards use `.glass()` / `Theme.pastel`. No Liquid Glass.
 - Headings `Theme.font(32, .regular)` tracking -0.04em equivalent; narration `Theme.font(17)`; meta `Theme.mono(12)`. All copy has no em dashes.
 - Pip (steps 5 and 6 only, appears from step 5): the guide character, one of the blob characters in `Blobs.all` (`Blobs.swift`, 18 entries; jordan-lee is `mint`, jordan's connector aisha-khan is `indigo`). Rule: Pip is never Jordan's blob and never the blob of the user's first friend. Blobs are a hash of the person id (`Blobs.name(for:)`, with the `assigned` table for sample ids), so Pip is picked at flow start at runtime: `Blobs.all.map(\.name)` minus `Blobs.name(for: "jordan-lee")` minus, if the store has any person (replay only), `Blobs.name(for:)` of the oldest person; take the first remaining in a fixed order (alphabetical), so it is stable and never changes mid flow. Also exclude `indigo` (Aisha) so Pip is not confused with a demo character. First-run onboarding has no first friend yet, so only Jordan's blob (and Aisha's) is excluded there; Pip only exists in onboarding, so a later first friend never clashes. Pip shows at 56pt with the 2pt white ring (`Avatar` style), bottom-left of the narration, with a speech line in `.glass()` bubble.
 - Reuse of real views, by name: `Composer` and `NameNote` (outline style, `Components/NameNote.swift`), `AskBar` (`Components/AskBar.swift`), the `ProfileView` hero (blob base color, 60pt avatar, name 20 medium, "Met ..." line) and its summary card, `MindmapView` disc dots and dashed links (`MindmapModel` / `ForceGraph` positions; drawn in a Canvas, so the demo uses a small sandboxed `MindmapModel` fed with 3 hard-coded ids, not the store), and `ResultCard` (currently `private` in `AddView.swift`; T2 makes it internal). Demos are driven by hard-coded text and fixed timelines. They never read or write the store, never call the AI, never ask for permissions.
-- 3D: steps 2 to 6 put the real-app view on a tilted, layered "device screen" plane: `.rotation3DEffect(.degrees(±8 to 14), axis: (x: 1, y: 0.3, z: 0), perspective: 0.6)`, with a 2 to 3 layer parallax (cards float 12 to 24pt above the plane via `.offset` and a soft shadow). The plane slowly eases between two tilts (6 s ease-in-out loop, 3 degrees apart). Step 1, 7, 8 stay flat. Under Reduce Motion: tilt is fixed, no loop.
+- 3D: steps 2 to 4 put the real-app view on a tilted, layered plane: `.rotation3DEffect(.degrees(±8 to 14), axis: (x: 1, y: 0.3, z: 0), perspective: 0.6)`, with a 2 to 3 layer parallax (cards float 12 to 24pt above the plane via `.offset` and a soft shadow). The plane slowly eases between two tilts (6 s ease-in-out loop, 3 degrees apart). **Steps 5 and 6 have NO phone frame, device bezel or screen plane.** The real app UI pieces (Composer, name outlines, result card, mindmap Canvas, AskBar, `ResultCard`) are shown directly, each made 3D itself: separate panels in layers at different depths (translateZ about 0, +40, +80 as in the motion spec), each with its own `.rotation3DEffect` and perspective 0.6, layered shadows, the motion spec's idle float (7 s loop, layers offset 0.4 s) and parallax (front layers move 1.3x). They are large enough to read: all note and card text at least 15 pt (`Theme.font(15)` or larger; scale the whole panel up rather than shrink the type, and let panels bleed to the screen edges if needed). Step 1, 7, 8 stay flat. Under Reduce Motion: tilt is fixed, no loop.
 
 ### 3.1 Step 1, Cold open (dark)
 - Ground `Theme.night` (#1c1522), three blurred orbs (blur about 90pt): yellow bottom-left, blue top-right, pink bottom-right, slow drift 14 to 25 s loops (off for Reduce Motion).
@@ -105,24 +105,24 @@ show onboarding = !defaults.bool("peepl.onboardingDone")
 - Reuses the real `ProfileView` hero and its summary, to-do and moment row styles as read-only sub-views (T2 extracts them so the demo does not instantiate the whole `ProfileView`).
 - Under Reduce Motion: final frame only.
 
-### 3.5 Step 5, Capture (Pip narrates; auto demo in a 3D app screen)
-- Act title "Learn by doing". Pip enters (0.5 s pop) bottom-left with the line: "Talk about someone you met. I will catch the rest."
-- Demo (total 14.0 s, rests): a tilted real-app screen of the Add flow. It is the real `Composer` (mic state, `Waveform` blue) with the `AddView` heading "Tell me about a new person or moment" and `NameNote` outlines. Plane tilt 10 degrees, cards layered.
-  - 0.0 to 1.0: the screen eases in; mic button highlights (a ring pulse, no tap, no cursor).
+### 3.5 Step 5, Capture (Pip narrates; auto demo of real UI pieces in 3D, no phone frame)
+- Act title "Learn by doing". Pip enters (0.5 s pop) bottom-left with the line: "Misheard a name? Tap it later to fix it."
+- Demo (total 14.0 s, rests): real pieces of the Add flow shown directly, with no phone frame: the `AddView` heading "Tell me about a new person or moment" on the back layer, the real `Composer` (mic state, `Waveform` blue) with `NameNote` outlines as a large middle panel (note text 15 pt or larger), and later the result card as a front layer. Each panel is tilted about 10 degrees in perspective with its own layered shadow, idle float and parallax.
+  - 0.0 to 1.0: the panels ease in back to front (80 ms apart); mic button highlights (a ring pulse, no tap, no cursor).
   - 1.0 to 6.0: the words stream into the Composer as if spoken, at about 3 words per second: "Met Jorden Lee at Demo Day. Founder at Voltcell, battery recycling for e-bikes. From Seattle, lives in Brooklyn now. Climbs Tuesdays. Owe them a hardware intro." The `Waveform` animates; names and the company are outlined faintly as they appear (the real `NameNote` outline style; this is the 2026-10-20 Misheard names design).
   - 6.0 to 6.8: stop (waveform flattens); the note shows as review text.
-  - 6.8 to 9.5: the fix, shown automatically: "Jorden" gets the dark outline and caret, the faded old spelling stays, "Jor" is typed over (letters appear at 0.18 s each) so it reads "Jordan"; a small caption chip from Pip: "I heard Jorden. Tap a name to fix it, once." (no tap is asked).
+  - 6.8 to 9.5: the fix, shown automatically: "Jorden" gets the dark outline and caret, the faded old spelling stays, "Jor" is typed over (letters appear at 0.18 s each) so it reads "Jordan"; a small caption chip near Pip: "I heard Jorden. Tap a name to fix it, once." (no tap is asked; this caption is separate from Pip's line).
   - 9.5 to 12.0: "Creating a new profile for Jordan Lee..." shimmer (`Shimmer.swift`) then the dark blob-colored card slides up (mint, 60pt avatar, "Jordan Lee", "Founder @ Voltcell, Brooklyn", "Met Oct 2026") with Motion.pop.
   - 12.0 to 14.0: hold; the card tilts toward the viewer by 4 degrees.
-- 3D: the Add screen plane plus the result card floating above it.
+- 3D: the heading, Composer and result card are separate layered panels (no screen plane); the result card floats 20 to 40pt above the Composer panel.
 - Under Reduce Motion: final state only (review text with the fixed name, and the card).
 
-### 3.6 Step 6, Connect and ask (Pip narrates; auto demo in a 3D app screen)
+### 3.6 Step 6, Connect and ask (Pip narrates; auto demo of real UI pieces in 3D, no phone frame)
 - Pip line: "Everyone connects. Then you can just ask."
-- Demo (total 16.0 s, rests): same tilted screen language, two scenes.
-  - Scene A, the mindmap (0.0 to 7.0): a sandboxed `MindmapView`-style Canvas with 3 existing disc dots on a pastel aura (Aisha Khan indigo, Daniel Okafor sky, Priya Nair lilac) and dashed links. At 1.0 Jordan Lee's mint disc "plops" in (the same effect as 6e: scale overshoot, ring ripple, nearby dots nudge, link draws in to Aisha Khan, 0.5 s). At 3.0 a name pill (`MindmapPill` look) "Jordan Lee, Founder @ Voltcell" settles; a mono 12 caption "Jordan knows Aisha" fades in (0.4 s). Hold to 7.0.
-  - 7.0 to 7.8: the plane flips to the Find screen (the scene cross-fades with a 12 degree tilt swap).
-  - Scene B, ask (7.8 to 16.0): the real `AskBar` text types "coffee in SF" (0.1 s per char), a "thinking" beat (dots, 0.8 s), then a real `ResultCard` for Theo Park (Furniture maker, Gowanus; blob per his id) rises with the why line "Met at a studio open house; always up for coffee when in SF." and a drafted message bubble: "Hey Theo, I am in San Francisco next week. Coffee?" (a hard-coded text; the real Find also shows why and a draft). The card floats 20pt above the plane, ease-in-out 0.5 s.
+- Demo (total 16.0 s, rests): same layered 3D panel language, no phone frame, two scenes; text 15 pt or larger.
+  - Scene A, the mindmap (0.0 to 7.0): a sandboxed `MindmapView`-style Canvas panel (large, tilted in perspective, layered shadow) with 3 existing disc dots on a pastel aura (Aisha Khan indigo, Daniel Okafor sky, Priya Nair lilac) and dashed links. At 1.0 Jordan Lee's mint disc "plops" in (the same effect as 6e: scale overshoot, ring ripple, nearby dots nudge, link draws in to Aisha Khan, 0.5 s). At 3.0 a name pill (`MindmapPill` look) "Jordan Lee, Founder @ Voltcell" settles; a mono 12 caption "Jordan knows Aisha" fades in (0.4 s). Hold to 7.0.
+  - 7.0 to 7.8: the mindmap panel swings away and the Find panels take its place (cross-fade with a 12 degree tilt swap).
+  - Scene B, ask (7.8 to 16.0): the real `AskBar` panel text types "coffee in SF" (0.1 s per char), a "thinking" beat (dots, 0.8 s), then a real `ResultCard` for Theo Park (Furniture maker, Gowanus; blob per his id) rises with the why line "Met at a studio open house; always up for coffee when in SF." and a drafted message bubble: "Hey Theo, I am in San Francisco next week. Coffee?" (a hard-coded text; the real Find also shows why and a draft). The card floats 20 to 40pt above the AskBar panel, ease-in-out 0.5 s.
   - 14.0 to 16.0: hold.
   - Note on the example: Theo Park is the "coffee in SF" answer (kept from the web demo); his seed city differs (Gowanus, LA origin), so the demo is hard-coded and not a claim about the real Find result.
 - Under Reduce Motion: show Scene A final frame, then Scene B final frame, with a cross-fade only.
@@ -205,10 +205,10 @@ House tokens:
 
 - Interim rules: every content piece animates (text, cards, dots, chips, buttons), mostly ease-in-out, premium and effortless: nothing snaps, nothing bounces except the deliberate overshoots (plop, `Motion.pop`). New tokens in `Motion.swift`: `Motion.ease = Animation.timingCurve(0.42, 0, 0.58, 1, duration: 0.4)`, `Motion.easeSlow = ... duration: 0.6`, `Motion.easeFast = ... duration: 0.25`. Existing `Motion.snap` (0.28 s snappy) for toggles and ticks, `Motion.pop` for pop-ins, `Motion.layer` for step slide (forward and back), `.appear(i)` stagger from `Motion.swift` (step 0.04 to 0.06 s, cap 10). Text appears by word or line with 6pt rise and fade; stagger never exceeds 0.2 s per item.
 - Step transitions: forward slides content 24pt and cross-fades (0.5 s); back reverses. The header does not move.
-- Reduce Motion: use `Motion.animation(_, reduce:)`; no orb drift, no 3D tilt loop, no looping or timed demos (show the final frame, cross-fade between), Next shown at once, progress bar jumps.
+- Reduce Motion: use `Motion.animation(_, reduce:)`; no orb drift, no 3D tilt loop, no looping or timed demos (show the final frame, cross-fade between), Next shown at once, progress bar segments jump.
 - Haptics: light impact on chip select and primary taps, light impact on the in-demo to-do tick (step 4), success on the first real profile saved (use the existing haptics helper).
 - Dynamic Type: all text uses `Theme.font` (scales); content sits in a `ScrollView` so XL sizes scroll and the primary button stays pinned in a bottom safe-area inset. Demos scale down (`.scaleEffect`) rather than overflow. Test at the largest accessibility size.
-- VoiceOver: each step is one heading (`.accessibilityAddTraits(.isHeader)`) then content; demos are `accessibilityElement(children: .ignore)` with one label describing the end state (for example step 5 "Jordan Lee's profile created from a spoken note, with the name fixed from Jorden"); the dot scatter is hidden with the label "150 dots, the outer ones fading"; chips are toggles with `.isSelected`; the progress bar is one element "Step N of 8"; Pip is hidden (decoration), the narration line is read. Back is "Back", Skip is "Skip introduction", Next appears immediately. Auto demos do not block VoiceOver focus.
+- VoiceOver: each step is one heading (`.accessibilityAddTraits(.isHeader)`) then content; demos are `accessibilityElement(children: .ignore)` with one label describing the end state (for example step 5 "Jordan Lee's profile created from a spoken note, with the name fixed from Jorden"); the dot scatter is hidden with the label "150 dots, the outer ones fading"; chips are toggles with `.isSelected`; the three-segment progress bar is one element labelled "Step N of 8, act name" (for example "Step 5 of 8, Learn by doing"); Pip is hidden (decoration), the narration line is read. Back is "Back", Skip is "Skip introduction", Next appears immediately. Auto demos do not block VoiceOver focus.
 - Targets 44pt minimum (chips 48, buttons 56). Contrast: white text on night; light steps use `Theme.ink` on pastel. Do not rely on color alone for chip selection (check mark).
 
 ## 5. After onboarding: contextual tips (each shown once)
@@ -263,10 +263,11 @@ New `Capture.parseMetDate(_ text: String, today: Date) -> String?` in `Logic/Cap
 - Rules: only the FIRST match wins; the met sentence (a sentence containing met / meet / ran into / bumped into / introduced / know / knew / "friends since") takes priority over other sentences, and a bare year or relative phrase in a non-met sentence is ignored ("we founded it in 2019" must not set a met year). "yesterday / last night / today / this week" are accepted in any sentence. Valid explicit year range 1950 to the current year; a future year returns nil.
 - Seasons use the middle month: summer 07, winter 01, spring 04, fall / autumn 10; a season alone with no year means the most recent past occurrence; if no year can be inferred, return nil.
 - Relative years subtract from the current year: "a year ago" 1, "a couple of years ago" 2, "a few years ago" 3, "N years ago" N (digits or words one to ten), "last year" 1.
-- Relative months subtract N months and return `yyyy-MM`; "last month" is 1; "this month" is the current month.
+- Relative months subtract N months and return `yyyy-MM`; "last month" is 1 (month precision); "this month" is the current month.
+- Relative days (all use the local calendar day of the injected `today`, never UTC): "yesterday" and "last night" = the previous calendar day (`yyyy-MM-dd`, never saved as today); "last night" said after midnight and before 5 am also means the previous calendar day (the same rule, so a 2 am note gets yesterday's date); "the day before yesterday" = 2 days back (match it before "yesterday"); "today", "this morning" and "tonight" = today (`yyyy-MM-dd`); "last week" = 7 days back (`yyyy-MM-dd`, shown by month only, see the display rule; match it before "last month" / "last year" so it is not misread).
 - Month alone ("last March", "this March", "in March") means the most recent past March (current year if that month has passed or is the current month, else the previous year); `yyyy-MM`.
 
-Examples (fixed `today` = 2026-11-22; table is the unit-test table, 24 rows):
+Examples (fixed `today` = 2026-11-22; table is the unit-test table, 30 rows):
 
 | Phrase in the note | Expected |
 |---|---|
@@ -286,8 +287,14 @@ Examples (fixed `today` = 2026-11-22; table is the unit-test table, 24 rows):
 | "met last summer" | `2026-07` |
 | "met in the summer of 2019" | `2019-07` |
 | "met last winter" | `2026-01` |
-| "met them yesterday" | `2026-11-22` (today's exact; see open item) |
-| "met them last night" | `2026-11-22` |
+| "met them yesterday" | `2026-11-21` |
+| "met them last night" | `2026-11-21` |
+| "met them last night" with `today` = 2026-11-22 02:00 local | `2026-11-21` |
+| "met them the day before yesterday" | `2026-11-20` |
+| "met them this morning" | `2026-11-22` |
+| "met them today" | `2026-11-22` |
+| "met them tonight" | `2026-11-22` |
+| "met them last week" | `2026-11-15` |
 | "met in 2031" | `nil` (future) |
 | "met in 1920" | `nil` (out of range) |
 | "we founded it in 2019. Met Sam at a bar." | `nil` (year not in the met sentence) |
@@ -295,7 +302,7 @@ Examples (fixed `today` = 2026-11-22; table is the unit-test table, 24 rows):
 | "met in high school" | `nil` date; `parseLifeStage` = `high-school` |
 | "Met Sam at Demo Day." | `nil` (no date: stays today) |
 
-Display rule: year only when the month is unknown ("Met 2023"); month plus year otherwise ("Met Mar 2022"); an exact day shows "Met Nov 2026" (month plus year, as now); a life stage shows "Met in college" / "Met in high school" / "Met in grad school" / "Met in childhood".
+Display rule: year only when the month is unknown ("Met 2023"); month plus year otherwise ("Met Mar 2022"); an exact day shows "Met Nov 2026" (month plus year, as now; yesterday on the 1st of a month shows the previous month, which is correct); "last week" is stored as an exact day but shows month plus year only; a life stage shows "Met in college" / "Met in high school" / "Met in grad school" / "Met in childhood".
 
 Where it lands (files, no schema change):
 - `Services/PeopleStore.swift` `createPerson`: the first `Moment.date` = `parseMetDate(...) ?? today`; `lifeStage` = `parseLifeStage(...)`; `lastContacted` stays `today` (existing behaviour, kept on purpose: they are talking about them now, so the losing-touch nudge effect is nil for a new person).
@@ -351,18 +358,18 @@ Deleted: `Screens/Onboarding/TryItView.swift` and its tests (the v3 Try it step)
 
 ### T1: onboarding flow and gate
 Files: `Services/OnboardingState.swift`, `Screens/Onboarding/OnboardingFlow.swift`, `Screens/Onboarding/OnboardingSteps.swift`, `Screens/Shell.swift`, `Services/Backup.swift` (expose restore entry only).
-Does: keys (section 2), gate, header (act title, Back, Skip, long progress bar, no "Part x of 3", no replay button), the 1 s Next delay, steps 1, 7 and 8 with final copy, steps 2 to 6 as empty placeholders that only show their heading, Restore, `meetWhere` saved, RootView hook.
-Acceptance: (a) `xcodebuild build` for the simulator passes; (b) a unit test for the gate: empty store + flag unset shows; people present hides and sets done; `-PeeplSkipOnboarding YES` hides; done flag hides; (c) launching with `-PeeplInMemory YES -PeeplNoSeed YES` shows step 1, Get started goes through to step 8, "Add your first friend" lands on the empty list and a relaunch does not show onboarding; (d) Skip from step 3 lands on step 8, Back from 8 lands on 7, step 1 has no Back and no Skip, step 8 has no Skip; (e) Next is not hittable before 1 s and is hittable after (UI test with a 1.2 s wait); (f) all existing tests pass with the skip flag.
+Does: keys (section 2), gate, header (act title, Back, Skip, the three-segment progress bar, no "Part x of 3", no replay button), the 1 s Next delay, steps 1, 7 and 8 with final copy, steps 2 to 6 as empty placeholders that only show their heading, Restore, `meetWhere` saved, RootView hook.
+Acceptance: (a) `xcodebuild build` for the simulator passes; (b) a unit test for the gate: empty store + flag unset shows; people present hides and sets done; `-PeeplSkipOnboarding YES` hides; done flag hides; (c) launching with `-PeeplInMemory YES -PeeplNoSeed YES` shows step 1, Get started goes through to step 8, "Add your first friend" lands on the empty list and a relaunch does not show onboarding; (d) the progress bar has three segments (4 : 2 : 2) that fill per step within their act (unit test on the fill fractions: step 1 gives 0.25 / 0 / 0, step 4 gives 1 / 0 / 0, step 5 gives 1 / 0.5 / 0, step 8 gives 1 / 1 / 1) and its accessibility label reads "Step N of 8, act name"; Skip from step 3 lands on step 8, Back from 8 lands on 7, step 1 has no Back and no Skip, step 8 has no Skip; (e) Next is not hittable before 1 s and is hittable after (UI test with a 1.2 s wait); (f) all existing tests pass with the skip flag.
 
 ### T2: auto demos, 3D, Pip
 Files: `Screens/Onboarding/OnboardingDemos.swift`, `Screens/Onboarding/OnboardingFlow.swift`, `Components/Motion.swift` (ease tokens), `Screens/AddView.swift` (make `ResultCard` internal), `Screens/ProfileView.swift` (extract the hero / summary / to-do rows as reusable read-only sub-views).
-Does: steps 2 to 6 with the storyboards and timings in section 3, the 3D plane (`rotation3DEffect`, perspective, layered cards), Pip (blob chosen at flow start per 3.0), reuse of `Composer`, `NameNote`, `AskBar`, `ProfileView` hero, `MindmapView` dots and `ResultCard`; Reduce Motion final frames.
-Acceptance: (a) build passes; (b) Pip's blob is never `mint` (Jordan) and never the blob of the oldest person in a replay test with a person present (unit test on the pick function, 18 blobs); (c) each step's timeline total matches section 3 within 0.3 s (a deterministic clock injected in tests); (d) with Reduce Motion on, every demo renders its final frame and shows no timers; (e) screenshot check: the tilted plane is visible on steps 2 to 6 and flat on 1, 7, 8; (f) demos do not read the store or call `AIClient` (grep in review).
+Does: steps 2 to 6 with the storyboards and timings in section 3; steps 2 to 4 on the tilted plane; steps 5 and 6 as directly shown real views made 3D themselves (SwiftUI `rotation3DEffect` with perspective 0.6 on the reused real views `Composer`, `NameNote`, `AskBar`, `MindmapView` dots, `ResultCard`, layered shadows, idle float, parallax; NO device bezel or phone frame view; note text at least 15 pt); Pip (blob chosen at flow start per 3.0), the `ProfileView` hero reuse; Reduce Motion final frames.
+Acceptance: (a) build passes; (b) Pip's blob is never `mint` (Jordan) and never the blob of the oldest person in a replay test with a person present (unit test on the pick function, 18 blobs); (c) each step's timeline total matches section 3 within 0.3 s (a deterministic clock injected in tests); (d) with Reduce Motion on, every demo renders its final frame and shows no timers; (e) screenshot check: the tilt is visible on steps 2 to 6, steps 5 and 6 show no phone frame or bezel and their text is at least 15 pt, and steps 1, 7, 8 are flat; (f) demos do not read the store or call `AIClient` (grep in review).
 
 ### T3: first-run coach, Add checklist, past-date parsing
 Files: `Logic/Capture.swift`, `Components/CoverChecklist.swift`, `Screens/AddView.swift`, `Services/PeopleStore.swift`, `Screens/ProfileView.swift` (plus `Logic/Search.swift` and `Logic/Ask.swift` for padded dates; if this exceeds 5 files, split the padding into T4).
 Does: `parseMetDate`, `parseLifeStage`, the checklist (6b) with a 300 ms debounce and monotonic ticks, the card and profile date display (6c), first Moment date and `lifeStage` in `createPerson`, the mic primer move (6f).
-Acceptance: (a) the 24 row table and the `nil` cases pass in `CaptureTests` with the fixed `today`; (b) typing "Met Sam at Demo Day, three years ago. Founder at Acme. From Austin." ticks Name, When you met, Where you met, Where they are from / live, What they do (5 of 6), and not the last row; clearing the text does not un-tick; (c) "met in 2023" saves a profile that reads "Met 2023"; "met in college" reads "Met in college"; a plain note reads "Met Nov 2026" (frozen date); (d) the primer shows only on the first mic tap and never again; denied state shows the inline line; (e) the checklist stays until 3 people exist and then `peepl.firstAddSeen` is true; (f) build passes.
+Acceptance: (a) the 30 row table (yesterday / last night giving the previous day, last night at 02:00 giving the previous day, this morning / today / tonight giving today, the day before yesterday 2 days back, last week 7 days back, last month at month precision, plus a month-boundary case with `today` = 2026-12-01 giving yesterday `2026-11-30`) and the `nil` cases pass in `CaptureTests` with the fixed `today`; (b) typing "Met Sam at Demo Day, three years ago. Founder at Acme. From Austin." ticks Name, When you met, Where you met, Where they are from / live, What they do (5 of 6), and not the last row; clearing the text does not un-tick; (c) "met in 2023" saves a profile that reads "Met 2023"; "met in college" reads "Met in college"; a plain note reads "Met Nov 2026" (frozen date); (d) the primer shows only on the first mic tap and never again; denied state shows the inline line; (e) the checklist stays until 3 people exist and then `peepl.firstAddSeen` is true; (f) build passes.
 
 ### T4: Add another, plop, tips, Settings replay, tests
 Files: `Screens/MindmapView.swift`, `Screens/MindmapModel.swift`, `Logic/ForceGraph.swift`, `Screens/Shell.swift` (`Nav.justAdded`), `Components/TipCallout.swift` (plus `Components/AskBar.swift` for the coach anchor, `Screens/SettingsView.swift`, `ConnectionsView.swift`, and the UI tests; split across two sub-tasks if over 5 files).
@@ -371,13 +378,13 @@ Acceptance: (a) "Add another" saves two people in a row with the keyboard stayin
 
 ## 9. Mockup brief (for open-design, iPhone 15 Pro, 393 x 852)
 
-Mock these screens and states with the Peepl tokens (Geist, pastel glass, night `#1c1522`, no Liquid Glass). Show the header on every light step: Back left, act title, Skip right, long progress bar in between, no "Part 1 of 3", no replay button.
+Mock these screens and states with the Peepl tokens (Geist, pastel glass, night `#1c1522`, no Liquid Glass). Show the header on every light step: Back left, act title, Skip right, three-segment progress bar (4 : 2 : 2, small gaps, filled per step) in between, no "Part 1 of 3", no replay button.
 1. Step 1 Cold open (dark, three blurred orbs, heading, sub, Get started, Restore a backup).
 2. Step 2 You meet Jordan: two frames (card with detail chips floating, then "Three weeks later" with the chips dissolving), tilted 3D plane.
 3. Step 3 The edge: 150-dot disc fading outward, Angela Lee label card floating above.
 4. Step 4 Peepl keeps the story: chips reassembling and the final profile card in perspective.
-5. Step 5 Capture: tilted Add screen with streaming words and the name fix mid-way (Jorden, dark outline and caret, faded old spelling), Pip bottom-left with its line; plus the result card frame.
-6. Step 6 Connect and ask: two frames (Jordan mint dot with a dashed line to Aisha on the mindmap; ask bar "coffee in SF" with the Theo Park result card and the drafted message).
+5. Step 5 Capture: no phone frame; layered 3D panels (heading, large Composer panel, text 15 pt or larger) with streaming words and the name fix mid-way (Jorden, dark outline and caret, faded old spelling), Pip bottom-left with its line "Misheard a name? Tap it later to fix it."; plus the result card frame.
+6. Step 6 Connect and ask: no phone frame, layered 3D panels; two frames (Jordan mint dot with a dashed line to Aisha on the mindmap; ask bar "coffee in SF" with the Theo Park result card and the drafted message).
 7. Step 7 chips (five chips, one or two selected, Next).
 8. Step 8 Privacy promise (three rows, the voice caveat line, fine print, "Add your first friend").
 9. The empty-state coach callout on the add-person button.
@@ -386,11 +393,13 @@ Mock these screens and states with the Peepl tokens (Geist, pastel glass, night 
 12. The plop mid-animation on the mindmap (new disc overshooting, ring ripple, a dashed link drawing, neighbours nudged).
 13. The mic primer sheet and the denied inline message as two extra frames; a tip callout on the mindmap and the Settings "How Peepl works" row.
 
-## 10. Open items for Vince
+## 10. Out of scope and open items for Vince
 
-- Importing from iOS Contacts (not in scope for v4; would add a step after Add your first friend, needs a Contacts permission and a consent line). Decide later.
+Out of scope for now (decision 2026-11-22): importing from iOS Contacts. It is its own flow (Contacts permission, consent line, matching), not part of onboarding.
+
+Open:
+
 - Voice caveat in 3.8 (on-device recognition not always available). Decide whether the privacy page and Settings About text should say so.
 - Whether the Welcome orbs should match the pitch deck exactly or the app aura palette.
-- "yesterday" and "last night" currently store today's date per the decision (day-exact, no subtraction). Subtracting one day would be more accurate; say if you want it.
 - Motion tokens: the interim ease tokens in section 4 should be reconciled with the motion spec table (house curves `(0.45,0,0.55,1)` / `(0.65,0,0.35,1)`).
 - Seed `lifeStage` values double as display text for `college` and `high-school` (6c); say if sample people should keep showing the dated "Met" line instead.
