@@ -9,7 +9,16 @@ enum Layer: Hashable {
 struct PeopleFilter: Equatable { var ids: [String]; var label: String }
 
 @Observable final class Nav {
-    var layers: [Layer] = []
+    /// Each pushed screen gets a fresh key, so a screen opened while the last one is still sliding out never inherits its state
+    /// (a profile swiped away keeps its off-screen drag offset; reused, the new profile was invisible and the page stayed receded).
+    var layers: [Layer] = [] {
+        didSet {
+            if keys.count > layers.count { keys.removeLast(keys.count - layers.count) }
+            while keys.count < layers.count { serial += 1; keys.append(serial) }
+        }
+    }
+    private(set) var keys: [Int] = []
+    private var serial = 0
     var showFilter: PeopleFilter?
     var tab: Tab = .connections // here so Find can say "in your list" / "on the mindmap"
     /// A profile's "View connections": who the mindmap focuses, with a "← Name" pill back to them.
@@ -25,7 +34,7 @@ struct PeopleFilter: Equatable { var ids: [String]; var label: String }
     var dragProgress: CGFloat = 0
     private var toastTask: Task<Void, Never>?
 
-    func push(_ l: Layer) { if layers.last != l { layers.append(l) } } // a double tap must not stack the same screen twice
+    func push(_ l: Layer) { if layers.last != l { dragProgress = 0; layers.append(l) } } // a double tap must not stack the same screen twice
     /// Resigning in the same transaction as the removal makes the system keyboard slide down with the layer's shrink, not after it.
     func pop() { UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil); _ = layers.popLast() }
     func replaceTop(_ l: Layer) { if layers.isEmpty { layers.append(l) } else { layers[layers.count - 1] = l } }
@@ -90,8 +99,9 @@ struct RootView: View {
             .offset(x: reduce || nav.tab == .mindmap ? 0 : -30 * depth)
             // dim with an overlay, not opacity, so the ground never shows through
             .overlay { Color.black.opacity(0.05 * depth).ignoresSafeArea().allowsHitTesting(false) }
-            // by position: the same profile can be on the stack twice (A -> B -> A), which a by-value id can't hold
-            ForEach(Array(nav.layers.enumerated()), id: \.offset) { i, layer in
+            // by push key: the same profile can be on the stack twice (A -> B -> A), which a by-value id can't hold
+            ForEach(Array(zip(nav.keys, nav.layers).enumerated()), id: \.element.0) { i, entry in
+                let layer = entry.1
                 LayerHost(layer: layer)
                     .transition(reduce ? .opacity : layer.isProfile ? AnyTransition.move(edge: .trailing) : AnyTransition.asymmetric(insertion: AnyTransition(RevealTransition(origin: nav.revealOrigin)), removal: AnyTransition(RevealTransition(origin: nav.closeOrigin))))
                     .zIndex(Double(i) + 1)
