@@ -1,0 +1,24 @@
+# rel-e: claims in public/privacy.html
+
+- Data on phone, no cloud copy, no sync: SettingsView.swift:44 ("Everyone you add stays on this device"); CLAUDE.md MVP scope. No network code except AIClient.send (AIClient.swift:24-25).
+- No analytics / ads / tracking: PrivacyInfo.xcprivacy:5-8 (tracking false, no domains); grep for Analytics/Sentry/Firebase found none.
+- Nothing shared with other users: SettingsView.swift:64, :71.
+- Back up is one file the user shares: Backup.swift:5, :53-58; SettingsView.swift:41-43. Peepl does not keep it: Backup.swift:182 (temp file deleted).
+- Voice: Speech.swift:33 `requiresOnDeviceRecognition = rec.supportsOnDeviceRecognition` (on device only when supported; otherwise Apple's server may be used). Not forced. No voice upload to Peepl/OpenAI: AIClient sends only text (AIClient.swift:48, :109, :136).
+- On-device model for Find/Add/drafts: LocalAI.swift:10-18 (availability), AddView.swift:158,162 (LocalAI.parseNote when OpenAI off), FindView.swift:134 (LocalAI.upgrade), LocalAI.swift:338-346 (draft chain).
+- OpenAI switch off by default: AIClient.swift:10-15, SettingsView.swift:35, :63.
+- Only while on: AIClient.swift:25, :48, :95, :103, :134 (all guard `enabled`).
+- Add (parse) payload is only {"text": note}: AIClient.swift:48.
+- Find (rank) payload: query + up to 12 candidates {i, job, lives, from, met, tags, story (240), recent (2 x 120)}, no id or name field: AIClient.swift:88-91, :106-109.
+- Draft payload: name (first name only), job, lives, from, met, tags, story (240), recent (2 x 120), kind, goal; a Find-made goal includes the question and why: AIClient.swift:122-123, :135-136. All listed on the page.
+- Via Peepl's server: AIClient.swift:20, :25.
+- Server rate limit per IP: server/ai.ts:66-80, :101, :206, :230 (in memory).
+- Server code does not log notes: no console/log calls in server/ai.ts, server/appAttest.ts, api/ai/*.ts. Vercel platform logs are not covered by code and are not claimed.
+- Crash reports not collected by Peepl: no crash SDK in ios/Peepl. Apple's crash sharing is Apple's feature (not verifiable in code).
+- PrivacyInfo.xcprivacy:9-22 declares OtherUserContent, unlinked, no tracking, app functionality (the OpenAI path). Consistent with the page.
+- Delete the app to delete data: standard iOS behaviour, not verifiable in code.
+- vercel.json has no cleanUrls or rewrites, so the URL is /privacy.html; /privacy is not guaranteed. `npm run build` put privacy.html in dist/ (dist removed afterward).
+
+- Draft may include another person's name: when goal is nil, AIClient.swift:136 sends action.draft, which Ask.swift:328, :359, :364 build with other people's names (intro, trip).
+- App Attest: AppAttest.swift:29-42 (device key id, attestation, challenge sent to /api/ai/attest-challenge and /attest, returns token with exp); server/ai.ts:205-219 verifies and signs a token; stateless, server/appAttest.ts:5.
+- Server sees IP and limits per IP and per device token: server/ai.ts:101, :206, :230. Counters in memory (ai.ts:68-80). No console/log calls in server code (checked above); Vercel platform logs not claimed. The page says "does not write the address to a database or a log" (code only).
