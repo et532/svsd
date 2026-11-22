@@ -103,6 +103,8 @@ private struct LayerHost: View {
     let layer: Layer
     @Environment(Nav.self) private var nav
     @Environment(\.modelContext) private var context
+    @State private var dragX: CGFloat = 0
+    @State private var edgeDrag = false // this drag began at the left edge and is mostly sideways
 
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -126,5 +128,21 @@ private struct LayerHost: View {
                 .accessibilityLabel("Back")
             }
         }
+        .offset(x: dragX)
+        // Swipe in from the left edge: the profile follows the finger and the page under it shows through.
+        // Past 20% of the width it leaves; less, and it springs back.
+        .simultaneousGesture(DragGesture(minimumDistance: 10, coordinateSpace: .global).onChanged { v in
+            if !edgeDrag, dragX == 0, v.startLocation.x < 28, v.translation.width > abs(v.translation.height) { edgeDrag = true }
+            if edgeDrag { dragX = max(0, v.translation.width) }
+        }.onEnded { v in
+            guard edgeDrag else { return }
+            edgeDrag = false
+            let width = UIScreen.main.bounds.width
+            if v.translation.width > width * 0.2 {
+                withAnimation(.easeOut(duration: 0.2)) { dragX = width } completion: { nav.pop() }
+            } else {
+                withAnimation(.spring(duration: 0.3)) { dragX = 0 }
+            }
+        }, including: layer.isProfile ? .all : .subviews)
     }
 }

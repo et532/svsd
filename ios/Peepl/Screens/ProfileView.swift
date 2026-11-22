@@ -30,8 +30,6 @@ struct ProfileView: View {
             ScrollView {
                 VStack(spacing: 0) {
                     hero
-                        // pulling down past the top: the hero's color carries on upward instead of showing the page behind it
-                        .background(alignment: .top) { Color(hex: blob.base).frame(height: 1200).offset(y: -1200) }
                     VStack(alignment: .leading, spacing: 24) {
                         summary
                         todos
@@ -41,16 +39,13 @@ struct ProfileView: View {
                     }
                     .padding(.horizontal, 16).padding(.top, 20).padding(.bottom, 100)
                 }
+                .offset(y: min(scrolled, 0)) // the banner stays put: pulling down at the top can't reveal what is behind it
             }
             .scrollDismissesKeyboard(.immediately) // leaving an inline field saves it
             .ignoresSafeArea(edges: .top) // hero runs under the status bar
             .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y + $0.contentInsets.top } action: { _, y in scrolled = y }
             topBar
         }
-        .simultaneousGesture(DragGesture(minimumDistance: 20).onEnded { v in
-            // swipe in from the left edge, like a navigation stack
-            if v.startLocation.x < 28, v.translation.width > 80, abs(v.translation.height) < 80 { nav.pop() }
-        })
         .safeAreaInset(edge: .bottom) {
             if !addingTag && !addingTodo { // the inline field has the keyboard
                 Composer(placeholder: "Add a moment", onSend: { text in
@@ -146,9 +141,9 @@ struct ProfileView: View {
         return ZStack {
             Text(person.name).font(Theme.font(16, .medium)).foregroundStyle(.white).opacity(p)
             HStack {
-                iconButton("chevron.left", label: "Back", id: nil) { nav.pop() }
+                iconButton("chevron.left", label: "Back", id: nil, glass: 1 - p) { nav.pop() }
                 Spacer()
-                iconButton("trash", label: "Delete person", id: "More") { confirmDelete = true }
+                iconButton("trash", label: "Delete person", id: "More", glass: 1 - p) { confirmDelete = true }
             }
             .padding(.horizontal, 12)
         }
@@ -160,11 +155,12 @@ struct ProfileView: View {
         }
     }
 
-    /// A plain icon, no glass behind it.
-    private func iconButton(_ icon: String, label: String, id: String?, action: @escaping () -> Void) -> some View {
+    /// Glass circle behind the icon on the expanded banner (`glass` 1), plain icon once the bar has collapsed (0).
+    private func iconButton(_ icon: String, label: String, id: String?, glass: CGFloat, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: icon).font(Theme.font(18, .semibold)).foregroundStyle(.white)
                 .frame(width: 44, height: 44).contentShape(.rect)
+                .background { Color.clear.glassEffect(.regular.tint(.white.opacity(0.14)), in: .circle).opacity(glass) }
         }
         .buttonStyle(.plain).accessibilityLabel(label).accessibilityIdentifier(id ?? label)
     }
