@@ -6,6 +6,7 @@ enum Tab { case mindmap, connections }
 struct TopControls: View {
     @Binding var tab: Tab
     @Namespace private var blob
+    @State private var bounce: [Tab: Int] = [:] // per icon, so only the newly selected one bounces
     @Environment(\.accessibilityReduceMotion) private var reduce
 
     var body: some View {
@@ -21,12 +22,13 @@ struct TopControls: View {
 
     private func button(_ t: Tab, _ symbol: String, _ label: String) -> some View {
         Button {
+            if tab != t { bounce[t, default: 0] += 1 }
             withAnimation(Motion.animation(Motion.pop, reduce: reduce)) { tab = t }
         } label: {
             Image(systemName: symbol)
                 .font(Theme.font(18))
                 .foregroundStyle(Theme.ink)
-                .symbolEffect(.bounce, value: tab == t) // shortcut: also bounces the icon that was just deselected
+                .symbolEffect(.bounce, value: bounce[t, default: 0])
                 .frame(width: 42, height: 42)
                 .background {
                     if tab == t { Circle().fill(Theme.pressed).matchedGeometryEffect(id: "blob", in: blob) }
