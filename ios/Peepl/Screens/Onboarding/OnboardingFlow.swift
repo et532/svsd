@@ -24,7 +24,10 @@ struct OnboardingFlow: View {
             VStack(spacing: 0) {
                 header.frame(height: 56).padding(.horizontal, 16)
                 ScrollView {
-                    OnboardingStep(step: step, replay: replay, picks: $picks, restore: { importing = true })
+                    Group {
+                        if (2...4).contains(step) { OnboardingDemoStep(step: step) }
+                        else { OnboardingStep(step: step, replay: replay, picks: $picks, restore: { importing = true }) }
+                    }
                         .id(step)
                         .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 24).padding(.top, 24)
                         .transition(reduce ? .opacity : .asymmetric(insertion: .offset(x: forward ? 24 : -24).combined(with: .opacity), removal: .opacity))
