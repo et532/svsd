@@ -19,6 +19,8 @@ struct PeopleFilter: Equatable { var ids: [String]; var label: String }
     var toast: String?
     /// Where Add / Find grow from (set by the ask bar before push).
     var revealOrigin = UnitPoint(x: 0.5, y: 0.95)
+    /// Where Add / Find collapse to on close: the X button's centre (set by the open layer).
+    var closeOrigin = UnitPoint(x: 0.1, y: 0.1)
     /// How far the top profile's edge swipe has gone (0...1), so the page under it follows the finger.
     var dragProgress: CGFloat = 0
     private var toastTask: Task<Void, Never>?
@@ -52,7 +54,8 @@ struct RootView: View {
 
     var body: some View {
         ZStack {
-            Theme.bg.ignoresSafeArea()
+            // matches the page, so the edge a receding page exposes is not white
+            (nav.tab == .mindmap ? Color(hex: "ededed") : Theme.bg).ignoresSafeArea()
             // Depth: with a profile on top, everything under it recedes (Add / Find use the circle reveal instead).
             ZStack {
             Group {
@@ -73,7 +76,7 @@ struct RootView: View {
             // by position: the same profile can be on the stack twice (A -> B -> A), which a by-value id can't hold
             ForEach(Array(nav.layers.enumerated()), id: \.offset) { i, layer in
                 LayerHost(layer: layer)
-                    .transition(reduce ? .opacity : layer.isProfile ? AnyTransition.move(edge: .trailing) : AnyTransition(RevealTransition(origin: nav.revealOrigin)))
+                    .transition(reduce ? .opacity : layer.isProfile ? AnyTransition.move(edge: .trailing) : AnyTransition.asymmetric(insertion: AnyTransition(RevealTransition(origin: nav.revealOrigin)), removal: AnyTransition(RevealTransition(origin: nav.closeOrigin))))
                     .zIndex(Double(i) + 1)
             }
             if let toast = nav.toast {
@@ -123,7 +126,7 @@ private struct LayerHost: View {
     @State private var hostSize = CGSize.zero
     private func syncOrigin() {
         guard hostSize.width > 0, hostSize.height > 0 else { return }
-        nav.revealOrigin = UnitPoint(x: xCenter.x / hostSize.width, y: xCenter.y / hostSize.height)
+        nav.closeOrigin = UnitPoint(x: xCenter.x / hostSize.width, y: xCenter.y / hostSize.height)
     }
     @State private var edgeDrag = false // this drag began at the left edge and is mostly sideways
 
@@ -141,7 +144,7 @@ private struct LayerHost: View {
             case .find(let voice): FindView(voice: voice)
             }
             if !layer.isProfile {
-                Button { withAnimation(Motion.animation(Motion.smooth, reduce: reduce)) { glyphShown = false }; nav.pop() } label: {
+                Button { withAnimation(.easeOut(duration: 0.1)) { glyphShown = false }; nav.pop() } label: {
                     Image(systemName: "xmark").font(Theme.font(16, .semibold))
                         .foregroundStyle(Theme.ink)
                         .rotationEffect(.degrees(glyphShown || reduce ? 0 : -90)).opacity(glyphShown || reduce ? 1 : 0)
