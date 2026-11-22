@@ -104,7 +104,7 @@ final class PeopleStoreTests: XCTestCase {
         let json = #"{"version":1,"people":[{"id":"p1","name":"A B","context":"x","profession":"","story":"","tags":[],"from":{"city":"","lat":0,"lng":0},"met":{"city":"","lat":0,"lng":0},"livesNow":{"city":"","lat":0,"lng":0},"lastContacted":"2026-01-01","knows":[],"mutualNotes":{},"todos":[{"id":"z","text":"one","done":false},{"id":"a","text":"two","done":false}],"moments":[]}],"nameFixes":{}}"#
         let file = try JSONDecoder().decode(BackupFile.self, from: Data(json.utf8))
         let ctx = ModelContext(try makeContainer())
-        file.restore(into: ctx)
+        try file.restore(into: ctx, mode: .replace)
         let p = try XCTUnwrap(try ctx.fetch(FetchDescriptor<Person>()).first)
         XCTAssertEqual(p.orderedTodos.map(\.text), ["one", "two"])
     }
