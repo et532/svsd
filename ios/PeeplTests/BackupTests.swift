@@ -88,6 +88,18 @@ final class BackupTests: XCTestCase {
         XCTAssertEqual(try all(ctx).count, 1)
     }
 
+    func testExportThatFailsItsCheckLeavesNoTempFile() throws {
+        let ctx = ModelContext(try makeContainer()); let p = add(ctx, "a")
+        let url = BackupFile.exportURL()
+        try? FileManager.default.removeItem(at: url)
+        XCTAssertThrowsError(try BackupFile.export(people: [p, p])) // the same id twice fails read()
+        XCTAssertFalse(FileManager.default.fileExists(atPath: url.path))
+        let ok = try BackupFile.export(people: [p])
+        XCTAssertEqual(ok, url)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: url.path))
+        BackupReminder.cleanup(ok)
+    }
+
     func testOldFileWithoutNewFieldsDecodes() throws {
         let f = try BackupFile.read(Data(#"{"version":1,"people":[],"nameFixes":{}}"#.utf8))
         XCTAssertNil(f.exportedAt); XCTAssertNil(f.counts)

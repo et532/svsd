@@ -4,6 +4,8 @@ import XCTest
 final class LocalAINoteTests: XCTestCase {
     let note = "Met Maya Chen at the Kiln pottery night. She is a designer at Kiln, from Bogota, lives in Queens."
 
+    override func tearDown() { AIClient.enabled = false }
+
     func testInventedFieldsDropped() {
         let d = LocalAI.validated(.init(name: "Maya Park", company: "Acme", does: "designer", from: "Lima", lives: "Queens", met: "at the Zoo"), note: note)
         XCTAssertNil(d.name); XCTAssertNil(d.company); XCTAssertNil(d.from); XCTAssertNil(d.met)
@@ -32,6 +34,38 @@ final class LocalAINoteTests: XCTestCase {
         XCTAssertNil(d?.name) // clipped away, so not in the text the model saw
         let ok = await LocalAI.parseNote(note, model: { _ in .init(name: "Maya Chen") })
         XCTAssertEqual(ok?.name, "Maya Chen")
+    }
+
+    func testSwitchOnOpenAIFailureTriesOnDeviceModel() async {
+        Consent.agree(); AIClient.enabled = true
+        var asked: [String] = []
+        let d = await LocalAI.readNote(note, openAI: { _ in asked.append("openai"); return nil },
+                                       local: { _ in asked.append("local"); var d = Draft(); d.name = "Maya Chen"; return d })
+        XCTAssertEqual(asked, ["openai", "local"])
+        XCTAssertEqual(d?.name, "Maya Chen")
+    }
+
+    func testSwitchOnOpenAIAnswerSkipsOnDeviceModel() async {
+        Consent.agree(); AIClient.enabled = true
+        var local = 0
+        var o = Draft(); o.company = "Kiln"
+        let d = await LocalAI.readNote(note, openAI: { _ in o }, local: { _ in local += 1; return nil })
+        XCTAssertEqual(d?.company, "Kiln"); XCTAssertEqual(local, 0)
+    }
+
+    func testBothFailGivesRegexResult() async {
+        Consent.agree(); AIClient.enabled = true
+        let d = await LocalAI.readNote(note, openAI: { _ in nil }, local: { _ in nil })
+        XCTAssertNil(d)
+        let regex = Capture.parsePerson(note, people: [])
+        XCTAssertEqual(regex.merged(with: d), regex)
+    }
+
+    func testSwitchOffNeverAsksOpenAI() async {
+        AIClient.enabled = false
+        var openAI = 0
+        _ = await LocalAI.readNote(note, openAI: { _ in openAI += 1; return nil }, local: { _ in nil })
+        XCTAssertEqual(openAI, 0)
     }
 
     func testOpenAISwitchDefaultsOff() {

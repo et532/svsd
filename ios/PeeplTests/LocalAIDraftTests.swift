@@ -45,4 +45,20 @@ final class LocalAIDraftTests: XCTestCase {
         let m = await LocalAI.message(person, action: action, openAI: { _, _ in "from openai" }, local: { _, _ in local += 1; return "x \(name)" })
         XCTAssertEqual(m, "from openai"); XCTAssertEqual(local, 0)
     }
+
+    func testSwitchOnOpenAIFailureTriesOnDeviceModel() async {
+        Consent.agree(); AIClient.enabled = true
+        let name = person.firstName
+        var asked: [String] = []
+        let m = await LocalAI.message(person, action: action, openAI: { _, _ in asked.append("openai"); return nil },
+                                      local: { _, _ in asked.append("local"); return "Hi \(name), coffee soon?" })
+        XCTAssertEqual(asked, ["openai", "local"])
+        XCTAssertEqual(m, "Hi \(name), coffee soon?")
+    }
+
+    func testSwitchOnBothFailGivesTemplate() async {
+        Consent.agree(); AIClient.enabled = true
+        let m = await LocalAI.message(person, action: action, openAI: { _, _ in nil }, local: { _, _ in nil })
+        XCTAssertEqual(m, template)
+    }
 }

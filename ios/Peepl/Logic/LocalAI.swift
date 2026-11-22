@@ -290,6 +290,19 @@ enum LocalAI {
         #endif
     }
 
+    /// The Add note chain: OpenAI if its switch is on, then the on-device model (also when OpenAI returns nil).
+    /// nil means neither answered: the caller keeps the Capture regex result (`parsePerson(...).merged(with: nil)`).
+    /// `openAI` / `local` are test seams.
+    static func readNote(_ note: String, openAI: ((String) async -> Draft?)? = nil,
+                         local: ((String) async -> Draft?)? = nil) async -> Draft? {
+        if AIClient.enabled {
+            let o: Draft? = if let openAI { await openAI(note) } else { await AIClient.parse(note) }
+            if let o { return o }
+        }
+        if let local { return await local(note) }
+        return await parseNote(note)
+    }
+
     // MARK: Message draft
 
     /// Trim and strip wrapping quotes from model text.
@@ -331,13 +344,13 @@ enum LocalAI {
         return t
     }
 
-    /// The "Draft a message" chain: OpenAI only if its switch is on (today's path), else the on-device model, else the template.
-    /// `openAI` / `local` are test seams.
-    static func message(_ person: PersonInfo, action: Action, openAI: ((PersonInfo, Action) async -> String)? = nil,
+    /// The "Draft a message" chain: OpenAI if its switch is on, then the on-device model (also when OpenAI fails), then the template.
+    /// `openAI` / `local` are test seams; nil from either means "try the next step".
+    static func message(_ person: PersonInfo, action: Action, openAI: ((PersonInfo, Action) async -> String?)? = nil,
                         local: ((PersonInfo, Action) async -> String?)? = nil) async -> String {
         if AIClient.enabled {
-            if let openAI { return await openAI(person, action) }
-            return await AIClient.draft(person, action: action)
+            let o: String? = if let openAI { await openAI(person, action) } else { await AIClient.draftText(person, action: action) }
+            if let o { return o }
         }
         let t: String? = if let local { await local(person, action) } else { await draft(person, action: action) }
         if let t { return t }

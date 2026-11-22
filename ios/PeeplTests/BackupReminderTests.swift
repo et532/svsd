@@ -1,4 +1,5 @@
 import XCTest
+import SwiftData
 @testable import Peepl
 
 final class BackupReminderTests: XCTestCase {
@@ -29,6 +30,21 @@ final class BackupReminderTests: XCTestCase {
         XCTAssertFalse(BackupReminder.shouldRemind(count: 15, now: now.addingTimeInterval(86400)))
         BackupReminder.recordBackup(count: 15, now: now)
         XCTAssertFalse(BackupReminder.shouldRemind(count: 16, now: now.addingTimeInterval(9 * 86400)))
+    }
+
+    @MainActor
+    func testLoadingSamplesIsNotCountedAsNewPeople() throws {
+        let s = UserDefaults(suiteName: "BackupReminderTests.samples")!
+        s.removePersistentDomain(forName: "BackupReminderTests.samples"); BackupReminder.store = s
+        defer { s.removePersistentDomain(forName: "BackupReminderTests.samples"); BackupReminder.store = .standard }
+        XCTAssertFalse(BackupReminder.shouldRemind(count: 0, now: now))        // first launch, empty list
+        let context = ModelContext(try makeContainer())
+        Seed.loadSamples(context)
+        let n = try context.fetchCount(FetchDescriptor<Person>())
+        XCTAssertGreaterThan(n, 100)
+        XCTAssertEqual(s.integer(forKey: "backupBaselineCount"), n)
+        XCTAssertFalse(BackupReminder.shouldRemind(count: n, now: now.addingTimeInterval(86400)))
+        XCTAssertTrue(BackupReminder.shouldRemind(count: n + 10, now: now.addingTimeInterval(2 * 86400))) // people added after that still count
     }
 
     func testCleanupRemovesFile() throws {

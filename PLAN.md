@@ -11,22 +11,22 @@ Target user: one person with a few hundred contacts, on their own iPhone, who wa
 
 Platform: **iOS 26+, iPhone only, portrait**, Xcode 27.2, SwiftUI + SwiftData, native Liquid Glass (`.glassEffect`).
 
-## 2. Status (2026-11-16)
+## 2. Status (2026-11-22)
 
-Milestones M0 and M1 are done. M1 added the test target (24 tests), `Logic/` capture parsing, `Services/` AI client, tab shell, profile and Add + Composer. Open M1 items: the Add screen echoed the typed note twice in a manager screenshot (probably simulator text injection, unconfirmed); the "Which Jordan" picker and profile "Add a moment" were covered by tests only, not driven in the UI. Nothing is committed. Next: M2 / M3 / M4.
+All iOS work so far is checked in the Simulator only (`xcodebuild test`, 163 tests pass on `main`); **nothing has been viewed on a real iPhone**. Details per milestone are in sections 5 and 12.
 
-Animation plan (`ios/ANIMATION_PLAN.md`): M1 Foundation done 2026-11-22 (`Motion.swift`, shared `Components/Shimmer.swift`; validator PASS, simulator-SDK build only). Next: apply `PressStyle` and the P0 items.
-
-| Built | Where |
+| Done | Notes |
 |---|---|
-| XcodeGen project (`ios/project.yml`), bundle id `com.vincelin.peepl` | `ios/` |
-| SwiftData models `Person`, `Moment`, `Todo`, `Place` | `ios/Peepl/Models.swift` |
-| Seed loader: 500 sample people from `seed.json` on first launch | `ios/Peepl/Seed.swift`, `scripts/export-ios-seed.ts` |
-| Theme tokens + `.glass()` modifier | `ios/Peepl/Theme.swift` |
-| Blob avatars (same hash as web `blobs.ts`, 18 photos) | `ios/Peepl/Blobs.swift`, `ios/Peepl/Resources/Blobs/` |
-| Connections list (A-Z, glass rows) + placeholder profile | `ios/Peepl/ConnectionsView.swift` |
+| M1 core loop: list, profile, typed Add, moments, to-dos, SwiftData | 2026-11-16 |
+| M2 mindmap, M3 Find (rules + MiniLM), M4 voice (Apple Speech, name fixes) | on `main`; open: 2-4 s freeze on the mindmap tab switch |
+| M5 polish: Geist, auras, circular reveal, haptics, icon, diverse 200, empty state with "Try with sample people" | release build starts empty |
+| Animation plan M1-M4 and iOS fixes M5a / M5b (`ios/ANIMATION_PLAN.md`) | device checks listed in section 10 notes |
+| MVP-1 (W6 OpenAI switch, default off; W7 losing-touch nudge; W8 share-sheet backup with Merge / Replace) | 2026-11-22 |
+| W1 eval and MVP-3 (W2-W5): on-device Foundation Models for Find, Add parse and drafts, with rule / regex / template fallbacks | real model output never viewed in the UI |
+| rel items: rel-a backup reminder, rel-b export-compliance key and version 0.9.0, rel-c privacy manifest, rel-d consent sheet, rel-e privacy page | privacy page live at `https://peepl-steel.vercel.app/privacy.html` (deployed 2026-11-22) |
+| App Attest client and server auth for `/api/ai/*` | only verifiable on a real device with a paid developer account |
 
-Not built: real profile, Add, moments, mindmap, Find, voice, aura backgrounds, Geist fonts, backup, release work.
+Open: anything that needs a device (mic, haptics, share sheet, Foundation Models output, performance), section 11 accounts / quota (only if the OpenAI opt-in goes public), TestFlight.
 
 Build and run:
 ```bash
@@ -411,7 +411,7 @@ Draft message   -> Foundation Models; fallback: template drafts
 | W1 (DONE 2026-11-22: guard enforced in `LocalAI.explain(question:matches:)`; eval is opt-in via `TEST_RUNNER_PEEPL_RUN_EVAL=1`; report `.orchestration/reports/w1b-eval.md`) | **Spike and eval harness** (do first, gates the rest) | `PeeplTests/` new `FoundationModelsEvalTests`, `Logic/LocalAI.swift` | 12.4. Runs on a real eligible iPhone; the Simulator only works if the Mac has Apple Intelligence. |
 | W2 (DONE 2026-11-22 as mvp3-a) | Query understanding with `@Generable` | `Logic/LocalAI.swift`, `Logic/Query.swift` | Maps onto `Constraints`; rules remain the fallback and the baseline. |
 | W3 (DONE 2026-11-22 as mvp3-a: Find shows the instant result, then upgrades when the on-device model answers; re-runs retrieval with model-parsed constraints; an empty re-run keeps the instant result; special answers not upgraded; OpenAI switch path unchanged; 144 tests, 1 skipped; live upgrade not viewed in the UI) | Explain and re-rank top candidates | `Logic/LocalAI.swift`, `Logic/Search.swift` | Replaces `AIClient.rank` as the default. |
-| W4 (Add parse DONE 2026-11-22 as mvp3-b: chain OpenAI only if the switch is on, else on-device model if available, else Capture regex; model fields validated against the note case-insensitively; 3 s timeout; note clipped to 1500 chars; real model not run in the Simulator; 149 tests, 1 skipped. Accepted gaps: with the OpenAI switch on, an OpenAI failure goes straight to the regex and skips the on-device model; the switch-on path has no test; a model spelling that differs in accents from the note ("Sofia" vs "Sofía") is dropped, so the regex field is used. Message drafts DONE 2026-11-22 as mvp3-c: chain in `LocalAI.message`: OpenAI only if the switch is on, else on-device model, else template; an unavailable model gives the template instantly; up to 6 s "Writing..." only during a real model call; a model draft must contain the person's first name; 154 tests, 1 skipped. All MVP-3 work is simulator-only: real on-device model output was never viewed in the UI) | Add parse and message drafts on device | `Logic/Capture.swift`, `Logic/LocalAI.swift` | Same validity rules as 12.2. |
+| W4 (Add parse DONE 2026-11-22 as mvp3-b: chain OpenAI only if the switch is on, else on-device model if available, else Capture regex; model fields validated against the note case-insensitively; 3 s timeout; note clipped to 1500 chars; real model not run in the Simulator; 149 tests, 1 skipped. Accepted gaps: ~~with the OpenAI switch on, an OpenAI failure goes straight to the regex and skips the on-device model; the switch-on path has no test~~ (fixed on branch `cloud/ios-batch`, unbuilt: `LocalAI.readNote` and `LocalAI.message` try the on-device model after an OpenAI failure, with tests); a model spelling that differs in accents from the note ("Sofia" vs "Sofía") is dropped, so the regex field is used. Message drafts DONE 2026-11-22 as mvp3-c: chain in `LocalAI.message`: OpenAI only if the switch is on, else on-device model, else template; an unavailable model gives the template instantly; up to 6 s "Writing..." only during a real model call; a model draft must contain the person's first name; 154 tests, 1 skipped. All MVP-3 work is simulator-only: real on-device model output was never viewed in the UI) | Add parse and message drafts on device | `Logic/Capture.swift`, `Logic/LocalAI.swift` | Same validity rules as 12.2. |
 | W5 (DONE 2026-11-22 as mvp3-d: Settings status line, 138 tests) | Availability, status line, fallback UX | `Screens/SettingsView.swift` | No dead ends: every AI action has a working local result. |
 | W6 (SHIPPED 2026-11-22, 135 tests pass, validator PASS; simulator tests only, Settings UI not seen on screen) | OpenAI opt-in toggle, default off, plain-language disclosure | `Services/AIClient.swift`, `Screens/SettingsView.swift` | Gate every `AIClient` call on the toggle. |
 | W7 (SHIPPED 2026-11-22, thresholds 30/60/120 adopted, no notifications; 5 unit tests; Connections / profile UI compiled but not seen on screen) | **Losing-touch nudge** | `Screens/Shell.swift` / Connections, `Services/Nudges.swift` | Uses `lastContacted` and `closeness`. Default thresholds (proposed): closeness 3 = 30 days, 2 = 60, 1 or unset = 120. Shows a "Reach out" section and a dot on the row; tapping "Talked today" or saving a moment resets it. Optional weekly local notification via `UNUserNotificationCenter` (no server, off until the user agrees). Snooze per person. |
@@ -467,6 +467,6 @@ Draft message   -> Foundation Models; fallback: template drafts
 
 **rel-c (privacy manifest) is no longer on hold, but changed (2026-11-22):** keep the optional OtherUserContent declaration and only verify / fix it (brief rewritten). New: rel-d (consent sheet) and rel-e (draft privacy page); queue in `.orchestration/briefs/rel2-queue.md`.
 
-**rel2 (2026-11-22, Simulator tests only):** 11 D1 privacy page DRAFTED at `public/privacy.html` (served at /privacy.html once deployed; NOT deployed; has `[VINCE: support email]` and `[VINCE: confirm OpenAI data-use wording]` placeholders). 11 D2 consent sheet done locally (the switch needs consent at the current `consentVersion`; no request of any kind, App Attest included, without it; a server-side consent gate still needs accounts). 11 D4 privacy manifest verified (OtherUserContent, not linked, no tracking, UserDefaults CA92.1; `CACurrentMediaTime` is not on Apple's required-reason list, so no declaration). Accepted gaps: the consent sheet omits the message kind / goal, the IP address and App Attest (the policy page covers them); the Settings toggle flow and sheet visuals are untested in the UI.
+**rel2 (2026-11-22, Simulator tests only):** 11 D1 privacy page DRAFTED at `public/privacy.html` (served at /privacy.html; NOT deployed at the time, deployed later the same day, see the 11 D1 update below; has `[VINCE: support email]` and `[VINCE: confirm OpenAI data-use wording]` placeholders). 11 D2 consent sheet done locally (the switch needs consent at the current `consentVersion`; no request of any kind, App Attest included, without it; a server-side consent gate still needs accounts). 11 D4 privacy manifest verified (OtherUserContent, not linked, no tracking, UserDefaults CA92.1; `CACurrentMediaTime` is not on Apple's required-reason list, so no declaration). Accepted gaps: the consent sheet omits the message kind / goal, the IP address and App Attest (the policy page covers them); the Settings toggle flow and sheet visuals are untested in the UI.
 
-**11 D1 update (2026-11-22):** privacy page placeholders filled (support email, OpenAI policy pointer sentence); still not deployed.
+**11 D1 update (2026-11-22):** privacy page placeholders filled (support email, OpenAI policy pointer sentence); deployed 2026-11-22 at `https://peepl-steel.vercel.app/privacy.html`.
