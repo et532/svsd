@@ -48,7 +48,6 @@ struct ConnectionsView: View {
                 .padding(.bottom, 100)
             }
             .scrollEdgeEffectStyle(.soft, for: [.top, .bottom])
-            .background(AuraBackground(light: true))
             .fileExporter(isPresented: $exporting, document: BackupFile(people: allPeople), contentType: .json, defaultFilename: "Peepl backup") { _ in }
             .fileImporter(isPresented: $importing, allowedContentTypes: [.json]) { result in
                 guard case .success(let url) = result, url.startAccessingSecurityScopedResource() else { nav.say("Couldn't read that file"); return }

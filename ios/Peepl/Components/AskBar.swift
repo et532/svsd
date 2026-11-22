@@ -36,6 +36,10 @@ struct AskBar: View {
             bar
         }
         .padding(.horizontal, 16)
+        .background(alignment: .bottom) {
+            LinearGradient(colors: [.clear, Color(hex: "3b2a5e").opacity(0.45)], startPoint: .top, endPoint: .bottom)
+                .frame(height: 170).ignoresSafeArea(edges: .bottom).allowsHitTesting(false)
+        }
         .animation(Motion.animation(Motion.snap, reduce: reduce), value: nav.focus?.id)
         .animation(Motion.animation(Motion.snap, reduce: reduce), value: nav.showFilter)
     }
