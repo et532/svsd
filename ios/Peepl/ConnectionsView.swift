@@ -6,13 +6,29 @@ struct ConnectionsView: View {
     @Environment(Nav.self) private var nav
     @Environment(\.modelContext) private var context
     @Query(sort: \Person.name) private var allPeople: [Person]
-    @State private var exporting = false
-    @State private var importing = false
+    @State private var sort = Sort.nameAZ
     @State private var intro = true   // the first-load stagger plays once, not on every scroll or filter change
     @Environment(\.accessibilityReduceMotion) private var reduce
+    private enum Sort: String, CaseIterable {
+        case nameAZ = "Name A–Z", nameZA = "Name Z–A", location = "Location", job = "Job", recent = "Recently in touch"
+    }
     private var people: [Person] {
-        guard let f = nav.showFilter else { return allPeople }
-        let ids = Set(f.ids); return allPeople.filter { ids.contains($0.id) }
+        var list = allPeople
+        if let f = nav.showFilter { let ids = Set(f.ids); list = list.filter { ids.contains($0.id) } }
+        func by(_ key: (Person) -> String) -> [Person] {
+            list.sorted { (a, b) in
+                let (x, y) = (key(a), key(b))
+                if x.isEmpty != y.isEmpty { return !x.isEmpty } // blanks last
+                return x == y ? a.name < b.name : x.localizedCaseInsensitiveCompare(y) == .orderedAscending
+            }
+        }
+        switch sort {
+        case .nameAZ: return list
+        case .nameZA: return Array(list.reversed())
+        case .location: return by { $0.livesNow.city == "Unknown" ? "" : $0.livesNow.city }
+        case .job: return by { $0.profession }
+        case .recent: return list.sorted { $0.lastContacted > $1.lastContacted }
+        }
     }
 
     var body: some View {
@@ -25,13 +41,14 @@ struct ConnectionsView: View {
                             .foregroundStyle(Theme.ink)
                         Spacer()
                         Menu {
-                            Button("Back up") { exporting = true }.accessibilityLabel("Back up")
-                            Button("Restore") { importing = true }.accessibilityLabel("Restore")
+                            Picker("Sort by", selection: $sort) {
+                                ForEach(Sort.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                            }
                         } label: {
-                            Image(systemName: "ellipsis").font(Theme.font(18)).foregroundStyle(Theme.ink).frame(width: 44, height: 44).contentShape(.rect)
+                            Image(systemName: "line.3.horizontal.decrease").font(Theme.font(18)).foregroundStyle(Theme.ink).frame(width: 44, height: 44).contentShape(.rect)
                         }
                         .buttonStyle(PressStyle(scale: 0.95))
-                        .accessibilityLabel("More")
+                        .accessibilityLabel("Sort")
                     }
                     .padding(.bottom, 12)
                     if allPeople.isEmpty { EmptyPeople().padding(.top, 120).transition(.opacity.combined(with: .scale(scale: 0.96))) }
@@ -48,14 +65,6 @@ struct ConnectionsView: View {
                 .padding(.bottom, 100)
             }
             .scrollEdgeEffectStyle(.soft, for: [.top, .bottom])
-            .fileExporter(isPresented: $exporting, document: BackupFile(people: allPeople), contentType: .json, defaultFilename: "Peepl backup") { _ in }
-            .fileImporter(isPresented: $importing, allowedContentTypes: [.json]) { result in
-                guard case .success(let url) = result, url.startAccessingSecurityScopedResource() else { nav.say("Couldn't read that file"); return }
-                defer { url.stopAccessingSecurityScopedResource() }
-                if let data = try? Data(contentsOf: url), let b = try? JSONDecoder().decode(BackupFile.self, from: data) {
-                    nav.say("Restored \(b.restore(into: context)) people")
-                } else { nav.say("Couldn't read that file") }
-            }
     }
 }
 

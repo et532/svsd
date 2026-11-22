@@ -15,6 +15,7 @@ struct MindmapView: View {
     @State private var size = CGSize.zero
     @State private var selectedId: String?
     @State private var lastMagnification = 1.0
+    @State private var pinching = false   // true for the whole pinch, so a finger landing mid-pinch can't restart pan or the zoom baseline
     @State private var pillWidth: CGFloat = 0
     @State private var limitHits = 0
     @Environment(\.accessibilityReduceMotion) private var reduce
@@ -87,7 +88,7 @@ struct MindmapView: View {
 
     private var drag: some Gesture {
         DragGesture(minimumDistance: 0)
-            .onChanged { v in model.touchMoved(v.location, size: size); paused = false }
+            .onChanged { v in if !pinching { model.touchMoved(v.location, size: size) }; paused = false }
             .onEnded { v in
                 if let tap = model.touchEnded(v.location, size: size) { selectedId = tap }
                 paused = false
@@ -97,14 +98,14 @@ struct MindmapView: View {
     private var pinch: some Gesture {
         MagnifyGesture()
             .onChanged { v in
-                if !model.pinched { model.pinchBegan(); lastMagnification = 1 }
+                if !pinching { pinching = true; model.pinchBegan(); lastMagnification = 1 }
                 let a = CGPoint(x: v.startAnchor.x * size.width, y: v.startAnchor.y * size.height)
                 model.zoom(at: a, factor: v.magnification / lastMagnification, size: size)
                 lastMagnification = v.magnification
                 limitHits = model.limitHits
                 paused = false
             }
-            .onEnded { _ in model.settle(size); paused = false }
+            .onEnded { _ in pinching = false; lastMagnification = 1; model.settle(size); paused = false }
     }
 
     private func draw(_ ctx: inout GraphicsContext, _ sz: CGSize, now: TimeInterval) {

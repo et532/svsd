@@ -53,6 +53,7 @@ struct RootView: View {
     @Environment(\.accessibilityReduceMotion) private var reduce
     private var depth: CGFloat { nav.layers.last?.isProfile == true ? 1 - nav.dragProgress : 0 }
 
+    @State private var showSettings = false
     var body: some View {
         ZStack {
             // page background lives outside the receding container, so it never scales, shifts or dims and reaches every edge
@@ -72,7 +73,16 @@ struct RootView: View {
                 }
             }
             .animation(Motion.animation(Motion.smooth, reduce: reduce), value: nav.tab)
-            VStack { TopControls(tab: Binding(get: { nav.tab }, set: { nav.focus = nil; nav.tab = $0 })).frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 16); Spacer() }
+            VStack {
+                HStack {
+                    TopControls(tab: Binding(get: { nav.tab }, set: { nav.focus = nil; nav.tab = $0 }))
+                    Spacer()
+                    if nav.tab == .connections { SettingsButton { showSettings = true }.transition(.opacity) }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 16)
+                Spacer()
+            }
+            .sheet(isPresented: $showSettings) { SettingsView().presentationDetents([.medium, .large]) }
             VStack { Spacer(); AskBar() }.ignoresSafeArea(.keyboard) // stays put under Add / Find instead of riding the keyboard
             }
             // the mindmap's orbs are drawn in its Canvas inside this container, so it must not scale or shift there (an edge would show); Connections' ground is separate

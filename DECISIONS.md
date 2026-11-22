@@ -1,13 +1,13 @@
 # Decisions
 
-Newest at the bottom. Only Fable edits this file. One line each: decision, reason, date, who decided.
+Newest at the bottom. Anyone (human or agent) may edit this file. One line each: decision, reason, date, who decided.
 
 ## Settled
 
 - 2026-11-16 (Vince): Rewrite Peepl as a native app instead of wrapping the web app in Capacitor. Reason: native Liquid Glass, on-device voice, storage iOS will not evict.
 - 2026-11-16 (Vince): **SwiftUI, iOS only**, not React Native. Reason: Apple-only goal; native glass and Speech framework.
 - 2026-11-16 (Vince): First milestone is the **core loop** (list, profile, typed Add, persistence); mindmap, Find and voice follow.
-- 2026-11-16 (Vince): **Keep OpenAI** behind the existing `/api/ai/*` endpoint for parse / rank / draft, instead of on-device AI. Reason: Vince is already building the parser there.
+- 2026-11-16 (Vince): **Keep OpenAI** behind the existing `/api/ai/*` endpoint for parse / rank / draft, instead of on-device AI. Reason: Vince is already building the parser there. **Superseded 2026-11-22: on-device AI by default, OpenAI opt-in only (see the last entries).**
 - 2026-11-16 (Fable): Deployment target **iOS 26.0**, iPhone only, portrait. Reason: `.glassEffect()` needs iOS 26; installed SDK is Xcode 27.2.
 - 2026-11-16 (Fable): **XcodeGen** (`ios/project.yml`) generates the Xcode project; `ios/Peepl.xcodeproj` and `ios/build` are git-ignored. Reason: no `.pbxproj` merge conflicts between parallel worktrees.
 - 2026-11-16 (Fable): **Swift language mode 5** for now. Reason: avoids Swift 6 strict-concurrency friction in a prototype; revisit at M5.
@@ -20,7 +20,7 @@ Newest at the bottom. Only Fable edits this file. One line each: decision, reaso
 ## Open (need the human; see `PLAN.md` section 7)
 
 - AI endpoint authentication for the native app (App Attest recommended).
-- Supabase layer: delete, or add auth + per-user RLS (delete recommended).
+- Private beta defaults D1-D7 in `PLAN.md` section 11.1 (Sign in with Apple only, account optional, Supabase for accounts only, per-user quota in Postgres, Apple-only crash reports (no Sentry), no cloud copy of people). 
 - Apple Developer Program purchase timing.
 
 ## Open (Fable decides, will log here)
@@ -44,3 +44,9 @@ Newest at the bottom. Only Fable edits this file. One line each: decision, reaso
 
 - 2026-11-21 (lead, iOS fixes M5a): the white band fix took 3 rounds (a recolour was rejected; the ground then moved out of the depth container; finally the mindmap tab does not scale or offset at all). Side effect: the mindmap no longer recedes under a profile, only a 5% dim. `closeOrigin` defaults to (0.1, 0.1) until the X is measured; `revealOrigin` is now only the open point set by the ask bar.
 - 2026-11-21 (lead, iOS fixes M5b): `Nav.pop()` resigns first responder in the same transaction as removing the layer, with no `keyboardWillHide` curve, so keyboard / layer sync is approximate. Autofocus on open is immediate and may need a 0.1-0.2 s delay. A profile back over a focused Find also drops its keyboard. The ask bar fades and offsets while an Add or Find layer is up (`covered`).
+
+- 2026-11-22 (Vince): **People stay on the device; the backend holds accounts only** (plus consent and AI usage counts). This reverses the earlier recommendation to delete Supabase: a new Supabase project is used for accounts, never for people. Per-user AI limits, crash reporting, consent for OpenAI, a privacy policy and robust export / restore are all in scope for the friends-and-family TestFlight beta. Plan: `PLAN.md` section 11.
+- 2026-11-22 (Vince): **Confirmed D1-D7** (`PLAN.md` section 11.1): Sign in with Apple only; app works without an account, AI needs one; Supabase for accounts only; per-user daily quota in Postgres; App Attest kept; crash reports via Apple's Organizer / TestFlight (no Sentry, Vince 2026-11-22); no cloud copy of people. **Accounts, quotas and consent (D1-D5) now only matter if the OpenAI opt-in ships (see below).**
+- 2026-11-22 (Vince): **MVP scope** after the Dex / Mesh competitor research: iOS only (Android later); no cross-device sync and no cloud copy of people, everything 100% on device; moving devices is a Back up file the user emails or AirDrops to themselves and Restores on the other device; add a **losing-touch nudge**. Plan: `PLAN.md` section 12.
+- 2026-11-22 (Vince): **AI is on-device by default: rules + on-device embeddings (option A) plus Apple Foundation Models (option B); OpenAI is opt-in only, off by default.** The model parses questions and explains a short candidate list; code does the retrieval. Must pass the test plan in `PLAN.md` section 12.4 before it replaces OpenAI as the default. Reason: 100% on device, no accounts or quotas needed, a stronger privacy story than Dex and Mesh. Supersedes the 2026-11-16 "keep OpenAI" line.
+- 2026-11-22 (Vince): **Anyone may edit `DECISIONS.md`.** The old "only Fable edits this file" rule is removed because Vince no longer has access to Fable.
