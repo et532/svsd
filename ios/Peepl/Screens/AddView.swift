@@ -184,15 +184,6 @@ private struct ResultCard: View {
     }
 }
 
-private struct Shimmer: View {
-    @State private var on = false
-    var body: some View {
-        Color.white.opacity(on ? 0.35 : 0.8)
-            .animation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true), value: on)
-            .onAppear { on = true }
-    }
-}
-
 private struct AddAura: View {
     var body: some View {
         ZStack {

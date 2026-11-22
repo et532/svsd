@@ -217,7 +217,6 @@ private struct FindCard: View {
 private struct Thinking: View {
     private static let steps = ["Reading your notes…", "Looking through your people…", "Picking the best matches…"]
     @State private var step = 0
-    @State private var dim = false
 
     var body: some View {
         Text(Self.steps[step]).font(Theme.font(16)).foregroundStyle(Theme.inkMuted)
@@ -229,10 +228,8 @@ private struct Thinking: View {
                 }
             }
         ForEach(0..<2, id: \.self) { _ in
-            Color.white.opacity(dim ? 0.35 : 0.8).frame(height: 120).clipShape(.rect(cornerRadius: 20))
+            Shimmer().frame(height: 120).clipShape(.rect(cornerRadius: 20))
         }
-        .animation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true), value: dim)
-        .onAppear { dim = true }
         .accessibilityHidden(true)
     }
 }
