@@ -1,6 +1,6 @@
 import type { IncomingHttpHeaders, IncomingMessage, ServerResponse } from 'node:http'
 import type { Plugin } from 'vite'
-import { challengeValid, makeChallenge, signToken, verifyAttestation, verifyToken } from './appAttest'
+import { challengeValid, makeChallenge, signToken, verifyAttestation, verifyToken } from './appAttest.js'
 
 // The AI behind the app, as one endpoint: POST /api/ai/<task> answers with JSON. It holds the OpenAI key so the browser
 // never sees it. The same `handleAi` runs in two places: the Vite dev / preview server (aiPlugin below, key from
