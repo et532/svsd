@@ -409,8 +409,8 @@ Draft message   -> Foundation Models; fallback: template drafts
 | ID | Work | Files (likely) | Notes |
 |---|---|---|---|
 | W1 (DONE 2026-11-22: guard enforced in `LocalAI.explain(question:matches:)`; eval is opt-in via `TEST_RUNNER_PEEPL_RUN_EVAL=1`; report `.orchestration/reports/w1b-eval.md`) | **Spike and eval harness** (do first, gates the rest) | `PeeplTests/` new `FoundationModelsEvalTests`, `Logic/LocalAI.swift` | 12.4. Runs on a real eligible iPhone; the Simulator only works if the Mac has Apple Intelligence. |
-| W2 | Query understanding with `@Generable` | `Logic/LocalAI.swift`, `Logic/Query.swift` | Maps onto `Constraints`; rules remain the fallback and the baseline. |
-| W3 | Explain and re-rank top candidates | `Logic/LocalAI.swift`, `Logic/Search.swift` | Replaces `AIClient.rank` as the default. |
+| W2 (DONE 2026-11-22 as mvp3-a) | Query understanding with `@Generable` | `Logic/LocalAI.swift`, `Logic/Query.swift` | Maps onto `Constraints`; rules remain the fallback and the baseline. |
+| W3 (DONE 2026-11-22 as mvp3-a: Find shows the instant result, then upgrades when the on-device model answers; re-runs retrieval with model-parsed constraints; an empty re-run keeps the instant result; special answers not upgraded; OpenAI switch path unchanged; 144 tests, 1 skipped; live upgrade not viewed in the UI) | Explain and re-rank top candidates | `Logic/LocalAI.swift`, `Logic/Search.swift` | Replaces `AIClient.rank` as the default. |
 | W4 | Add parse and message drafts on device | `Logic/Capture.swift`, `Logic/LocalAI.swift` | Same validity rules as 12.2. |
 | W5 (DONE 2026-11-22 as mvp3-d: Settings status line, 138 tests) | Availability, status line, fallback UX | `Screens/SettingsView.swift` | No dead ends: every AI action has a working local result. |
 | W6 (SHIPPED 2026-11-22, 135 tests pass, validator PASS; simulator tests only, Settings UI not seen on screen) | OpenAI opt-in toggle, default off, plain-language disclosure | `Services/AIClient.swift`, `Screens/SettingsView.swift` | Gate every `AIClient` call on the toggle. |
