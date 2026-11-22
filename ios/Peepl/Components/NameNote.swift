@@ -33,6 +33,7 @@ struct NameNote: View {
     @State private var editing: Int?
     @State private var typed = ""
     @FocusState private var typing: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduce
 
     private var words: [Word] {
         let names = NameFixes.outlines(text, people: people)
@@ -59,6 +60,7 @@ struct NameNote: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 10).padding(.leading, 6)
+        .animation(Motion.animation(Motion.snap, reduce: reduce), value: editing)
     }
 
     @ViewBuilder private func nameWord(_ w: Word, _ name: String) -> some View {
@@ -72,15 +74,15 @@ struct NameNote: View {
                         .onSubmit { save(w, name) }
                 }
             .font(Theme.font(16)).padding(.horizontal, 3).padding(.vertical, 1)
-            .overlay(RoundedRectangle(cornerRadius: 6).stroke(Theme.ink, lineWidth: 1))
+            .overlay { Outline(Theme.ink) }
             .onAppear { typing = true }
         } else if !interactive {
             Text(w.text).font(Theme.font(16)).foregroundStyle(Theme.ink).padding(.horizontal, 3).padding(.vertical, 1)
-                .overlay(RoundedRectangle(cornerRadius: 6).stroke(Theme.ink.opacity(0.25), lineWidth: 1))
+                .overlay { Outline(Theme.ink.opacity(0.25)) }
         } else {
             Button { typed = ""; editing = w.id } label: {
                 Text(w.text).font(Theme.font(16)).foregroundStyle(Theme.ink).padding(.horizontal, 3).padding(.vertical, 1)
-                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(Theme.ink.opacity(0.25), lineWidth: 1))
+                    .overlay { Outline(Theme.ink.opacity(0.25)) }
             }
             .buttonStyle(PressStyle(scale: 0.95)).accessibilityLabel("Fix the name \(w.text)")
         }
@@ -91,6 +93,17 @@ struct NameNote: View {
         editing = nil
         guard !t.isEmpty, t != w.text else { return }
         text = NameFixes.rename(text, name: name, word: w.index, typed: t, people: people, fixed: &fixed)
+    }
+}
+
+/// A name's outline, fading in over 0.2 s when it first appears.
+private struct Outline: View {
+    let color: Color
+    init(_ c: Color) { color = c }
+    @State private var shown = false
+    var body: some View {
+        RoundedRectangle(cornerRadius: 6).stroke(color, lineWidth: 1).opacity(shown ? 1 : 0)
+            .onAppear { withAnimation(.easeOut(duration: 0.2)) { shown = true } }
     }
 }
 
