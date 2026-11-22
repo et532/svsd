@@ -45,42 +45,46 @@ struct PeopleFilter: Equatable { var ids: [String]; var label: String }
 struct RootView: View {
     @Environment(\.modelContext) private var context
     @State private var nav = Nav()
+    @Environment(\.accessibilityReduceMotion) private var reduce
 
     var body: some View {
         ZStack {
             Theme.bg.ignoresSafeArea()
-            switch nav.tab {
-            case .mindmap:
-                MindmapView()
-            case .connections:
-                ConnectionsView()
+            Group {
+                switch nav.tab {
+                case .mindmap:
+                    MindmapView().transition(.opacity)
+                case .connections:
+                    ConnectionsView().transition(.opacity)
+                }
             }
+            .animation(Motion.animation(Motion.smooth, reduce: reduce), value: nav.tab)
             VStack { TopControls(tab: Binding(get: { nav.tab }, set: { nav.focus = nil; nav.tab = $0 })).frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 16); Spacer() }
             VStack { Spacer(); AskBar() }
             // by position: the same profile can be on the stack twice (A -> B -> A), which a by-value id can't hold
             ForEach(Array(nav.layers.enumerated()), id: \.offset) { i, layer in
                 LayerHost(layer: layer)
-                    .transition(layer.isProfile ? AnyTransition.move(edge: .trailing) : AnyTransition(RevealTransition(origin: nav.revealOrigin)))
+                    .transition(reduce ? .opacity : layer.isProfile ? AnyTransition.move(edge: .trailing) : AnyTransition(RevealTransition(origin: nav.revealOrigin)))
                     .zIndex(Double(i) + 1)
             }
             if let toast = nav.toast {
                 VStack {
                     Spacer()
                     HStack(spacing: 8) {
-                        Image(systemName: "checkmark.circle.fill").foregroundStyle(Color(hex: "d6f23c"))
-                        Text(toast).foregroundStyle(.white)
+                        Image(systemName: "checkmark.circle.fill").foregroundStyle(Color(hex: "d6f23c")).symbolEffect(.bounce, value: toast)
+                        Text(toast).foregroundStyle(.white).contentTransition(.opacity)
                     }
                     .font(Theme.font(15, .medium))
                     .padding(.horizontal, 18).padding(.vertical, 12)
                     .background(Theme.ink, in: .capsule)
                     .padding(.bottom, 90)
                 }
-                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .transition(reduce ? .opacity : .move(edge: .bottom).combined(with: .opacity).combined(with: .scale(scale: 0.92)))
                 .zIndex(1000)
             }
         }
-        .animation(.easeInOut(duration: 0.3), value: nav.layers)
-        .animation(.easeInOut(duration: 0.25), value: nav.toast)
+        .animation(Motion.animation(Motion.layer, reduce: reduce), value: nav.layers)
+        .animation(Motion.animation(Motion.pop, reduce: reduce), value: nav.toast)
         .sensoryFeedback(.selection, trigger: nav.tab)
         .sensoryFeedback(.impact(weight: .light), trigger: nav.layers.count)
         .sensoryFeedback(.success, trigger: nav.toast) { _, new in new != nil }
@@ -104,6 +108,8 @@ private struct LayerHost: View {
     @Environment(Nav.self) private var nav
     @Environment(\.modelContext) private var context
     @State private var dragX: CGFloat = 0
+    @Environment(\.accessibilityReduceMotion) private var reduce
+    @State private var glyphShown = false // the X turns in as the reveal grows
     @State private var edgeDrag = false // this drag began at the left edge and is mostly sideways
 
     var body: some View {
@@ -122,8 +128,11 @@ private struct LayerHost: View {
             if !layer.isProfile {
                 Button { nav.pop() } label: {
                     Image(systemName: "xmark").font(Theme.font(16, .semibold))
-                        .foregroundStyle(Theme.ink).frame(width: 44, height: 44).pastel(in: Circle())
+                        .foregroundStyle(Theme.ink)
+                        .rotationEffect(.degrees(glyphShown || reduce ? 0 : -90)).opacity(glyphShown || reduce ? 1 : 0)
+                        .frame(width: 44, height: 44).pastel(in: Circle())
                 }
+                .onAppear { withAnimation(Motion.smooth.delay(0.15)) { glyphShown = true } }
                 .buttonStyle(PressStyle(scale: 0.92)).padding(.leading, 16)
                 .accessibilityLabel("Back")
             }
