@@ -11,6 +11,15 @@ struct ProfileView: View {
     @State private var addingTag = false
     @State private var addingTodo = false
     @State private var confirmDelete = false
+    @State private var deleted = false
+    @State private var newMoment: String?
+    @State private var addBounce = 0
+    @Environment(\.accessibilityReduceMotion) private var reduce
+
+    /// Runs `body` with a Motion animation (a short fade under Reduce Motion).
+    private func go(_ a: Animation, _ body: () -> Void) { withAnimation(Motion.animation(a, reduce: reduce), body) }
+    /// Slides / scales are plain fades under Reduce Motion.
+    private func tr(_ t: AnyTransition) -> AnyTransition { reduce ? .opacity : t }
 
     private var blob: Blob { Blobs.blob(for: person.id) }
     private var moments: [Moment] { person.moments.sorted { $0.date > $1.date } }
@@ -27,15 +36,16 @@ struct ProfileView: View {
         ZStack(alignment: .top) {
             Theme.bg.ignoresSafeArea()
             aura
+            ScrollViewReader { proxy in
             ScrollView {
                 VStack(spacing: 0) {
                     hero
                     VStack(alignment: .leading, spacing: 24) {
-                        summary
-                        todos
-                        where_
-                        mutualsRow
-                        momentsList
+                        summary.appear(0)
+                        todos.appear(1)
+                        where_.appear(2)
+                        mutualsRow.appear(3)
+                        momentsList.appear(4)
                     }
                     .padding(.horizontal, 16).padding(.top, 20).padding(.bottom, 100)
                 }
@@ -44,13 +54,22 @@ struct ProfileView: View {
             .scrollDismissesKeyboard(.immediately) // leaving an inline field saves it
             .ignoresSafeArea(edges: .top) // hero runs under the status bar
             .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y + $0.contentInsets.top } action: { _, y in scrolled = y }
+            .onChange(of: newMoment) { _, id in
+                guard let id else { return }
+                go(Motion.smooth) { proxy.scrollTo(id, anchor: .center) }
+                newMoment = nil
+            }
+            }
             topBar
         }
         .safeAreaInset(edge: .bottom) {
             if !addingTag && !addingTodo { // the inline field has the keyboard
                 Composer(placeholder: "Add a moment", onSend: { text in
-                    let m = PeopleStore.addMoment(to: person, note: text, in: context)
-                    openMoment = m.id
+                    go(Motion.smooth) {
+                        let m = PeopleStore.addMoment(to: person, note: text, in: context)
+                        openMoment = m.id
+                        newMoment = m.id
+                    }
                     nav.say("New moment saved")
                 }, people: everyone)
                 .padding(.horizontal, 16).padding(.bottom, 8)
@@ -64,9 +83,11 @@ struct ProfileView: View {
         .onAppear {
             if let f = nav.fresh, person.moments.contains(where: { $0.id == f }) { openMoment = f; nav.fresh = nil }
         }
+        .sensoryFeedback(.warning, trigger: deleted)
         .confirmationDialog("Delete \(person.name)?", isPresented: $confirmDelete, titleVisibility: .visible) {
             Button("Delete person", role: .destructive) {
                 let p = person, ctx = context
+                deleted.toggle()
                 nav.forget(p.id)
                 nav.say("\(p.firstName) deleted")
                 // once the profile has slid away: a view must never read a deleted person
@@ -94,16 +115,14 @@ struct ProfileView: View {
     }
 
     private func addTag(_ text: String?) {
-        addingTag = false
-        guard let tag = text?.lowercased(), !person.tags.contains(tag) else { return }
-        person.tags.append(tag)
+        guard let tag = text?.lowercased(), !person.tags.contains(tag) else { go(Motion.snap) { addingTag = false }; return }
+        go(Motion.snap) { addingTag = false; person.tags.append(tag) }
         try? context.save()
     }
 
     private func addTodo(_ text: String?) {
-        addingTodo = false
-        guard let text else { return }
-        person.addTodo(id: Capture.uid(), text: text)
+        guard let text else { go(Motion.snap) { addingTodo = false }; return }
+        go(Motion.smooth) { addingTodo = false; person.addTodo(id: Capture.uid(), text: text) }
         try? context.save()
     }
 
@@ -182,20 +201,24 @@ struct ProfileView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text(person.story).font(Theme.font(15)).foregroundStyle(Theme.ink)
             FlowLayout(spacing: 6) {
-                ForEach(person.tags, id: \.self) { chip($0) }
+                ForEach(person.tags, id: \.self) { chip($0).transition(tr(.scale.combined(with: .opacity))) }
                 if addingTag {
                     InlineField(placeholder: "New tag", size: 12, onDone: addTag).frame(width: 110)
                         .padding(.horizontal, 10).padding(.vertical, 5).overlay(Capsule().stroke(Theme.ink, lineWidth: 1))
+                        .transition(tr(.scale(scale: 0.9, anchor: .leading).combined(with: .opacity)))
                 } else {
-                    Button { addingTag = true } label: { chip("+ tag", ghost: true) }.buttonStyle(PressStyle(scale: 0.94)).accessibilityLabel("Add tag")
+                    Button { go(Motion.snap) { addingTag = true } } label: { chip("+ tag", ghost: true) }.buttonStyle(PressStyle(scale: 0.94)).accessibilityLabel("Add tag")
+                        .transition(tr(.scale(scale: 0.9, anchor: .leading).combined(with: .opacity)))
                 }
             }
+            .animation(Motion.animation(Motion.snap, reduce: reduce), value: person.tags)
             if addingTag, !tagIdeas.isEmpty {
                 FlowLayout(spacing: 6) {
                     ForEach(tagIdeas, id: \.self) { t in
                         Button { addTag(t) } label: { chip(t, ghost: true) }.buttonStyle(PressStyle(scale: 0.94))
                     }
                 }
+                .transition(tr(.opacity.combined(with: .offset(y: 6))))
             }
         }
         .padding(16).frame(maxWidth: .infinity, alignment: .leading).glass(20)
@@ -207,20 +230,29 @@ struct ProfileView: View {
             // Figma: one card, rows split by hairlines
             VStack(spacing: 0) {
                 ForEach(person.orderedTodos) { t in
-                    Button { t.done.toggle(); try? context.save() } label: {
-                        Text(t.text).strikethrough(t.done).font(Theme.font(15)).foregroundStyle(Theme.ink)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                    VStack(spacing: 0) {
+                        Button { go(Motion.snap) { t.done.toggle() }; try? context.save() } label: {
+                            HStack(spacing: 10) {
+                                Image(systemName: t.done ? "checkmark.circle.fill" : "circle").font(Theme.font(17))
+                                    .foregroundStyle(t.done ? Theme.ink : Theme.inkMuted.opacity(0.6))
+                                    .symbolEffect(.bounce, value: t.done)
+                                Text(t.text).strikethrough(t.done).font(Theme.font(15)).foregroundStyle(Theme.ink)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
                             .opacity(t.done ? 0.45 : 1).padding(.horizontal, 16).padding(.vertical, 14).contentShape(.rect)
+                        }
+                        .buttonStyle(PressStyle(scale: 0.99))
+                        .accessibilityLabel(t.text).accessibilityValue(t.done ? "Done" : "To do")
+                        .sensoryFeedback(.selection, trigger: t.done)
+                        Divider().padding(.leading, 16)
                     }
-                    .buttonStyle(PressStyle(scale: 0.99))
-                    .accessibilityLabel(t.text).accessibilityValue(t.done ? "Done" : "To do")
-                    .sensoryFeedback(.selection, trigger: t.done)
-                    Divider().padding(.leading, 16)
+                    .transition(tr(.move(edge: .top).combined(with: .opacity)))
                 }
                 if addingTodo {
                     InlineField(placeholder: "Something to do with \(person.firstName)", size: 15, onDone: addTodo).padding(16)
+                        .transition(tr(.scale(scale: 0.9, anchor: .leading).combined(with: .opacity)))
                 } else {
-                    Button { addingTodo = true } label: {
+                    Button { go(Motion.snap) { addingTodo = true } } label: {
                         HStack(spacing: 8) {
                             Image(systemName: "plus").font(Theme.font(12, .semibold))
                             Text("Add something to do").font(Theme.font(14))
@@ -229,6 +261,7 @@ struct ProfileView: View {
                         .foregroundStyle(Theme.inkMuted).padding(16).contentShape(.rect)
                     }
                     .buttonStyle(PressStyle(scale: 0.95))
+                    .transition(tr(.scale(scale: 0.9, anchor: .leading).combined(with: .opacity)))
                 }
             }
             .glass(16)
@@ -264,9 +297,9 @@ struct ProfileView: View {
             }
             ScrollView(.horizontal) {
                 HStack(alignment: .top, spacing: 16) {
-                    Button { nav.push(.add(mutualOf: person.id)) } label: {
+                    Button { addBounce += 1; nav.push(.add(mutualOf: person.id)) } label: {
                         VStack(spacing: 4) {
-                            Image(systemName: "plus").font(Theme.font(18)).foregroundStyle(Theme.inkMuted).frame(width: 48, height: 48)
+                            Image(systemName: "plus").font(Theme.font(18)).foregroundStyle(Theme.inkMuted).symbolEffect(.bounce, value: addBounce).frame(width: 48, height: 48)
                                 .overlay(Circle().stroke(Theme.inkMuted.opacity(0.5), style: StrokeStyle(lineWidth: 1.5, dash: [4, 3])))
                             Text("Add").font(Theme.font(12)).foregroundStyle(Theme.ink)
                         }
@@ -298,7 +331,7 @@ struct ProfileView: View {
             ForEach(moments) { m in
                 let open = openMoment == m.id
                 VStack(alignment: .leading, spacing: 10) {
-                    Button { openMoment = open ? nil : m.id } label: {
+                    Button { go(Motion.smooth) { openMoment = open ? nil : m.id } } label: {
                         HStack {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(dayLabel(m.date)).font(Theme.font(12)).foregroundStyle(Theme.inkMuted)
@@ -312,14 +345,20 @@ struct ProfileView: View {
                     }
                     .buttonStyle(PressStyle(scale: 0.98)).accessibilityValue(open ? "Open" : "Closed")
                     if open {
-                        if let text = m.text, text != m.title {
-                            Text(text).font(Theme.font(14)).foregroundStyle(Theme.inkMuted).frame(maxWidth: .infinity, alignment: .leading)
+                        VStack(alignment: .leading, spacing: 10) {
+                            if let text = m.text, text != m.title {
+                                Text(text).font(Theme.font(14)).foregroundStyle(Theme.inkMuted).frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            if let t = m.transcript { VoiceNote(transcript: t, seconds: m.seconds) }
                         }
-                        if let t = m.transcript { VoiceNote(transcript: t, seconds: m.seconds) }
+                        .transition(tr(.opacity.combined(with: .move(edge: .top))))
                     }
                 }
                 .padding(14).glass(16)
-                .overlay { if open { RoundedRectangle(cornerRadius: 16).stroke(Color(hex: "4f7cff"), lineWidth: 1.5) } }
+                .overlay { RoundedRectangle(cornerRadius: 16).stroke(Color(hex: "4f7cff"), lineWidth: 1.5).opacity(open ? 1 : 0) }
+                .animation(Motion.animation(Motion.snap, reduce: reduce), value: open)
+                .id(m.id)
+                .transition(tr(.scale(scale: 0.96).combined(with: .opacity)))
             }
         }
     }
@@ -381,6 +420,7 @@ private struct VoiceNote: View {
     let seconds: Int?
     @State private var at = 0 // bars played
     @State private var playing = false
+    @Environment(\.accessibilityReduceMotion) private var reduce
     private static let wave = (0..<40).map { 4 + Double(($0 * 7) % 11) * 1.6 }
 
     var body: some View {
@@ -391,18 +431,21 @@ private struct VoiceNote: View {
                 (Text(words.prefix(said).joined(separator: " ") + (said > 0 ? " " : "")).foregroundStyle(Theme.ink)
                     + Text(words.dropFirst(said).joined(separator: " ")).foregroundStyle(at == 0 ? Theme.ink : Theme.inkMuted.opacity(0.5)))
                     .font(Theme.font(14)).frame(maxWidth: .infinity, alignment: .leading)
+                    .animation(.easeOut(duration: 0.12), value: said)
                 HStack(spacing: 10) {
                     Button {
                         if !playing, at >= Self.wave.count { at = 0 }
-                        playing.toggle()
+                        withAnimation(Motion.animation(Motion.snap, reduce: reduce)) { playing.toggle() }
                     } label: {
                         Image(systemName: playing ? "pause.fill" : "play.fill").font(Theme.font(12)).foregroundStyle(.white)
+                            .contentTransition(.symbolEffect(.replace))
                             .frame(width: 32, height: 32).background(Theme.night, in: .circle)
                     }
                     .buttonStyle(PressStyle(scale: 0.9)).accessibilityLabel(playing ? "Pause voice note" : "Play voice note")
                     HStack(spacing: 2) {
                         ForEach(Self.wave.indices, id: \.self) { i in
                             Capsule().fill(i < at ? Theme.ink : Theme.inkMuted.opacity(0.3)).frame(width: 2.5, height: Self.wave[i])
+                                .animation(.linear(duration: 0.14), value: at)
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading).accessibilityHidden(true)
