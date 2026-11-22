@@ -199,7 +199,7 @@ private struct FindCard: View {
                     Button {
                         withAnimation(Motion.animation(Motion.smooth, reduce: reduce)) { text = ""; writing = true }
                         Task {
-                            let d = await AIClient.draft(p, action: action)
+                            let d = await LocalAI.message(p, action: action)
                             withAnimation(Motion.animation(Motion.smooth, reduce: reduce)) { text = d; writing = false }
                         }
                     } label: {
