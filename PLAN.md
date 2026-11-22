@@ -473,9 +473,10 @@ Draft message   -> Foundation Models; fallback: template drafts
 
 ## 13. Onboarding
 
-Spec: `ONBOARDING.md`. iOS only, no account, skippable.
+Spec: `ONBOARDING.md` (v4, 2026-11-22). iOS only, no account, skippable. 8 steps in 3 acts ("The story", "Learn by doing", "Make it yours"); demos auto-play with Pip as guide, no interactive tasks; first-run teaching happens in the real app.
 
-- [x] **O1 Spec** written and validated (2026-11-22).
-- [ ] **O2 open-design mockups** of the 7 screens / states in the spec's Mockup brief; Vince approves.
-- [ ] **O3 SwiftUI build**, sequential: T1 flow shell + static screens + gate + RootView hook; T2 Try it step + mic primer; T3 in-app tips + Settings replay + UI / unit tests.
+- [x] **O1 Spec** written and validated (2026-11-22); **v4** rewrite after the user's review of the v3 prototype.
+- [ ] **O2 open-design mockups** of the 8 steps plus the first-run states (coach callout, Add with Try to cover checklist, Add another, the plop mid-animation); Vince approves.
+- [ ] **O3 SwiftUI build**, sequential: T1 onboarding flow + gate (header: act title, Back, long progress bar, Skip; Next after 1 s); T2 auto demos + 3D + Pip; T3 first-run coach + Add "Try to cover" checklist + past-date parsing ("Met 2023") + fix the empty Mindmap state overlap bug (title sits under the status bar / top controls); T4 Add another + mindmap plop ripple + tips + Settings replay + tests.
 - [ ] **O4 Verify + docs:** run all tests with the skip flag, check Dynamic Type / VoiceOver / Reduce Motion, update `CLAUDE.md`, `PLAN.md`, `DECISIONS.md`.
+- Open for Vince: import from iOS Contacts (not in scope); `lifeStage` display is limited to 4 values (college, high school, grad school, childhood); voice caveat in privacy copy.
