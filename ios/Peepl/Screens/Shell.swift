@@ -19,6 +19,8 @@ struct PeopleFilter: Equatable { var ids: [String]; var label: String }
     var toast: String?
     /// Where Add / Find grow from (set by the ask bar before push).
     var revealOrigin = UnitPoint(x: 0.5, y: 0.95)
+    /// How far the top profile's edge swipe has gone (0...1), so the page under it follows the finger.
+    var dragProgress: CGFloat = 0
     private var toastTask: Task<Void, Never>?
 
     func push(_ l: Layer) { if layers.last != l { layers.append(l) } } // a double tap must not stack the same screen twice
@@ -46,10 +48,13 @@ struct RootView: View {
     @Environment(\.modelContext) private var context
     @State private var nav = Nav()
     @Environment(\.accessibilityReduceMotion) private var reduce
+    private var depth: CGFloat { nav.layers.last?.isProfile == true ? 1 - nav.dragProgress : 0 }
 
     var body: some View {
         ZStack {
             Theme.bg.ignoresSafeArea()
+            // Depth: with a profile on top, everything under it recedes (Add / Find use the circle reveal instead).
+            ZStack {
             Group {
                 switch nav.tab {
                 case .mindmap:
@@ -61,6 +66,10 @@ struct RootView: View {
             .animation(Motion.animation(Motion.smooth, reduce: reduce), value: nav.tab)
             VStack { TopControls(tab: Binding(get: { nav.tab }, set: { nav.focus = nil; nav.tab = $0 })).frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 16); Spacer() }
             VStack { Spacer(); AskBar() }
+            }
+            .scaleEffect(reduce ? 1 : 1 - 0.04 * depth)
+            .offset(x: reduce ? 0 : -30 * depth)
+            .opacity(1 - 0.15 * depth)
             // by position: the same profile can be on the stack twice (A -> B -> A), which a by-value id can't hold
             ForEach(Array(nav.layers.enumerated()), id: \.offset) { i, layer in
                 LayerHost(layer: layer)
@@ -126,11 +135,16 @@ private struct LayerHost: View {
             case .find(let voice): FindView(voice: voice)
             }
             if !layer.isProfile {
-                Button { nav.pop() } label: {
+                Button { withAnimation(Motion.animation(Motion.smooth, reduce: reduce)) { glyphShown = false }; nav.pop() } label: {
                     Image(systemName: "xmark").font(Theme.font(16, .semibold))
                         .foregroundStyle(Theme.ink)
                         .rotationEffect(.degrees(glyphShown || reduce ? 0 : -90)).opacity(glyphShown || reduce ? 1 : 0)
                         .frame(width: 44, height: 44).pastel(in: Circle())
+                }
+                // The dismiss shrinks into the X: set before the pop so the removal transition already has it.
+                .onGeometryChange(for: CGPoint.self) { let f = $0.frame(in: .global); return CGPoint(x: f.midX, y: f.midY) } action: { c in
+                    let s = UIScreen.main.bounds.size
+                    nav.revealOrigin = UnitPoint(x: c.x / s.width, y: c.y / s.height)
                 }
                 .onAppear { withAnimation(Motion.smooth.delay(0.15)) { glyphShown = true } }
                 .buttonStyle(PressStyle(scale: 0.92)).padding(.leading, 16)
@@ -142,15 +156,15 @@ private struct LayerHost: View {
         // Past 20% of the width it leaves; less, and it springs back.
         .simultaneousGesture(DragGesture(minimumDistance: 10, coordinateSpace: .global).onChanged { v in
             if !edgeDrag, dragX == 0, v.startLocation.x < 28, v.translation.width > abs(v.translation.height) { edgeDrag = true }
-            if edgeDrag { dragX = max(0, v.translation.width) }
+            if edgeDrag { dragX = max(0, v.translation.width); nav.dragProgress = min(1, dragX / UIScreen.main.bounds.width) }
         }.onEnded { v in
             guard edgeDrag else { return }
             edgeDrag = false
             let width = UIScreen.main.bounds.width
             if v.translation.width > width * 0.2 {
-                withAnimation(.easeOut(duration: 0.2)) { dragX = width } completion: { nav.pop() }
+                withAnimation(.easeOut(duration: 0.2)) { dragX = width; nav.dragProgress = 1 } completion: { nav.pop(); nav.dragProgress = 0 }
             } else {
-                withAnimation(.spring(duration: 0.3)) { dragX = 0 }
+                withAnimation(.spring(duration: 0.3)) { dragX = 0; nav.dragProgress = 0 }
             }
         }, including: layer.isProfile ? .all : .subviews)
     }
