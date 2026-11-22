@@ -7,6 +7,7 @@ struct ConnectionsView: View {
     @Environment(\.modelContext) private var context
     @Query(sort: \Person.name) private var allPeople: [Person]
     @State private var sort = Sort.nameAZ
+    @State private var snoozed = Nudges.load()
     @State private var intro = true   // the first-load stagger plays once, not on every scroll or filter change
     @Environment(\.accessibilityReduceMotion) private var reduce
     private enum Sort: String, CaseIterable {
@@ -31,6 +32,9 @@ struct ConnectionsView: View {
         }
     }
 
+    private var dueAll: [Person] { Nudges.due(allPeople, today: Capture.today(), snoozed: snoozed) }
+    private var dueIds: Set<String> { Set(dueAll.map(\.id)) }
+
     var body: some View {
         ScrollView {
                 LazyVStack(spacing: 8) {
@@ -52,13 +56,23 @@ struct ConnectionsView: View {
                     }
                     .padding(.bottom, 12)
                     if allPeople.isEmpty { EmptyPeople().padding(.top, 120).transition(.opacity.combined(with: .scale(scale: 0.96))) }
+                    if nav.showFilter == nil, !dueAll.isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Reach out").font(Theme.font(13, .medium)).foregroundStyle(Theme.inkMuted).padding(.leading, 4)
+                            ForEach(dueAll.prefix(5), id: \.id) { p in
+                                Button { nav.push(.profile(p.id)) } label: { Row(person: p, due: true) }.buttonStyle(PressStyle(scale: 0.98))
+                            }
+                        }
+                        .padding(.bottom, 8)
+                    }
                     ForEach(Array(people.enumerated()), id: \.element.id) { i, p in
-                        let row = Button { nav.push(.profile(p.id)) } label: { Row(person: p) }.buttonStyle(PressStyle(scale: 0.98))
+                        let row = Button { nav.push(.profile(p.id)) } label: { Row(person: p, due: dueIds.contains(p.id)) }.buttonStyle(PressStyle(scale: 0.98))
                         if intro && i < 10 { row.appear(i) } else { row }
                     }
                 }
                 .animation(Motion.animation(Motion.smooth, reduce: reduce), value: people.map(\.id))
                 .animation(Motion.animation(Motion.smooth, reduce: reduce), value: allPeople.isEmpty)
+                .onAppear { snoozed = Nudges.load() }
                 .task { try? await Task.sleep(for: .seconds(1)); intro = false }
                 .padding(.horizontal, 16)
                 .padding(.top, 78)
@@ -70,6 +84,7 @@ struct ConnectionsView: View {
 
 private struct Row: View {
     let person: Person
+    var due = false
 
     var body: some View {
         HStack(spacing: 12) {
@@ -80,6 +95,7 @@ private struct Row: View {
                     .font(Theme.font(13)).foregroundStyle(Theme.inkMuted).lineLimit(1)
             }
             Spacer(minLength: 8)
+            if due { Circle().fill(Theme.night).frame(width: 8, height: 8).accessibilityLabel("Reach out") }
             Image(systemName: "chevron.right").font(Theme.font(13, .semibold)).foregroundStyle(.tertiary)
         }
         .padding(.horizontal, 16)

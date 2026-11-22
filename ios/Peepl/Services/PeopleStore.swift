@@ -50,9 +50,17 @@ enum PeopleStore {
         person.moments.append(moment)
         if let f = draft.follow { person.addTodo(id: Capture.uid(), text: f) }
         person.lastContacted = Capture.today()
+        Nudges.clearSnooze(person.id)
         person.closeness = min(3, (person.closeness ?? 1) + 1)
         try? context.save()
         return moment
+    }
+
+    /// "Talked today": resets the clock (closeness unchanged) and clears any snooze.
+    static func talkedToday(_ person: Person, in context: ModelContext) {
+        person.lastContacted = Capture.today()
+        Nudges.clearSnooze(person.id)
+        try? context.save()
     }
 
     /// Deletes people with their moments and to-dos (cascade), and the links other people have to them.
