@@ -5,6 +5,9 @@ enum Motion {
     static let smooth = Animation.smooth(duration: 0.4)                          // content swaps, expand/collapse
     static let pop    = Animation.spring(response: 0.45, dampingFraction: 0.72)  // pop-ins, blob, toast
     static let layer  = Animation.spring(response: 0.5, dampingFraction: 0.9)    // screen push/pop
+    static let ease     = Animation.timingCurve(0.42, 0, 0.58, 1, duration: 0.4)  // ease-in-out for things that move
+    static let easeSlow = Animation.timingCurve(0.42, 0, 0.58, 1, duration: 0.6)
+    static let easeFast = Animation.timingCurve(0.42, 0, 0.58, 1, duration: 0.25)
 
     /// Stagger delay for the i-th item of a list entrance.
     static func stagger(_ i: Int, step: Double = 0.04, cap: Int = 10) -> Animation {

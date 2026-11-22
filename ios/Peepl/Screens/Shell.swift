@@ -63,6 +63,10 @@ struct RootView: View {
     private var depth: CGFloat { nav.layers.last?.isProfile == true ? 1 - nav.dragProgress : 0 }
 
     @State private var showSettings = false
+    @State private var gate = OnboardingGate()
+    @State private var onboardingDone = false
+    /// Decided in the first body, before the first frame, so the list never flashes under it.
+    private var showOnboarding: Bool { !onboardingDone && gate.show(context) }
     var body: some View {
         ZStack {
             // page background lives outside the receding container, so it never scales, shifts or dims and reaches every edge
@@ -106,6 +110,10 @@ struct RootView: View {
                     .transition(reduce ? .opacity : layer.isProfile ? AnyTransition.move(edge: .trailing) : AnyTransition.asymmetric(insertion: AnyTransition(RevealTransition(origin: nav.revealOrigin)), removal: AnyTransition(RevealTransition(origin: nav.closeOrigin))))
                     .zIndex(Double(i) + 1)
             }
+            if showOnboarding {
+                OnboardingFlow { withAnimation(Motion.animation(Motion.smooth, reduce: reduce)) { onboardingDone = true } }
+                    .transition(.opacity).zIndex(900)
+            }
             if let toast = nav.toast {
                 VStack {
                     Spacer()
@@ -135,6 +143,15 @@ struct RootView: View {
             if UserDefaults.standard.string(forKey: "findQuery") != nil { nav.push(.find()) } // see FindView.preset
             #endif
         }
+    }
+}
+
+/// Remembers the launch-time onboarding decision, so later redraws (and people added meanwhile) do not change it.
+private final class OnboardingGate {
+    private var value: Bool?
+    func show(_ context: ModelContext) -> Bool {
+        if value == nil { value = OnboardingState.shouldShow(peopleCount: (try? context.fetchCount(FetchDescriptor<Person>())) ?? 0) }
+        return value!
     }
 }
 

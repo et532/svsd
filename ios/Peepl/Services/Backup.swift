@@ -107,6 +107,7 @@ struct BackupFile: Codable {
 /// Shared by Settings and the empty list: pick a file, check it, ask Merge / Replace, apply, say what happened.
 struct BackupImporter: ViewModifier {
     @Binding var isPresented: Bool
+    var onRestored: (() -> Void)?
     @Environment(Nav.self) private var nav
     @Environment(\.modelContext) private var context
     @State private var pending: BackupFile?
@@ -135,12 +136,13 @@ struct BackupImporter: ViewModifier {
         do {
             let r = try f.restore(into: context, mode: mode)
             nav.say(mode == .replace ? "Restored \(r.total) people" : "Merged: \(r.added) added, \(r.updated) updated")
+            onRestored?()
         } catch { nav.say("Couldn't restore: \(error.localizedDescription)") }
         pending = nil
     }
 }
 
-extension View { func backupImporter(isPresented: Binding<Bool>) -> some View { modifier(BackupImporter(isPresented: isPresented)) } }
+extension View { func backupImporter(isPresented: Binding<Bool>, onRestored: (() -> Void)? = nil) -> some View { modifier(BackupImporter(isPresented: isPresented, onRestored: onRestored)) } }
 
 /// System share sheet (Mail, AirDrop, Files) for the backup file.
 struct ShareSheet: UIViewControllerRepresentable {
