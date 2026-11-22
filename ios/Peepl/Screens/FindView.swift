@@ -31,7 +31,7 @@ struct FindView: View {
 
     var body: some View {
         ZStack {
-            FindAura()
+            PastelAura().equatable()
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     if let pending {
@@ -253,18 +253,5 @@ private struct Thinking: View {
             Shimmer().frame(height: 120).clipShape(.rect(cornerRadius: 20)).appear(i)
         }
         .accessibilityHidden(true)
-    }
-}
-
-// Same pastel orbs as AddView's (private there; AddView is being changed by M4, so not shared yet).
-private struct FindAura: View {
-    var body: some View {
-        ZStack {
-            Circle().fill(Color(hex: "f5b5d3")).frame(width: 320).offset(x: -120, y: -260)
-            Circle().fill(Color(hex: "ffe08a")).frame(width: 300).offset(x: 140, y: -120)
-            Circle().fill(Color(hex: "a9c4ff")).frame(width: 340).offset(x: -140, y: 200)
-            Circle().fill(Color(hex: "ffb899")).frame(width: 280).offset(x: 150, y: 300)
-        }
-        .blur(radius: 90).opacity(0.6).ignoresSafeArea()
     }
 }

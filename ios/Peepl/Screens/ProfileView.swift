@@ -127,18 +127,17 @@ struct ProfileView: View {
     }
 
     private var aura: some View {
-        let c = blob.soft.map { Color(hex: $0) }
-        return ZStack {
-            Circle().fill(c[0]).frame(width: 360).blur(radius: 90).offset(x: -140, y: 360)
-            Circle().fill(c[1]).frame(width: 320).blur(radius: 90).offset(x: 160, y: 620)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity).opacity(0.6).allowsHitTesting(false)
+        let c = blob.soft
+        return PastelAura(orbs: [.init(color: c[0], size: 360, x: -140, y: 360), .init(color: c[1], size: 320, x: 160, y: 620)])
+            .equatable()
     }
+
+    private var heroFade: CGFloat { min(max((scrolled - 40) / 80, 0), 1) }
 
     private var hero: some View {
         // Figma "Profile Top": 233 pt tall, avatar left, name and details beside it
         HStack(spacing: 16) {
-            Avatar(id: person.id, size: 88)
+            Avatar(id: person.id, size: 88).scaleEffect(1 - 0.15 * heroFade).opacity(1 - heroFade)
             VStack(alignment: .leading, spacing: 6) {
                 Text(person.name).font(Theme.font(20, .medium)).foregroundStyle(.white)
                 Text(person.subtitle).font(Theme.font(13)).foregroundStyle(.white.opacity(0.85))

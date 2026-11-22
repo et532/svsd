@@ -56,7 +56,7 @@ struct AddView: View {
 
     var body: some View {
         ZStack {
-            AddAura()
+            PastelAura().equatable()
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     switch phase {
@@ -214,17 +214,5 @@ private struct ResultCard: View {
             }
         }
         .clipShape(.rect(cornerRadius: 24))
-    }
-}
-
-private struct AddAura: View {
-    var body: some View {
-        ZStack {
-            Circle().fill(Color(hex: "f5b5d3")).frame(width: 320).offset(x: -120, y: -260)
-            Circle().fill(Color(hex: "ffe08a")).frame(width: 300).offset(x: 140, y: -120)
-            Circle().fill(Color(hex: "a9c4ff")).frame(width: 340).offset(x: -140, y: 200)
-            Circle().fill(Color(hex: "ffb899")).frame(width: 280).offset(x: 150, y: 300)
-        }
-        .blur(radius: 90).opacity(0.6).ignoresSafeArea()
     }
 }
