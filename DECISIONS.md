@@ -52,3 +52,4 @@ Newest at the bottom. Anyone (human or agent) may edit this file. One line each:
 - 2026-11-22 (Vince): **Anyone may edit `DECISIONS.md`.** The old "only Fable edits this file" rule is removed because Vince no longer has access to Fable.
 
 - 2026-11-22 (lead, MVP-1): Notifications are out of the MVP; nudge thresholds 30 / 60 / 120 days (closeness 3 / 2 / 1 or unset) adopted, snooze 30 days; OpenAI switch (`peepl.openaiEnabled`) shipped, default off, gates every `AIClient` call; backup is a share-sheet file with Merge (default) / Replace restore.
+- 2026-11-22 (Fable): Nested spawns from the lead do not survive the lead's turn ending (W1b validator and builder ended with no output); W1b runs in flat fallback: orchestrator spawns builders and validators, lead merges and writes docs.
