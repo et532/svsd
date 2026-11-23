@@ -473,10 +473,12 @@ Draft message   -> Foundation Models; fallback: template drafts
 
 ## 13. Onboarding
 
-Spec: `ONBOARDING.md` (v4, 2026-11-22). iOS only, no account, skippable. 8 steps in 3 acts ("The story", "Learn by doing", "Make it yours"); demos auto-play with Pip as guide, no interactive tasks; first-run teaching happens in the real app.
+Spec: `ONBOARDING.md` (v5, 2026-11-22). iOS only, no account, skippable. 8 steps in 3 acts ("The story", "Learn by doing", "Make it yours"); demos auto-play with Pip as guide, no interactive tasks; first-run teaching happens in the real app.
 
 - [x] **O1 Spec** written and validated (2026-11-22); **v4** rewrite after the user's review of the v3 prototype.
 - [ ] **O2 open-design mockups** of the 8 steps plus the first-run states (coach callout, Add with Try to cover checklist, Add another, the plop mid-animation); Vince approves.
-- [ ] **O3 SwiftUI build**, sequential: T1 onboarding flow + gate (header: act title, Back, long progress bar, Skip; Next after 1 s); T2 auto demos + 3D + Pip; T3 first-run coach + Add "Try to cover" checklist + past-date parsing ("Met 2023") + fix the empty Mindmap state overlap bug (title sits under the status bar / top controls); T4 Add another + mindmap plop ripple + tips + Settings replay + tests.
-- [ ] **O4 Verify + docs:** run all tests with the skip flag, check Dynamic Type / VoiceOver / Reduce Motion, update `CLAUDE.md`, `PLAN.md`, `DECISIONS.md`.
+- [x] **O3 SwiftUI build (shipped 2026-11-22, merged to main as T1, T2a, T2b, T3a, T3b, T4; unit 205 tests, UI 18 tests, all green on the iPhone 18 Pro Simulator; not seen on a real device)**, sequential: T1 onboarding flow + gate (header: act title, Back, long progress bar, Skip; Next after 1 s); T2 auto demos + 3D + Pip; T3 first-run coach + Add "Try to cover" checklist + past-date parsing ("Met 2023") + fix the empty Mindmap state overlap bug (title sits under the status bar / top controls); T4 Add another + mindmap plop ripple + tips + Settings replay + tests.
+- [~] **O4 Verify + docs:** docs updated (CLAUDE.md, PLAN.md, DECISIONS.md). Still manual for Vince: visual check of steps 2 to 6 and the plop on a device, largest Dynamic Type, VoiceOver, Reduce Motion (only read in code so far).
 - Open for Vince: import from iOS Contacts (not in scope); `lifeStage` display is limited to 4 values (college, high school, grad school, childhood); voice caveat in privacy copy.
+
+- 2026-11-22 (lead): O3 open items: the `lifeStage` vs date rule is a heuristic (life stage shows only while the first moment date equals `lastContacted`; a schema flag would be the proper fix); the delete-person crash fix is a delay patch (see DECISIONS.md); steps 5 and 6 demos are built from look-alike views, not the live `Composer` / `NameNote` / Canvas mindmap.

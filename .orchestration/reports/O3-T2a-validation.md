@@ -1,0 +1,8 @@
+# Validation O3-T2a: PASS
+Checks run:
+- Unit tests (scheme Peepl, iPhone 18 Pro): 178 run, 1 skipped, 0 failures; new OnboardingDemoTests (Pip pick incl. replay case, timeline durations 9/8/8 within 0.3 s via fake clock, Reduce Motion final frame with zero sleep, scatter determinism, source-grep no PeopleStore/AIClient/ModelContext) pass.
+- UI tests (scheme PeeplUI): 17 run, 2 failed: testProfileTodoTagConnectionsDelete (known, ignored) and testMomentWithSomeoneYouKnowOpensExpanded, which PASSED when re-run alone (flaky in the full run, not attributable to the diff).
+- Diff read: ProfileView extraction is verbatim (hero, chip, to-do row, moment row; summary card sub-view added but ProfileView's own summary untouched); behaviour unchanged. ResultCard change is only `private` removed. Demos grep clean of store/AI. Steps 2 to 4 use .tilted3D; steps 1/7/8 still go through the old OnboardingStep (flat). No em dashes found in demos. VoiceOver labels present (demo end-state label; "150 dots, the outer ones fading"). Step 2 heading switches to "Three weeks later, it is gone." at stage 4.
+- Screenshots: not taken. Only the step 1 screen is reachable on launch; simctl cannot tap and no idb is installed, so steps 2 to 4 could not be reached. Tilt, overflow and Dynamic Type scaling are verified by code reading only, NOT visually.
+Files touched vs allowed: ok. OnboardingKit.swift is the permitted extra new file under Screens/Onboarding/. Motion.swift, AddView, ProfileView, OnboardingFlow, OnboardingDemos, OnboardingDemoTests all on the list.
+Problems: none blocking. Note: Motion tokens only +6 lines, reuses existing ones; the flaky UI test is worth a re-run on main.

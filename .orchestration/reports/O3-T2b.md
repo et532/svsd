@@ -1,0 +1,2 @@
+# O3-T2b builder report (lead)
+Branch task/O3-T2b 5510779. Unit 181/1 skipped. UI 2 failures (known M5 delete + flaky testMomentWithSomeoneYouKnowOpensExpanded). Deviations: step 5 note hand-built from outlined word views (NameNote fix state internal), cards hard-coded ResultCard-style, mindmap panel SwiftUI views not Canvas, word rate ~5 wps to fit 1.0-6.0 s window. Extra file OnboardingDemos56.swift. Not seen visually.
