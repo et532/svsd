@@ -82,14 +82,13 @@ struct ProfileView: View {
             if let f = nav.fresh, person.moments.contains(where: { $0.id == f }) { openMoment = f; nav.fresh = nil }
         }
         .sensoryFeedback(.warning, trigger: deleted)
+        // Delete only once the profile is off screen: it is still drawn while it slides away, and reading a deleted person traps.
+        .onDisappear { if deleted { PeopleStore.delete([person], in: context) } }
         .confirmationDialog("Delete \(person.name)?", isPresented: $confirmDelete, titleVisibility: .visible) {
             Button("Delete person", role: .destructive) {
-                let p = person, ctx = context
                 deleted.toggle()
-                nav.forget(p.id)
-                nav.say("\(p.firstName) deleted")
-                // once the profile has slid away: a view must never read a deleted person
-                Task { try? await Task.sleep(for: .milliseconds(1500)); PeopleStore.delete([p], in: ctx) }
+                nav.forget(person.id)
+                nav.say("\(person.firstName) deleted")
             }
         } message: {
             Text("Their moments and to-dos go too, and they leave other people's mutuals. This can't be undone.")
