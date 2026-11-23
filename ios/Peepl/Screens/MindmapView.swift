@@ -57,7 +57,7 @@ struct MindmapView: View {
         GeometryReader { geo in
             ZStack {
                 if people.isEmpty {
-                    EmptyPeople()
+                    EmptyPeople().frame(maxWidth: .infinity, maxHeight: .infinity) // GeometryReader tops its content; centre it
                 } else {
                     TimelineView(.animation(paused: paused)) { tl in
                         ZStack {

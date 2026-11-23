@@ -65,6 +65,13 @@ struct RootView: View {
     @State private var showSettings = false
     @State private var gate = OnboardingGate()
     @State private var onboardingDone = false
+    @State private var coach = false
+    private func maybeCoach() {
+        let n = (try? context.fetchCount(FetchDescriptor<Person>())) ?? 0
+        guard OnboardingState.shouldCoach(peopleCount: n, layersEmpty: nav.layers.isEmpty) else { return }
+        UserDefaults.standard.set(true, forKey: OnboardingState.coachKey)
+        coach = true
+    }
     /// Decided in the first body, before the first frame, so the list never flashes under it.
     private var showOnboarding: Bool { !onboardingDone && gate.show(context) }
     var body: some View {
@@ -111,7 +118,10 @@ struct RootView: View {
                     .zIndex(Double(i) + 1)
             }
             if showOnboarding {
-                OnboardingFlow { withAnimation(Motion.animation(Motion.smooth, reduce: reduce)) { onboardingDone = true } }
+                OnboardingFlow {
+                    withAnimation(Motion.animation(Motion.smooth, reduce: reduce)) { onboardingDone = true }
+                    Task { try? await Task.sleep(for: .milliseconds(400)); maybeCoach() }
+                }
                     .transition(.opacity).zIndex(900)
             }
             if let toast = nav.toast {
@@ -130,6 +140,19 @@ struct RootView: View {
                 .zIndex(1000)
             }
         }
+        .overlayPreferenceValue(CoachAnchorKey.self) { anchor in
+            GeometryReader { g in
+                if coach, let anchor {
+                    let r = g[anchor]
+                    TipCallout(title: "Add your first friend.", message: "Tap here, then talk off the top of your head about everything you know about them.") { coach = false }
+                        .padding(.trailing, g.size.width - r.maxX).padding(.bottom, g.size.height - r.minY + 14)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                }
+            }
+        }
+        .animation(.easeInOut(duration: 0.25), value: coach)
+        .onChange(of: nav.layers.count) { coach = false } // Add / Find / a profile opened (the button tap included)
+        .simultaneousGesture(TapGesture().onEnded { coach = false })
         .animation(Motion.animation(Motion.layer, reduce: reduce), value: nav.layers)
         .animation(Motion.animation(Motion.pop, reduce: reduce), value: nav.toast)
         .sensoryFeedback(.selection, trigger: nav.tab)
@@ -138,6 +161,7 @@ struct RootView: View {
         .environment(nav)
         .task {
             Seed.loadIfEmpty(context)
+            if !showOnboarding { maybeCoach() }
             if BackupReminder.shouldRemind(count: (try? context.fetchCount(FetchDescriptor<Person>())) ?? 0) { nav.say(BackupReminder.text) }
             #if DEBUG
             if UserDefaults.standard.string(forKey: "findQuery") != nil { nav.push(.find()) } // see FindView.preset
