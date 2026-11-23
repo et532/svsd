@@ -89,7 +89,7 @@ struct ProfileView: View {
                 nav.forget(p.id)
                 nav.say("\(p.firstName) deleted")
                 // once the profile has slid away: a view must never read a deleted person
-                Task { try? await Task.sleep(for: .milliseconds(450)); PeopleStore.delete([p], in: ctx) }
+                Task { try? await Task.sleep(for: .milliseconds(1500)); PeopleStore.delete([p], in: ctx) }
             }
         } message: {
             Text("Their moments and to-dos go too, and they leave other people's mutuals. This can't be undone.")

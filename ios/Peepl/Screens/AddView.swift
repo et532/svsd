@@ -31,6 +31,14 @@ enum AddPath<P> {
     }
 }
 
+/// What "Add another" keeps and clears (ONBOARDING.md 6d): the note and the checklist ticks start over, the running count stays.
+struct AddSession: Equatable {
+    var note = "", ticked: Set<CoverRow> = [], saved = 0
+    mutating func another() { note = ""; ticked = [] }
+    /// "3 added", from the second save on.
+    var countLine: String? { saved >= 2 ? "\(saved) added" : nil }
+}
+
 struct AddView: View {
     let mutualOf: String?
     @Environment(Nav.self) private var nav
@@ -39,9 +47,10 @@ struct AddView: View {
 
     private enum Phase { case idle, choosing([Person]), creating(String), done(Person), doneMany([Person]) }
     @State private var phase = Phase.idle
-    @State private var note = ""
+    @State private var session = AddSession()
+    private var note: String { get { session.note } nonmutating set { session.note = newValue } }
+    private var ticked: Set<CoverRow> { get { session.ticked } nonmutating set { session.ticked = newValue } }
     @State private var showCover = !UserDefaults.standard.bool(forKey: OnboardingState.firstAddKey)
-    @State private var ticked: Set<CoverRow> = []
     @State private var tickTask: Task<Void, Never>?
     @Namespace private var ns
     @Environment(\.accessibilityReduceMotion) private var reduce
@@ -90,10 +99,13 @@ struct AddView: View {
                                 .matchedGeometryEffect(id: "result", in: ns).transition(enter)
                         }
                     case .done(let p):
+                        counter
                         bubble
                         Button { nav.replaceTop(.profile(p.id)) } label: { ResultCard(person: p) }.buttonStyle(PressStyle(scale: 0.98))
                             .modifier(Arrive(0, scale: 0.96, spring: true)).matchedGeometryEffect(id: "result", in: ns)
+                        afterSave(open: p.id)
                     case .doneMany(let ps):
+                        counter
                         bubble
                         ForEach(Array(ps.enumerated()), id: \.element.id) { i, p in
                             Button { nav.replaceTop(.profile(p.id)) } label: { ResultCard(person: p) }.buttonStyle(PressStyle(scale: 0.98))
@@ -101,6 +113,7 @@ struct AddView: View {
                         }
                         Text("\(AddMany.list(ps.map(\.firstName))) were met together, so they're linked as mutuals.")
                             .font(Theme.font(13)).foregroundStyle(Theme.inkMuted).modifier(Arrive(ps.count, step: 0.08))
+                        afterSave(open: ps[0].id)
                     }
                 }
                 .padding(.horizontal, 20).padding(.top, 80).padding(.bottom, 24)
@@ -117,6 +130,24 @@ struct AddView: View {
             }
             .padding(.horizontal, 16).padding(.bottom, 8)
         }
+    }
+
+    @ViewBuilder private var counter: some View {
+        if let line = session.countLine { Text(line).font(Theme.mono(12)).foregroundStyle(Theme.inkMuted).transition(.opacity) }
+    }
+
+    /// Primary "Add another" (back to a fresh note, the composer keeps the keyboard up) and a quiet "Open profile".
+    private func afterSave(open id: String) -> some View {
+        VStack(spacing: 4) {
+            Button { withAnimation(Motion.animation(Motion.easeFast, reduce: reduce)) { session.another(); phase = .idle } } label: {
+                Text("Add another").font(Theme.font(16, .medium)).foregroundStyle(.white)
+                    .frame(maxWidth: .infinity).frame(height: 52).background(Theme.night, in: .capsule)
+            }.buttonStyle(PressStyle(scale: 0.97)).accessibilityIdentifier("addAnother")
+            Button { nav.replaceTop(.profile(id)) } label: {
+                Text("Open profile").font(Theme.font(15, .medium)).foregroundStyle(Theme.ink).frame(maxWidth: .infinity).frame(height: 44)
+            }.buttonStyle(PressStyle(scale: 0.97)).accessibilityIdentifier("openProfile")
+        }
+        .padding(.top, 8)
     }
 
     /// 300 ms after the last change; ticks only grow.
@@ -176,13 +207,18 @@ struct AddView: View {
         phase = .creating(text)
         let notes = mutualOf == nil ? Capture.splitPeople(text) : []
         if notes.count > 1 {
-            Task { phase = .doneMany(await AddMany.create(notes, people: people, in: context, aiFor: { AIClient.enabled ? await AIClient.parse($0) : await LocalAI.parseNote($0) })); endCover() }
+            Task {
+                let made = await AddMany.create(notes, people: people, in: context, aiFor: { AIClient.enabled ? await AIClient.parse($0) : await LocalAI.parseNote($0) })
+                session.saved += made.count; nav.justAdded += made.map(\.id)
+                phase = .doneMany(made); endCover()
+            }
             return
         }
         Task {
             let ai = AIClient.enabled ? await AIClient.parse(text) : await LocalAI.parseNote(text)
             let d = Capture.parsePerson(text, people: people).merged(with: ai)
             let r = PeopleStore.createPerson(d, note: text, in: context, mutualOf: mutualOf)
+            session.saved += 1; if !r.existed { nav.justAdded.append(r.person.id) }
             phase = .done(r.person)
             endCover()
         }

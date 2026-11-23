@@ -37,6 +37,7 @@ struct SettingsView: View {
     @State private var shareURL: URL?
     @State private var lastShared: URL?
     @State private var importing = false
+    @State private var replay = false
     private var version: String {
         let i = Bundle.main.infoDictionary
         return "\(i?["CFBundleShortVersionString"] as? String ?? "1.0") (\(i?["CFBundleVersion"] as? String ?? "1"))"
@@ -73,6 +74,7 @@ struct SettingsView: View {
                     Button("Open iOS Settings") { if let u = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(u) } }
                 }
                 Section("About") {
+                    Button("How Peepl works") { nav.replaying = true; replay = true }
                     LabeledContent("Version", value: version)
                     Text("Nothing leaves this phone unless you turn on AI help from OpenAI above. Nothing is shared with other users.").font(.footnote).foregroundStyle(.secondary)
                 }
@@ -87,6 +89,7 @@ struct SettingsView: View {
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
             .sheet(item: $shareURL, onDismiss: { BackupReminder.cleanup(lastShared); lastShared = nil }) { ShareSheet(url: $0) }
             .backupImporter(isPresented: $importing)
+            .fullScreenCover(isPresented: $replay) { OnboardingFlow(replay: true) { replay = false; nav.replaying = false } }
         }
     }
 }

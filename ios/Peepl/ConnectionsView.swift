@@ -35,6 +35,8 @@ struct ConnectionsView: View {
     private var dueAll: [Person] { Nudges.due(allPeople, today: Capture.today(), snoozed: snoozed) }
     private var dueIds: Set<String> { Set(dueAll.map(\.id)) }
 
+    private var reachVisible: Bool { nav.showFilter == nil && !dueAll.isEmpty }
+
     var body: some View {
         ScrollView {
                 LazyVStack(spacing: 8) {
@@ -72,7 +74,9 @@ struct ConnectionsView: View {
                 }
                 .animation(Motion.animation(Motion.smooth, reduce: reduce), value: people.map(\.id))
                 .animation(Motion.animation(Motion.smooth, reduce: reduce), value: allPeople.isEmpty)
-                .onAppear { snoozed = Nudges.load() }
+                .onAppear { snoozed = Nudges.load(); nav.reachOutVisible = reachVisible }
+                .onDisappear { nav.reachOutVisible = false }
+                .onChange(of: reachVisible) { nav.reachOutVisible = reachVisible }
                 .task { try? await Task.sleep(for: .seconds(1)); intro = false }
                 .padding(.horizontal, 16)
                 .padding(.top, 78)

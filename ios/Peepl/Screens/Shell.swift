@@ -26,6 +26,11 @@ struct PeopleFilter: Equatable { var ids: [String]; var label: String }
     /// A moment that was just logged from Add: their profile opens with it expanded.
     var fresh: String?
     var toast: String?
+    /// People saved in Add since the mindmap last showed them; it plops them in once Add is closed (ONBOARDING.md 6e).
+    var justAdded: [String] = []
+    /// Onboarding replay from Settings is open (no tips meanwhile), and whether Connections shows "Reach out" (for its tip).
+    var replaying = false
+    var reachOutVisible = false
     /// Where Add / Find grow from (set by the ask bar before push).
     var revealOrigin = UnitPoint(x: 0.5, y: 0.95)
     /// Where Add / Find collapse to on close: the X button's centre (set by the open layer).
@@ -66,6 +71,21 @@ struct RootView: View {
     @State private var gate = OnboardingGate()
     @State private var onboardingDone = false
     @State private var coach = false
+    @State private var tip: OnboardingState.Tip?
+    @State private var tipTask: Task<Void, Never>?
+    /// A beat after the screen settles, show the next tip that is due (once each, never two at a time).
+    private func refreshTip() {
+        guard tip == nil else { return }
+        tipTask?.cancel()
+        tipTask = Task {
+            try? await Task.sleep(for: .milliseconds(700))
+            let n = (try? context.fetchCount(FetchDescriptor<Person>())) ?? 0
+            let c = OnboardingState.TipContext(people: n, mindmapTab: nav.tab == .mindmap, layersEmpty: nav.layers.isEmpty, replaying: nav.replaying,
+                                               coachShowing: coach, onboardingShowing: showOnboarding, reachOutVisible: nav.reachOutVisible)
+            guard !Task.isCancelled, tip == nil, let t = OnboardingState.tipToShow(c) else { return }
+            OnboardingState.markTipSeen(t); tip = t
+        }
+    }
     private func maybeCoach() {
         let n = (try? context.fetchCount(FetchDescriptor<Person>())) ?? 0
         guard OnboardingState.shouldCoach(peopleCount: n, layersEmpty: nav.layers.isEmpty) else { return }
@@ -120,7 +140,7 @@ struct RootView: View {
             if showOnboarding {
                 OnboardingFlow {
                     withAnimation(Motion.animation(Motion.smooth, reduce: reduce)) { onboardingDone = true }
-                    Task { try? await Task.sleep(for: .milliseconds(400)); maybeCoach() }
+                    Task { try? await Task.sleep(for: .milliseconds(400)); maybeCoach(); refreshTip() }
                 }
                     .transition(.opacity).zIndex(900)
             }
@@ -147,12 +167,21 @@ struct RootView: View {
                     TipCallout(title: "Add your first friend.", message: "Tap here, then talk off the top of your head about everything you know about them.") { coach = false }
                         .padding(.trailing, g.size.width - r.maxX).padding(.bottom, g.size.height - r.minY + 14)
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                } else if let tip, let anchor {
+                    let r = g[anchor]
+                    TipCallout(message: tip.message, onDismiss: { self.tip = nil }, arrow: false)
+                        .padding(.trailing, g.size.width - r.maxX).padding(.bottom, g.size.height - r.minY + 14)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
                 }
             }
         }
         .animation(.easeInOut(duration: 0.25), value: coach)
-        .onChange(of: nav.layers.count) { coach = false } // Add / Find / a profile opened (the button tap included)
-        .simultaneousGesture(TapGesture().onEnded { coach = false })
+        .animation(.easeInOut(duration: 0.25), value: tip)
+        .onChange(of: nav.layers.count) { coach = false; tip = nil; refreshTip() } // Add / Find / a profile opened (the button tap included), or closed
+        .onChange(of: nav.tab) { tip = nil; refreshTip() }
+        .onChange(of: nav.reachOutVisible) { refreshTip() }
+        .onChange(of: nav.replaying) { tip = nil; refreshTip() }
+        .simultaneousGesture(TapGesture().onEnded { coach = false; tip = nil })
         .animation(Motion.animation(Motion.layer, reduce: reduce), value: nav.layers)
         .animation(Motion.animation(Motion.pop, reduce: reduce), value: nav.toast)
         .sensoryFeedback(.selection, trigger: nav.tab)
@@ -161,7 +190,7 @@ struct RootView: View {
         .environment(nav)
         .task {
             Seed.loadIfEmpty(context)
-            if !showOnboarding { maybeCoach() }
+            if !showOnboarding { maybeCoach(); refreshTip() }
             if BackupReminder.shouldRemind(count: (try? context.fetchCount(FetchDescriptor<Person>())) ?? 0) { nav.say(BackupReminder.text) }
             #if DEBUG
             if UserDefaults.standard.string(forKey: "findQuery") != nil { nav.push(.find()) } // see FindView.preset
