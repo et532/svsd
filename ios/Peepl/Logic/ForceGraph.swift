@@ -34,9 +34,24 @@ final class ForceGraph {
 
     init(ids: [String], pairs: [(String, String)], prev: [String: (x: Double, y: Double)] = [:], seed: UInt64 = 1) {
         rng = SplitMix64(s: seed)
+        // A new person lands beside the people they know (centroid + a small fixed offset), so a plop is where they will live.
+        // Two passes: someone added with a friend from the same note can use that friend's spot. No known mutuals: the spiral.
+        var start = prev
+        if !prev.isEmpty {
+            var mutuals: [String: [String]] = [:]
+            for (a, b) in pairs { mutuals[a, default: []].append(b); mutuals[b, default: []].append(a) }
+            for _ in 0..<2 {
+                for (i, id) in ids.enumerated() where start[id] == nil {
+                    let near = (mutuals[id] ?? []).compactMap { start[$0] }
+                    guard !near.isEmpty else { continue }
+                    let a = Double(i) * 2.4
+                    start[id] = (near.map(\.x).reduce(0, +) / Double(near.count) + cos(a) * 24, near.map(\.y).reduce(0, +) / Double(near.count) + sin(a) * 24)
+                }
+            }
+        }
         var ns = ids.enumerated().map { i, id -> Node in
             let angle = Double(i) * 2.4, r = 20 + Double(i) * 6
-            let old = prev[id]
+            let old = start[id]
             return Node(id: id, x: old?.x ?? cos(angle) * r, y: old?.y ?? sin(angle) * r)
         }
         var idx: [String: Int] = [:]

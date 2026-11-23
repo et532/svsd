@@ -18,6 +18,7 @@ struct MindmapView: View {
     @State private var pinching = false   // true for the whole pinch, so a finger landing mid-pinch can't restart pan or the zoom baseline
     @State private var pillWidth: CGFloat = 0
     @State private var limitHits = 0
+    @State private var plops = 0
     @Environment(\.accessibilityReduceMotion) private var reduce
 
     private func sync() {
@@ -28,6 +29,13 @@ struct MindmapView: View {
         selectedId = model.selected
         paused = false
         focusNav()
+    }
+
+    /// People saved in Add play their plop once nothing covers the map (Add closed), not when they are inserted under it.
+    private func consumeAdded() {
+        guard nav.layers.isEmpty, !nav.justAdded.isEmpty else { return }
+        model.plop(nav.justAdded, now: Date.timeIntervalSinceReferenceDate)
+        nav.justAdded = []; plops += 1; paused = false
     }
 
     /// A profile's "View connections": select them like a tap, after a beat so a rebuilt graph has spread out first.
@@ -50,6 +58,8 @@ struct MindmapView: View {
         .sensoryFeedback(.selection, trigger: selectedId)
         .sensoryFeedback(.selection, trigger: groupBy)
         .sensoryFeedback(.impact(weight: .light), trigger: limitHits)
+        .sensoryFeedback(.impact(weight: .light), trigger: plops)
+        .onChange(of: nav.layers) { consumeAdded() }
         .onChange(of: groupBy) { _, g in model.setGroupBy(g); selectedId = nil; paused = false }
     }
 
@@ -78,7 +88,7 @@ struct MindmapView: View {
                     }
                 }
             }
-            .onAppear { size = geo.size; sync() }
+            .onAppear { size = geo.size; sync(); consumeAdded() }
             .onChange(of: geo.size) { _, n in size = n; paused = false }
             .onChange(of: people.map(\.id) + people.flatMap(\.knows)) { sync() }
             .onChange(of: nav.focus?.id) { focusNav() }
@@ -120,15 +130,24 @@ struct MindmapView: View {
 
         ctx.fill(Path(CGRect(origin: .zero, size: sz)), with: .color(Color(hex: "ededed")))
         drawOrbs(&ctx, m)
-        let sel = m.selected != nil, focus = m.focus
+        let sel = m.selected != nil, focus = m.focus, reduceM = m.reduceMotion
+        var linkNo: [String: Int] = [:]   // which of a new person's links this is, for the staggered draw-in
         for l in m.graph.links {
             let a = nodes[l.a], b = nodes[l.b], pa = pos[l.a], pb = pos[l.b]
             guard screen.contains(pa) || screen.contains(pb) else { continue }
-            var path = Path(); path.move(to: pa); path.addLine(to: pb)
+            var from = pa, to = pb, plopAlpha = 1.0
+            let newest = [(a.id, m.born[a.id]), (b.id, m.born[b.id])].compactMap { id, bn in bn.map { (id, $0) } }.max { $0.1.t < $1.1.t }
+            if let (id, bn) = newest {
+                let n = linkNo[id, default: 0]; linkNo[id] = n + 1
+                let lk = Plop.link(age: now - bn.t, index: n, full: bn.full, reduce: reduceM)
+                if id == b.id { from = pb; to = pa }   // the trim grows from the new person's end
+                to = CGPoint(x: from.x + (to.x - from.x) * lk.trim, y: from.y + (to.y - from.y) * lk.trim); plopAlpha = lk.alpha
+            }
+            var path = Path(); path.move(to: from); path.addLine(to: to)
             let solid = !a.group.isEmpty && a.group == b.group && a.group != MindmapMath.other
             let near = sel && m.depth[a.id] != nil && m.depth[b.id] != nil
             let dimmed = focus != nil && (a.group != focus || b.group != focus)
-            ctx.opacity = dimmed ? 0.08 : near ? 1 : 1 - 0.92 * m.selFade
+            ctx.opacity = (dimmed ? 0.08 : near ? 1 : 1 - 0.92 * m.selFade) * plopAlpha
             ctx.stroke(path, with: .color(.white), style: StrokeStyle(lineWidth: near ? 3.2 : 1, dash: solid ? [] : [4, 3]))
         }
 
@@ -138,8 +157,14 @@ struct MindmapView: View {
             guard screen.contains(p) else { continue }
             let r = m.radii[n.id] ?? 8
             let d = m.depth[n.id]
-            ctx.opacity = m.dots[i].op
-            let dr = MindmapMath.disc(r) * k, dotR = MindmapMath.dot(r) * k
+            let look = m.born[n.id].map { Plop.look(age: now - $0.t, full: $0.full, reduce: reduceM) }
+            ctx.opacity = m.dots[i].op * (look?.opacity ?? 1)
+            let s = look?.scale ?? 1, dr0 = MindmapMath.disc(r) * k
+            let dr = dr0 * s, dotR = MindmapMath.dot(r) * k * s
+            for ring in look?.rings ?? [] {
+                let rr = dr0 * ring.radius
+                ctx.stroke(Path(ellipseIn: CGRect(x: p.x - rr, y: p.y - rr, width: rr * 2, height: rr * 2)), with: .color(Theme.night.opacity(0.3 * ring.alpha)), lineWidth: 2)
+            }
             let disc = Path(ellipseIn: CGRect(x: p.x - dr, y: p.y - dr, width: dr * 2, height: dr * 2))
             // 50% white x 60% layer opacity, folded into the colors (a layer per disc costs an offscreen pass each)
             ctx.fill(disc, with: .radialGradient(

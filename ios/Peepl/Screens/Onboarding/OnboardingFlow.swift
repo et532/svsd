@@ -70,7 +70,7 @@ struct OnboardingFlow: View {
     }
     private func advance() { step == OnboardingState.lastStep ? finish() : go(OnboardingState.next(step)) }
     private func finish() {
-        if !replay { UserDefaults.standard.set(true, forKey: OnboardingState.doneKey) }
+        OnboardingState.finish(replay: replay)
         onFinish()
     }
 

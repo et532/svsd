@@ -20,6 +20,43 @@ enum OnboardingState {
         return peopleCount >= 3
     }
 
+    /// Replay (Settings) ends without touching any gate flag; a first run marks onboarding done. Step 7's answers are saved as they are picked.
+    static func finish(replay: Bool, defaults: UserDefaults = .standard) {
+        if !replay { defaults.set(true, forKey: doneKey) }
+    }
+
+    /// Section 5: contextual tips, each shown once, one at a time. Declared in priority order.
+    static let tipsKey = "peepl.tipsSeen"
+    enum Tip: String, CaseIterable {
+        case askBar, mindmapDot, reachOut
+        var message: String {
+            switch self {
+            case .askBar: "Ask in your own words, like climbing buddy."
+            case .mindmapDot: "Tap a dot to see who they know."
+            case .reachOut: "These are people you have not talked to in a while."
+            }
+        }
+    }
+    struct TipContext {
+        var people = 0, mindmapTab = false, layersEmpty = true, replaying = false, coachShowing = false, onboardingShowing = false, reachOutVisible = false
+    }
+    /// The tip to show now, or nil. Never over Add / Find / a profile, during a replay, the coach or onboarding; a tip already seen is never offered again.
+    static func tipToShow(_ c: TipContext, defaults: UserDefaults = .standard) -> Tip? {
+        guard c.layersEmpty, !c.replaying, !c.coachShowing, !c.onboardingShowing, !defaults.bool(forKey: skipKey) else { return nil } // the skip flag is the UI tests': a tip would cover their buttons
+        let seen = defaults.stringArray(forKey: tipsKey) ?? []
+        return Tip.allCases.first { t in
+            guard !seen.contains(t.rawValue) else { return false }
+            switch t {
+            case .askBar: return c.people >= 1
+            case .mindmapDot: return c.mindmapTab && c.people >= 2
+            case .reachOut: return !c.mindmapTab && c.reachOutVisible
+            }
+        }
+    }
+    static func markTipSeen(_ t: Tip, defaults: UserDefaults = .standard) {
+        defaults.set(Array(Set((defaults.stringArray(forKey: tipsKey) ?? []) + [t.rawValue])).sorted(), forKey: tipsKey)
+    }
+
     /// Evaluated once at launch. People already on the phone mean done, silently, so deleting everyone later does not bring it back.
     static func shouldShow(defaults: UserDefaults = .standard, peopleCount: Int) -> Bool {
         if defaults.bool(forKey: doneKey) { return false }

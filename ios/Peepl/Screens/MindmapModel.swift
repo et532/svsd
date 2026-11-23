@@ -10,6 +10,40 @@ struct GroupKeys { var city = "", met = "", job = "" }
 /// A background orb on screen: center, size, blur (at the 400 base size, as the web) and opacity.
 struct OrbState: Equatable { var x, y, w, h, blur, op: Double }
 
+/// ONBOARDING.md 6e: how a new person "plops" in. Pure, so the timings and Reduce Motion are unit tested.
+struct PlopLook: Equatable {
+    struct Ring: Equatable { var radius: Double, alpha: Double }   // radius in disc radii
+    var scale: Double, opacity: Double, rings: [Ring]
+}
+enum Plop {
+    static let gap = 0.35, cap = 3, fadeTime = 0.2, ringTime = 0.7, ringDelay = 0.12, linkTime = 0.5, linkStagger = 0.1, nudgeReach = 1.6, nudgeMax = 10.0
+    /// `age` is seconds since this person's turn began (negative: still queued). `full` is false past the cap of 3: those only fade.
+    static func look(age: Double, full: Bool, reduce: Bool) -> PlopLook {
+        let plain = !full || reduce
+        guard age > 0 else { return PlopLook(scale: plain ? 1 : 0, opacity: 0, rings: []) }
+        if plain { return PlopLook(scale: 1, opacity: min(1, age / fadeTime), rings: []) }
+        let w = 2 * Double.pi / 0.5, z = 0.6, root = (1 - z * z).squareRoot(), wd = w * root   // spring: response 0.5 s, damping 0.6
+        let scale = 1 - exp(-z * w * age) * (cos(wd * age) + z / root * sin(wd * age))
+        let rings = [0, ringDelay].compactMap { d -> PlopLook.Ring? in
+            let a = age - d
+            guard a > 0, a < ringTime else { return nil }
+            let p = a / ringTime
+            return .init(radius: 1 + 1.2 * (1 - pow(1 - p, 3)), alpha: 1 - p)   // out to 2.2 x, ease-out, fading
+        }
+        return PlopLook(scale: scale, opacity: min(1, age / 0.1), rings: rings)
+    }
+    /// How much of link number `index` of the new person is drawn (trim from the new end) and how opaque it is.
+    static func link(age: Double, index: Int, full: Bool, reduce: Bool) -> (trim: Double, alpha: Double) {
+        if !full || reduce { return (1, max(0, min(1, age / fadeTime))) }
+        return (max(0, min(1, (age - Double(index) * linkStagger) / linkTime)), 1)
+    }
+    /// The most a neighbour is pushed outward, in points: 10 beside the new disc, easing to 0 at 1.6 disc radii; none under Reduce Motion.
+    static func nudge(distance: Double, discR: Double, reduce: Bool) -> Double {
+        guard !reduce, discR > 0, distance < nudgeReach * discR else { return 0 }
+        return nudgeMax * max(0, min(1, 1 - max(0, distance - discR) / ((nudgeReach - 1) * discR)))
+    }
+}
+
 /// Per-frame mindmap state. A plain class on purpose: the Canvas reads it every frame without SwiftUI observing it.
 final class MindmapModel {
     /// One model for the app, so layout, view and group-by survive a trip to the Connections tab.
@@ -50,6 +84,9 @@ final class MindmapModel {
     // float / parallax (per dot, indexed like graph.nodes) and momentum
     struct Dot { var ux = 0.0, uy = 0.0, vx = 0.0, vy = 0.0, f = 0.0, d = 0.0, op = 1.0 }
     var dots: [Dot] = []
+    struct Born { var t: TimeInterval; var full: Bool; var kicked = false }
+    /// Who is plopping in and when their turn starts (seconds on the draw clock); entries drop out when it is over.
+    private(set) var born: [String: Born] = [:]
     private var floating = false, gliding = false, fading = false
     private(set) var selFade = 0.0, labelOp = 0.0   // eased 0...1: selection dim on links, group-name visibility
     private(set) var limitHits = 0                  // pinch pushed past a zoom limit (once per overshoot)
@@ -89,7 +126,29 @@ final class MindmapModel {
         dots = graph.nodes.map { let r = radii[$0.id] ?? 12; return Dot(f: MindmapMath.floatOf($0.id, r: r), d: MindmapMath.depthOf($0.id, r: r)) }
     }
 
-    var settled: Bool { graph.alpha <= 0.01 && fitted && anim == nil && !gliding && !floating && !blending && !fading }
+    var settled: Bool { graph.alpha <= 0.01 && fitted && anim == nil && !gliding && !floating && !blending && !fading && born.isEmpty }
+
+    /// Queue plops 0.35 s apart; from the fourth on a person only fades in.
+    func plop(_ ids: [String], now: TimeInterval) {
+        for (i, id) in ids.enumerated() { born[id] = Born(t: now + Double(min(i, Plop.cap - 1)) * Plop.gap, full: i < Plop.cap) }
+    }
+
+    /// When a turn starts the neighbours are pushed outward through the float spring (layout positions do not move).
+    private func stepPlops(now: TimeInterval) {
+        for (id, b) in born {
+            if now - b.t > 1.5 { born[id] = nil; continue }
+            guard !b.kicked, now >= b.t else { continue }
+            born[id]?.kicked = true
+            guard b.full, !reduceMotion, let n = graph.index[id] else { continue }
+            let c = graph.nodes[n], discR = MindmapMath.disc(radii[id] ?? 8)
+            for j in graph.nodes.indices where j != n && j < dots.count {
+                let dx = graph.nodes[j].x - c.x, dy = graph.nodes[j].y - c.y, d = max(0.001, hypot(dx, dy))
+                let peak = Plop.nudge(distance: d, discR: discR, reduce: false)
+                guard peak > 0 else { continue }
+                dots[j].vx += dx / d * peak * 14; dots[j].vy += dy / d * peak * 14   // the float spring swings out to about 1/14 of a kick's speed
+            }
+        }
+    }
 
     func frame(now: TimeInterval, size: CGSize) {
         let dt = prevT > 0 ? min(0.05, now - prevT) : 0
@@ -108,6 +167,7 @@ final class MindmapModel {
             }
         }
         if gliding { glide(dt, size) }
+        stepPlops(now: now)
         stepFloat(dt)
         stepFade(dt)
         lastSize = size

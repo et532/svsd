@@ -6,6 +6,7 @@ struct TipCallout: View {
     let message: String
     var onDismiss: () -> Void
     var arrowInset: CGFloat = 28 // arrow centre from the trailing edge
+    var arrow = true
 
     var body: some View {
         Button(action: onDismiss) {
@@ -15,7 +16,7 @@ struct TipCallout: View {
             }
             .padding(14).frame(width: 250, alignment: .leading).glass(18)
             .overlay(alignment: .bottomTrailing) {
-                Triangle().fill(Color(hex: "faf7ff").opacity(0.92)).frame(width: 16, height: 8).offset(x: -(arrowInset - 8), y: 8)
+                if arrow { Triangle().fill(Color(hex: "faf7ff").opacity(0.92)).frame(width: 16, height: 8).offset(x: -(arrowInset - 8), y: 8) }
             }
         }
         .buttonStyle(.plain)
