@@ -40,6 +40,9 @@ struct AddView: View {
     private enum Phase { case idle, choosing([Person]), creating(String), done(Person), doneMany([Person]) }
     @State private var phase = Phase.idle
     @State private var note = ""
+    @State private var showCover = !UserDefaults.standard.bool(forKey: OnboardingState.firstAddKey)
+    @State private var ticked: Set<CoverRow> = []
+    @State private var tickTask: Task<Void, Never>?
     @Namespace private var ns
     @Environment(\.accessibilityReduceMotion) private var reduce
 
@@ -107,9 +110,26 @@ struct AddView: View {
         }
         .sensoryFeedback(.success, trigger: phaseKey) { _, new in new >= 3 } // the result card landed
         .safeAreaInset(edge: .bottom) {
-            Composer(placeholder: "Who did you meet?", autofocus: true, onSend: send, people: people).padding(.horizontal, 16).padding(.bottom, 8)
+            VStack(spacing: 8) {
+                if showCover, case .idle = phase { CoverChecklist(ticked: ticked).transition(.opacity) }
+                Composer(placeholder: MeetWhere.saved().first?.addPlaceholder ?? MeetWhere.defaultPlaceholder, autofocus: true, onSend: send, people: people,
+                         primer: true, onText: coverText)
+            }
+            .padding(.horizontal, 16).padding(.bottom, 8)
         }
     }
+
+    /// 300 ms after the last change; ticks only grow.
+    private func coverText(_ t: String) {
+        guard showCover else { return }
+        tickTask?.cancel()
+        tickTask = Task {
+            try? await Task.sleep(for: .milliseconds(300))
+            if !Task.isCancelled { ticked = CoverTicks.update(ticked, text: t, people: people) }
+        }
+    }
+
+    private func endCover() { OnboardingState.endCoverIfDone(peopleCount: (try? context.fetchCount(FetchDescriptor<Person>())) ?? 0) }
 
     private func title(_ s: String) -> some View {
         Text(s).font(Theme.font(28, .light)).tracking(-1.1).foregroundStyle(Theme.ink)
@@ -135,6 +155,7 @@ struct AddView: View {
     }
 
     private func send(_ text: String) {
+        tickTask?.cancel() // no parsing while the result is landing
         note = text
         if mutualOf != nil { return startNew() } // from a profile's "Add" mutual: always someone new
         switch AddPath.decide(text, people: people) {
@@ -155,7 +176,7 @@ struct AddView: View {
         phase = .creating(text)
         let notes = mutualOf == nil ? Capture.splitPeople(text) : []
         if notes.count > 1 {
-            Task { phase = .doneMany(await AddMany.create(notes, people: people, in: context, aiFor: { AIClient.enabled ? await AIClient.parse($0) : await LocalAI.parseNote($0) })) }
+            Task { phase = .doneMany(await AddMany.create(notes, people: people, in: context, aiFor: { AIClient.enabled ? await AIClient.parse($0) : await LocalAI.parseNote($0) })); endCover() }
             return
         }
         Task {
@@ -163,6 +184,7 @@ struct AddView: View {
             let d = Capture.parsePerson(text, people: people).merged(with: ai)
             let r = PeopleStore.createPerson(d, note: text, in: context, mutualOf: mutualOf)
             phase = .done(r.person)
+            endCover()
         }
     }
 }

@@ -15,11 +15,15 @@ struct FindView: View {
 
     private struct Asked { var text: String; var result: AskResult }
     private static let minThink = Duration.milliseconds(450)
-    private static let ways = [
-        ("gamecontroller", "Interest", "Someone to go climbing with", "Someone to go climbing with"),
-        ("party.popper", "Occasion", "Someone to invite to a house party", "friends"),
-        ("mappin.and.ellipse", "Location", "Someone to hang out in the city", "friends in New York"),
-    ]
+    /// The Occasion card follows step 7's first pick (ONBOARDING.md 3.7); its query is answerable offline.
+    private var ways: [(String, String, String, String)] {
+        let occasion = MeetWhere.saved().first?.findCard
+        return [
+            ("gamecontroller", "Interest", "Someone to go climbing with", "Someone to go climbing with"),
+            ("party.popper", "Occasion", occasion?.shown ?? "Someone to invite to a house party", occasion?.query ?? "friends"),
+            ("mappin.and.ellipse", "Location", "Someone to hang out in the city", "friends in New York"),
+        ]
+    }
     /// Debug only: `-findQuery "<question>"` as a launch argument asks it at once (for screenshots).
     private var preset: String? {
         #if DEBUG
@@ -40,7 +44,7 @@ struct FindView: View {
                         Group { title(asked.text); answer(asked.result) }.transition(.opacity)
                     } else {
                         Group { title("Search for someone by…")
-                        ForEach(Array(Self.ways.enumerated()), id: \.element.1) { i, way in
+                        ForEach(Array(ways.enumerated()), id: \.element.1) { i, way in
                             Button { ask(way.2, query: way.3) } label: {
                                 HStack(spacing: 14) {
                                     Image(systemName: way.0).font(Theme.font(20)).foregroundStyle(Theme.ink).frame(width: 28)

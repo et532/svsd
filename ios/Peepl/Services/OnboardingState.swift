@@ -6,6 +6,19 @@ enum OnboardingState {
     static let meetWhereKey = "peepl.meetWhere"
     static let skipKey = "PeeplSkipOnboarding" // launch argument -PeeplSkipOnboarding YES
     static let lastStep = 8
+    static let coachKey = "peepl.firstRunCoachSeen"
+    static let firstAddKey = "peepl.firstAddSeen"
+    static let micPrimerKey = "peepl.micPrimerSeen"
+
+    /// 6a: the coach shows once, only on an empty store, never in replay or over Add / Find / a profile.
+    static func shouldCoach(defaults: UserDefaults = .standard, peopleCount: Int, layersEmpty: Bool, replay: Bool = false) -> Bool {
+        !replay && peopleCount == 0 && layersEmpty && !defaults.bool(forKey: coachKey)
+    }
+    /// 6b: the checklist ends once three people are saved; observed at the end of a save.
+    @discardableResult static func endCoverIfDone(peopleCount: Int, defaults: UserDefaults = .standard) -> Bool {
+        if peopleCount >= 3 { defaults.set(true, forKey: firstAddKey) }
+        return peopleCount >= 3
+    }
 
     /// Evaluated once at launch. People already on the phone mean done, silently, so deleting everyone later does not bring it back.
     static func shouldShow(defaults: UserDefaults = .standard, peopleCount: Int) -> Bool {
@@ -72,5 +85,13 @@ enum MeetWhere: String, CaseIterable {
     }
     static func save(_ picks: [MeetWhere], _ defaults: UserDefaults = .standard) {
         defaults.set(picks.map(\.rawValue), forKey: OnboardingState.meetWhereKey)
+    }
+}
+
+/// 6f: what the Composer's mic does in Add. `undetermined` / `denied` come from the system status.
+enum MicPrimer {
+    enum Action { case primer, deniedLine, listen }
+    static func action(seen: Bool, undetermined: Bool, denied: Bool) -> Action {
+        denied ? .deniedLine : (undetermined && !seen) ? .primer : .listen
     }
 }

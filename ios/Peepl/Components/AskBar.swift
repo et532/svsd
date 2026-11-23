@@ -69,8 +69,15 @@ struct AskBar: View {
                     .pastel(in: Circle())
             }
             .buttonStyle(PressStyle(scale: 0.92))
+            .anchorPreference(key: CoachAnchorKey.self, value: .bounds) { $0 }
             .accessibilityLabel("Add person")
         }
         .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
     }
+}
+
+/// Where the add-person button is, so the first-run coach can point at it.
+struct CoachAnchorKey: PreferenceKey {
+    static var defaultValue: Anchor<CGRect>?
+    static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?) { value = value ?? nextValue() }
 }
