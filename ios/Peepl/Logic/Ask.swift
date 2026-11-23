@@ -99,7 +99,7 @@ enum Ask {
         let f = DateFormatter(); f.locale = Locale(identifier: "en_US"); f.timeZone = TimeZone(identifier: "UTC"); f.dateFormat = "MMM yyyy"; return f
     }()
     /// Dates in data are ISO days; UTC midnight like JS `new Date('2026-10-02')`.
-    private static func date(_ s: String) -> Date { iso.date(from: String(s.prefix(10))) ?? Date(timeIntervalSince1970: 0) }
+    private static func date(_ s: String) -> Date { iso.date(from: Capture.padDate(s)) ?? Date(timeIntervalSince1970: 0) }
 
     /// Web people.ts timeSince.
     static func timeSince(_ isoDate: String, now: Date = Date()) -> String {

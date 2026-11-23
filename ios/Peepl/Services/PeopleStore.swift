@@ -23,14 +23,14 @@ enum PeopleStore {
                 id: id, name: name, context: draft.context ?? "unsorted", alsoContext: nil,
                 profession: Capture.professionOf(draft), story: note.trimmingCharacters(in: .whitespacesAndNewlines),
                 tags: Capture.tagsOf(draft), from: Capture.place(draft.from, fallback: "Unknown"), met: met,
-                livesNow: Capture.place(draft.lives, fallback: "Unknown"), lifeStage: nil, lastContacted: today,
+                livesNow: Capture.place(draft.lives, fallback: "Unknown"), lifeStage: Capture.parseLifeStage(note), lastContacted: today,
                 knows: draft.knowsIds + (mutualOf.map { [$0] } ?? []), mutualNotes: [:], closeness: 1)
             context.insert(person)
             for text in Capture.dedupeTodos([draft.follow, draft.goal, draft.remember]) {
                 person.addTodo(id: Capture.uid(), text: text)
             }
             person.moments.append(Moment(
-                id: Capture.uid(), date: today, title: draft.met.map { "Met at \($0)" } ?? "First meeting",
+                id: Capture.uid(), date: Capture.parseMetDate(note, today: Date()) ?? today, title: draft.met.map { "Met at \($0)" } ?? "First meeting",
                 transcript: note.trimmingCharacters(in: .whitespacesAndNewlines), firstMeeting: true))
         }
         if let mutualOf, mutualOf != person.id, let other = all.first(where: { $0.id == mutualOf }) {

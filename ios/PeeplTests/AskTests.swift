@@ -54,4 +54,10 @@ final class AskTests: XCTestCase {
         XCTAssertEqual(Ask.timeSince("2026-11-16", now: now), "Today")
         XCTAssertEqual(Ask.timeSince("2026-11-01", now: now), "2w ago")
     }
+
+    func testShortDatesAreNotEpoch() {
+        let now = ISO8601DateFormatter().date(from: "2026-11-22T12:00:00Z")!
+        XCTAssertEqual(Ask.timeSince("2023", now: now), "3y ago")
+        XCTAssertEqual(Ask.timeSince("2026-05", now: now), "6mo ago")
+    }
 }

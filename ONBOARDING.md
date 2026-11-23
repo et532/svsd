@@ -302,7 +302,7 @@ Examples (fixed `today` = 2026-11-22; table is the unit-test table, 30 rows):
 | "met in high school" | `nil` date; `parseLifeStage` = `high-school` |
 | "Met Sam at Demo Day." | `nil` (no date: stays today) |
 
-Display rule: year only when the month is unknown ("Met 2023"); month plus year otherwise ("Met Mar 2022"); an exact day shows "Met Nov 2026" (month plus year, as now; yesterday on the 1st of a month shows the previous month, which is correct); "last week" is stored as an exact day but shows month plus year only; a life stage shows "Met in college" / "Met in high school" / "Met in grad school" / "Met in childhood".
+Display rule: year only when the month is unknown ("Met 2023"); month plus year otherwise ("Met Mar 2022"); an exact day shows "Met Nov 2026" (month plus year, as now; yesterday on the 1st of a month shows the previous month, which is correct); "last week" is stored as an exact day but shows month plus year only; a life stage shows "Met in college" / "Met in high school" / "Met in grad school" / "Met in childhood" ONLY when no meeting date is known (Vince, 2026-11-22; supersedes "life stage first"); when a date exists, the date label shows. Sample people keep their dates. Built as `MetDate.label(_:lifeStage:)` and `MetDate.label(for:)` in `Logic/Capture.swift`: a person is dateless when `lifeStage` is one of the four and their first moment is dated on their `lastContacted` day (createPerson stores today) or they have no moments.
 
 Where it lands (files, no schema change):
 - `Services/PeopleStore.swift` `createPerson`: the first `Moment.date` = `parseMetDate(...) ?? today`; `lifeStage` = `parseLifeStage(...)`; `lastContacted` stays `today` (existing behaviour, kept on purpose: they are talking about them now, so the losing-touch nudge effect is nil for a new person).
@@ -402,4 +402,4 @@ Open:
 - Voice caveat in 3.8 (on-device recognition not always available). Decide whether the privacy page and Settings About text should say so.
 - Whether the Welcome orbs should match the pitch deck exactly or the app aura palette.
 - Motion tokens: the interim ease tokens in section 4 should be reconciled with the motion spec table (house curves `(0.45,0,0.55,1)` / `(0.65,0,0.35,1)`).
-- Seed `lifeStage` values double as display text for `college` and `high-school` (6c); say if sample people should keep showing the dated "Met" line instead.
+- Decided 2026-11-22: life stage shows only when no meeting date is known; sample people keep their dated "Met" line. Contacts import stays out of scope.

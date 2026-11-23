@@ -90,4 +90,58 @@ final class CaptureTests: XCTestCase {
         let m = a.merged(with: b)
         XCTAssertEqual(m.name, "B"); XCTAssertEqual(m.does, "chef")
     }
+
+    // MARK: 6c when you met
+
+    func local(_ y: Int, _ m: Int, _ d: Int, _ h: Int = 12) -> Date {
+        Calendar.current.date(from: DateComponents(year: y, month: m, day: d, hour: h))!
+    }
+
+    func testMetDateTable() {
+        let today = local(2026, 11, 22)
+        let rows: [(String, String?)] = [
+            ("met them three years ago", "2023"), ("met them 3 years ago", "2023"), ("met a couple of years ago", "2024"),
+            ("met a few years ago", "2023"), ("met a year ago", "2025"), ("met them last year", "2025"),
+            ("met six months ago", "2026-05"), ("we met last month", "2026-10"), ("met in 2023", "2023"),
+            ("back in 2019 we met", "2019"), ("met in March 2022", "2022-03"), ("met in Mar 2022", "2022-03"),
+            ("met last March", "2026-03"), ("met last summer", "2026-07"), ("met in the summer of 2019", "2019-07"),
+            ("met last winter", "2026-01"), ("met them yesterday", "2026-11-21"), ("met them last night", "2026-11-21"),
+            ("met them the day before yesterday", "2026-11-20"), ("met them this morning", "2026-11-22"),
+            ("met them today", "2026-11-22"), ("met them tonight", "2026-11-22"), ("met them last week", "2026-11-15"),
+            ("met in 2031", nil), ("met in 1920", nil), ("we founded it in 2019. Met Sam at a bar.", nil),
+            ("met in college", nil), ("met in high school", nil), ("Met Sam at Demo Day.", nil),
+        ]
+        for (text, want) in rows { XCTAssertEqual(Capture.parseMetDate(text, today: today), want, text) }
+        // 30th row: after midnight, "last night" is still the previous calendar day.
+        XCTAssertEqual(Capture.parseMetDate("met them last night", today: local(2026, 11, 22, 2)), "2026-11-21")
+        XCTAssertEqual(Capture.parseLifeStage("met in college"), "college")
+        XCTAssertEqual(Capture.parseLifeStage("met in high school"), "high-school")
+        XCTAssertEqual(Capture.parseLifeStage("we met in grad school"), "grad-school")
+        XCTAssertEqual(Capture.parseLifeStage("friends as kids"), "childhood")
+        XCTAssertNil(Capture.parseLifeStage("Met Sam at Demo Day."))
+    }
+
+    func testMetDateMonthBoundary() {
+        XCTAssertEqual(Capture.parseMetDate("met yesterday", today: local(2026, 12, 1)), "2026-11-30")
+        XCTAssertEqual(Capture.parseMetDate("met last month", today: local(2026, 1, 5)), "2025-12")
+    }
+
+    func testMetLabel() {
+        XCTAssertEqual(MetDate.label("2026-11-22", lifeStage: nil), "Met Nov 2026")
+        XCTAssertEqual(MetDate.label("2022-03", lifeStage: nil), "Met Mar 2022")
+        XCTAssertEqual(MetDate.label("2023", lifeStage: nil), "Met 2023")
+        XCTAssertEqual(MetDate.label(nil, lifeStage: "college"), "Met in college")
+        XCTAssertEqual(MetDate.label(nil, lifeStage: "high-school"), "Met in high school")
+        XCTAssertEqual(MetDate.label(nil, lifeStage: "grad-school"), "Met in grad school")
+        XCTAssertEqual(MetDate.label(nil, lifeStage: "childhood"), "Met in childhood")
+        XCTAssertEqual(MetDate.label(nil, lifeStage: "nyc-work"), "")
+        // a known date wins over the life stage
+        XCTAssertEqual(MetDate.label("2014-09-01", lifeStage: "college"), "Met Sep 2014")
+    }
+
+    func testPadDate() {
+        XCTAssertEqual(Capture.padDate("2023"), "2023-07-01")
+        XCTAssertEqual(Capture.padDate("2023-05"), "2023-05-15")
+        XCTAssertEqual(Capture.padDate("2023-05-10"), "2023-05-10")
+    }
 }

@@ -66,7 +66,7 @@ enum Search {
         let f = DateFormatter(); f.locale = Locale(identifier: "en_US_POSIX"); f.timeZone = TimeZone(identifier: "UTC"); f.dateFormat = "yyyy-MM-dd"; return f
     }()
     private static func days(_ s: String, _ now: Date) -> Double {
-        now.timeIntervalSince(iso.date(from: String(s.prefix(10))) ?? Date(timeIntervalSince1970: 0)) / 86400
+        now.timeIntervalSince(iso.date(from: Capture.padDate(s)) ?? Date(timeIntervalSince1970: 0)) / 86400
     }
     private static func clamp(_ x: Double) -> Double { max(0, min(1, x)) }
     private static let norm = Ask.norm

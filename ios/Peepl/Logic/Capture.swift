@@ -295,3 +295,115 @@ enum Capture {
         return word == "run" ? "running" : (word.isEmpty ? nil : word)
     }
 }
+
+// MARK: when you met (ONBOARDING 6c)
+
+private let numWords = ["one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10,
+                        "a": 1, "an": 1, "a couple of": 2, "a few": 3, "couple of": 2, "few": 3]
+private let monthNames = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"]
+private let seasonMonth = ["summer": 7, "winter": 1, "spring": 4, "fall": 10, "autumn": 10]
+private let monthAlt = "jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sept?(?:ember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?"
+private let metSentenceRx = rx(#"\b(?:met|meet|ran into|bumped into|introduced|know|knew|friends since)\b"#, .caseInsensitive)
+private let lifeStages: [(String, NSRegularExpression)] = [
+    ("grad-school", rx(#"\b(?:in|from|at|during|since)\s+(?:grad(?:uate)?\s+school)\b"#, .caseInsensitive)),
+    ("high-school", rx(#"\b(?:in|from|at|during|since)\s+high\s+school\b"#, .caseInsensitive)),
+    ("college", rx(#"\b(?:in|from|at|during|since)\s+college\b"#, .caseInsensitive)),
+    ("childhood", rx(#"\b(?:as\s+(?:kids|children)|in\s+childhood|since\s+(?:we were\s+)?(?:kids|children)|childhood friend)\b"#, .caseInsensitive)),
+]
+private let numRx = "(\\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|an?(?: couple of| few)?|couple of|few)"
+
+extension Capture {
+    static func parseLifeStage(_ text: String) -> String? {
+        lifeStages.first { test($0.1, text) }?.0
+    }
+
+    /// "yyyy-MM-dd" / "yyyy-MM" / "yyyy" for when the note says they met, or nil. `today` is injected; local calendar day.
+    static func parseMetDate(_ text: String, today: Date) -> String? {
+        let sentences = text.components(separatedBy: CharacterSet(charactersIn: ".!?\n")).map { $0.trimmingCharacters(in: .whitespaces) }
+        let met = sentences.filter { test(metSentenceRx, $0) }
+        for s in met { if let r = metDate(in: s, today: today, daysOnly: false) { return r.value } }
+        for s in sentences where !met.contains(s) { if let r = metDate(in: s, today: today, daysOnly: true) { return r.value } }
+        return nil
+    }
+
+    /// Outer nil: no date phrase. `value` nil: a date phrase matched but is invalid (future / out of range), so the parse stops there.
+    private static func metDate(in s: String, today: Date, daysOnly: Bool) -> (value: String?, Void)? {
+        let cal = Calendar.current
+        let c = cal.dateComponents([.year, .month], from: today)
+        let (y, mo) = (c.year!, c.month!)
+        func day(_ back: Int) -> (String?, Void)? {
+            (fmt("yyyy-MM-dd", cal.date(byAdding: .day, value: -back, to: today)!), ())
+        }
+        func ym(_ year: Int, _ month: Int) -> (String?, Void)? { (String(format: "%04d-%02d", year, month), ()) }
+        func past(_ month: Int) -> (String?, Void)? { ym(month > mo ? y - 1 : y, month) }
+        func n(_ t: String) -> Int { Int(t) ?? numWords[t.lowercased()] ?? 0 }
+        func has(_ p: String) -> Bool { test(rx(p, .caseInsensitive), s) }
+
+        // Day words come first, longer phrases before shorter ("day before yesterday", "last week").
+        if has(#"\bday before yesterday\b"#) { return day(2) }
+        if has(#"\b(?:yesterday|last night)\b"#) { return day(1) }
+        if has(#"\b(?:this morning|today|tonight|this week)\b"#) { return day(0) }
+        if has(#"\blast week\b"#) { return day(7) }
+        if daysOnly { return nil }
+
+        if let m = first(rx("\\b\(numRx) years? ago\\b", .caseInsensitive), s), let t = grp(m, 1, s) {
+            return ("\(y - n(t))", ())
+        }
+        if let m = first(rx("\\b\(numRx) months? ago\\b", .caseInsensitive), s), let t = grp(m, 1, s) {
+            let total = y * 12 + (mo - 1) - n(t)
+            return ym(total / 12, total % 12 + 1)
+        }
+        if has(#"\blast month\b"#) { return ym(mo == 1 ? y - 1 : y, mo == 1 ? 12 : mo - 1) }
+        if has(#"\bthis month\b"#) { return ym(y, mo) }
+        if has(#"\blast year\b"#) { return ("\(y - 1)", ()) }
+        if let m = first(rx(#"\b(summer|winter|spring|fall|autumn)\b(?:\s+of)?(?:\s+(\d{4}))?"#, .caseInsensitive), s), let k = grp(m, 1, s) {
+            let mm = seasonMonth[k.lowercased()]!
+            if let yr = grp(m, 2, s).flatMap(Int.init) { return (1950...y).contains(yr) ? ym(yr, mm) : (nil, ()) }
+            return past(mm)
+        }
+        if let m = first(rx("\\b(\(monthAlt))\\b\\.?,?\\s+(\\d{4})\\b", .caseInsensitive), s), let k = grp(m, 1, s), let yr = grp(m, 2, s).flatMap(Int.init) {
+            let mm = monthNames.firstIndex(of: String(k.lowercased().prefix(3)))! + 1
+            return (1950...y).contains(yr) && (yr < y || mm <= mo) ? ym(yr, mm) : (nil, ())
+        }
+        if let m = first(rx("\\b(?:in|last|this|since)\\s+(\(monthAlt))\\b", .caseInsensitive), s), let k = grp(m, 1, s) {
+            return past(monthNames.firstIndex(of: String(k.lowercased().prefix(3)))! + 1)
+        }
+        if let m = first(rx(#"\b(?:19|20)\d{2}\b"#), s), let yr = grp(m, 0, s).flatMap(Int.init) {
+            return ((1950...y).contains(yr) ? "\(yr)" : nil, ())
+        }
+        return nil
+    }
+
+    private static func fmt(_ f: String, _ d: Date) -> String {
+        let df = DateFormatter(); df.locale = Locale(identifier: "en_US_POSIX"); df.dateFormat = f; return df.string(from: d)
+    }
+
+    /// "2023" -> "2023-07-01", "2023-05" -> "2023-05-15", so short met dates sort, age and print sensibly.
+    static func padDate(_ s: String) -> String {
+        switch s.count { case 4: return s + "-07-01"; case 7: return s + "-15"; default: return String(s.prefix(10)) }
+    }
+}
+
+/// The "Met ..." line shown on a profile and on the new-person card.
+enum MetDate {
+    private static let stageText = ["college": "college", "high-school": "high school", "grad-school": "grad school", "childhood": "childhood"]
+
+    /// A date label when `iso` is known; otherwise the life stage ("Met in college") if there is one, else "".
+    static func label(_ iso: String?, lifeStage: String?) -> String {
+        guard let iso else { return stageText[lifeStage ?? ""].map { "Met in \($0)" } ?? "" }
+        if iso.count == 4 { return "Met \(iso)" }
+        let p = iso.split(separator: "-")
+        guard iso.count >= 7, p.count >= 2, let m = Int(p[1]), (1...12).contains(m) else { return "" }
+        return "Met \(Calendar.current.shortMonthSymbols[m - 1]) \(p[0])"
+    }
+
+    /// Dateless rule (no schema change): createPerson stores the first moment as today when the note names no date, so a person
+    /// with a display life stage whose first moment is on their lastContacted day (both "today" at creation), or who has no
+    /// moments, has no known meeting date. Sample people have older dated first moments, so they keep their dates.
+    /// Limit: once the person is contacted on a later day the dates differ and the date label shows; fix would need a schema flag.
+    static func label(for p: Person) -> String {
+        let first = p.moments.first(where: \.firstMeeting)
+        let dateless = stageText[p.lifeStage ?? ""] != nil && (first == nil || first!.date == p.lastContacted)
+        return label(dateless ? nil : (first?.date ?? p.lastContacted), lifeStage: p.lifeStage)
+    }
+}
