@@ -98,6 +98,7 @@ private let metRx5 = rx(#"\b(?:went to|attended) (?:an? |the |my )?([^.,]+?)(?= 
 private let metTail = rx(#"(?<=\S)\s+(?:through|via|who|that|where)\s+.*"#, .caseInsensitive)
 private let metHead = rx(#"^(?:an?|the)\s+(?:friend's\s+)?"#, .caseInsensitive)
 private let doesRx = rx(#"\b((?:(?:product|project|program|engineering|marketing|operations|account|sales|general) manager|(?:software|hardware|mechanical|electrical|data|machine learning|research) (?:engineer|scientist)|(?:(?!an?\b|the\b)[a-z]+ )?(?:architect|chef|teacher|nurse|doctor|lawyer|developer|musician|photographer|filmmaker|professor|consultant|analyst|scientist|director|editor|producer|journalist|therapist|illustrator|accountant|barista|baker|carpenter|plumber|electrician|pilot|translator|interpreter|dentist|entrepreneur|pharmacist)|founder|co-?founder|engineer|designer|investor|student|researcher|artist|writer|recruiter|PM|manager|climbing coach|coach(?:es)?)\b)[^.,]*"#, .caseInsensitive)
+private let studyRx = rx(#"\b(?:studying|majoring in)\s+([a-z][a-z ]*?)(?=\s+(?:at|in|and|but|who|from)\b|[.,]|$)"#, .caseInsensitive)
 private let andRx = rx(#"\s+and\s+"#)
 private let andButRx = rx(#"\s+(?:and|but)\s+"#)
 private let teachRx = rx(#"\bteach(?:es|ing)\b"#, .caseInsensitive)
@@ -180,6 +181,8 @@ enum Capture {
             out.does = cut(trim(head(andRx, does)))
         } else if test(teachRx, t) {
             out.does = "teacher"
+        } else if let major = grp(first(studyRx, t), 1, t) {
+            out.does = trim(major) + " student"
         }
         if let d = out.does { out.does = sub(coachesRx, d, "$1 coach") }
         if let rem = grp(first(remRx, t), 0, t) { out.remember = cut(trim(head(andButRx, rem))) }

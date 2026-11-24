@@ -22,6 +22,10 @@ final class CaptureTests: XCTestCase {
         XCTAssertEqual(d.goal, "Wants to open a studio")
     }
 
+    func testStudyingIsARole() {
+        check(parse("Met Sam Ortiz at the library. He's studying astrophysics at Vanderbilt."), ["name": "Sam Ortiz", "does": "astrophysics student"])
+    }
+
     func testKeepsCompanyForOtherRoles() {
         let d = parse("Met Jules Marlowe at a climbing gym. Jules is a chef at Nopa.")
         check(d, ["name": "Jules Marlowe", "company": "Nopa", "met": "climbing gym"])

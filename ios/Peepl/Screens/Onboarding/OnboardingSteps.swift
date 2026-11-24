@@ -46,16 +46,25 @@ private struct ColdOpen: View {
     let replay: Bool
     let restore: () -> Void
     private let words = "Every person you meet has a story.".split(separator: " ").map(String.init)
+    @State private var shownWords = 0
+    @Environment(\.accessibilityReduceMotion) private var reduce
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Peepl").font(Theme.font(20, .semibold)).foregroundStyle(.white).fadeIn(1.6, 0.4)
-            WrapLayout(spacing: 10, lineSpacing: 4) {
-                ForEach(Array(words.enumerated()), id: \.offset) { i, w in
-                    Word(text: w, delay: 0.3 + 0.12 * Double(i))
+            // One Text, so it wraps and measures like text (a custom wrap layout measured a line short); each word fades in on its own
+            words.enumerated().reduce(Text("")) { all, w in
+                all + Text(w.offset > 0 ? " " : "") + Text(w.element).foregroundStyle(.white.opacity(w.offset < shownWords ? 1 : 0))
+            }
+            .font(Theme.font(40)).tracking(-1.6).fixedSize(horizontal: false, vertical: true)
+            .padding(.top, 24).frame(maxWidth: .infinity, alignment: .leading)
+            .animation(.easeOut(duration: 0.35), value: shownWords)
+            .task {
+                for n in 1...words.count {
+                    try? await Task.sleep(for: .seconds(reduce ? 0 : (n == 1 ? 0.3 : 0.12)))
+                    shownWords = n
                 }
             }
-            .padding(.top, 24)
             .accessibilityElement(children: .ignore).accessibilityLabel(words.joined(separator: " ")).accessibilityAddTraits(.isHeader)
             Text("Peepl keeps it for you.").font(Theme.font(20)).foregroundStyle(.white.opacity(0.7)).fadeIn(1.3)
             if !replay {
@@ -65,18 +74,6 @@ private struct ColdOpen: View {
                 .buttonStyle(PressStyle(scale: 0.95)).padding(.top, 8).fadeIn(1.3)
                 .accessibilityIdentifier("onboardingRestore")
             }
-        }
-    }
-
-    private struct Word: View {
-        let text: String
-        let delay: Double
-        @State private var shown = false
-        @Environment(\.accessibilityReduceMotion) private var reduce
-        var body: some View {
-            Text(text).font(Theme.font(40)).tracking(-1.6).foregroundStyle(.white)
-                .opacity(shown ? 1 : 0).offset(y: shown || reduce ? 0 : 6)
-                .task { try? await Task.sleep(for: .seconds(reduce ? 0 : delay)); withAnimation(Motion.animation(.timingCurve(0.42, 0, 0.58, 1, duration: 0.35), reduce: reduce)) { shown = true } }
         }
     }
 }
