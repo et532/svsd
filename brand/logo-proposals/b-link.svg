@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+<defs>
+<radialGradient id="bp" gradientUnits="userSpaceOnUse" cx="260" cy="234" r="520"><stop offset="0" stop-color="#d6347f" stop-opacity=".85"/><stop offset="1" stop-color="#d6347f" stop-opacity="0"/></radialGradient><radialGradient id="by" gradientUnits="userSpaceOnUse" cx="800" cy="424" r="480"><stop offset="0" stop-color="#e8c22e" stop-opacity=".85"/><stop offset="1" stop-color="#e8c22e" stop-opacity="0"/></radialGradient><radialGradient id="bb" gradientUnits="userSpaceOnUse" cx="220" cy="774" r="500"><stop offset="0" stop-color="#2f4fd0" stop-opacity=".85"/><stop offset="1" stop-color="#2f4fd0" stop-opacity="0"/></radialGradient><radialGradient id="bo" gradientUnits="userSpaceOnUse" cx="780" cy="824" r="500"><stop offset="0" stop-color="#ec5a32" stop-opacity=".85"/><stop offset="1" stop-color="#ec5a32" stop-opacity="0"/></radialGradient>
+<filter id="bs" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="6" stdDeviation="9" flood-color="#000" flood-opacity=".18"/></filter>
+</defs>
+<rect width="1024" height="1024" fill="#f4f4f4"/>
+<rect width="1024" height="1024" fill="url(#bp)"/><rect width="1024" height="1024" fill="url(#by)"/><rect width="1024" height="1024" fill="url(#bb)"/><rect width="1024" height="1024" fill="url(#bo)"/><line x1="390" y1="430" x2="660" y2="630" stroke="#fff" stroke-width="14" stroke-linecap="round" stroke-opacity=".9"/>
+<circle cx="390" cy="430" r="190" fill="#fff" fill-opacity=".72"/>
+<circle cx="390" cy="430" r="200" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="7.6"/>
+<circle cx="390" cy="430" r="57" fill="#fff" filter="url(#bs)"/>
+<circle cx="665" cy="635" r="125" fill="#fff" fill-opacity=".72"/>
+<circle cx="665" cy="635" r="135" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="5"/>
+<circle cx="665" cy="635" r="40" fill="#fff" filter="url(#bs)"/></svg>
