@@ -467,6 +467,7 @@ struct ProfileHero: View {
     var topInset: CGFloat = 118
     var dim = 1.0 // text opacity (onboarding demo fades it)
     var avatarSaturation = 1.0
+    var rounded = false // all four corners (the onboarding card floats); the profile page runs under the status bar, so only the bottom
     var body: some View {
         let blob = Blobs.blob(for: id)
         // Figma "Profile Top": 233 pt tall, avatar left, name and details beside it
@@ -491,7 +492,7 @@ struct ProfileHero: View {
             }
             .clipped()
         }
-        .clipShape(UnevenRoundedRectangle(bottomLeadingRadius: 28, bottomTrailingRadius: 28))
+        .clipShape(UnevenRoundedRectangle(topLeadingRadius: rounded ? 28 : 0, bottomLeadingRadius: 28, bottomTrailingRadius: 28, topTrailingRadius: rounded ? 28 : 0))
     }
 }
 

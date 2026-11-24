@@ -94,7 +94,7 @@ private struct Step2Demo: View {
                 VStack(spacing: 14) {
                     VStack(spacing: 0) {
                         ProfileHero(id: "jordan-lee", name: reduce || stage >= 2 ? Self.name : typed, subtitle: "Founder @ Voltcell", met: "Met at Demo Day",
-                                    avatarSize: 60, topInset: 24, dim: gone ? 0.35 : 1, avatarSaturation: gone ? 0.2 : 1)
+                                    avatarSize: 60, topInset: 24, dim: gone ? 0.35 : 1, avatarSaturation: gone ? 0.2 : 1, rounded: true)
                             .scaleEffect(stage >= 1 ? 1 : 0.6)
                             .animation(Motion.animation(Motion.pop, reduce: reduce), value: stage >= 1)
                             .animation(Motion.animation(.easeInOut(duration: 3.6), reduce: reduce), value: gone)
@@ -221,7 +221,7 @@ private struct Step4Demo: View {
             DemoPanel(height: 430, label: "Jordan Lee's profile: founder at Voltcell in Brooklyn, met at Demo Day. Battery recycling for e-bikes. Climbs Tuesdays. To do: intro Jordan to a hardware engineer.") {
                 ZStack {
                     VStack(spacing: 12) {
-                        piece(0) { ProfileHero(id: "jordan-lee", name: "Jordan Lee", subtitle: "Founder @ Voltcell, Brooklyn", met: "Met Oct 2026", avatarSize: 60, topInset: 24) }
+                        piece(0) { ProfileHero(id: "jordan-lee", name: "Jordan Lee", subtitle: "Founder @ Voltcell, Brooklyn", met: "Met Oct 2026", avatarSize: 60, topInset: 24, rounded: true) }
                         piece(1) { ProfileSummaryCard(story: "Met Jordan at Demo Day. Battery recycling for e-bikes. Climbs Tuesdays.", tags: ["founder", "climbing"]) }
                         piece(2) {
                             TodoRowLabel(text: "Intro Jordan to a hardware engineer", done: stage >= 4)

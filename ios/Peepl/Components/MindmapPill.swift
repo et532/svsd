@@ -8,7 +8,7 @@ struct MindmapPill: View {
     @State private var shown = false
 
     var body: some View {
-        let sub = [person.profession, person.livesNow.city].filter { !$0.isEmpty && $0 != "Unknown" }.joined(separator: " · ")
+        let sub = person.subtitle
         Button { nav.push(.profile(person.id)) } label: {
             HStack(spacing: 12) {
                 Avatar(id: person.id, size: 36)

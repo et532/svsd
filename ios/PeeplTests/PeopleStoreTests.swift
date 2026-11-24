@@ -15,7 +15,10 @@ final class PeopleStoreTests: XCTestCase {
         let p = make(ctx).person
         XCTAssertFalse(p.subtitle.contains("Unknown"))
         p.profession = "Unknown"; p.livesNow.city = ""
+        p.from.city = "Unknown"; p.met.context = nil; p.met.city = "Unknown"
         XCTAssertEqual(p.subtitle, "")
+        p.from.city = "Arizona"; XCTAssertEqual(p.subtitle, "From Arizona") // no job or city: where they are from
+        p.from.city = "Unknown"; p.met.city = "Vanderbilt"; XCTAssertEqual(p.subtitle, "Met at Vanderbilt")
         p.profession = "Designer"; XCTAssertEqual(p.subtitle, "Designer")
         p.livesNow.city = "Queens"; XCTAssertEqual(p.subtitle, "Designer · Queens")
     }

@@ -8,7 +8,7 @@ struct CircleReveal: Shape {
     func path(in r: CGRect) -> Path {
         let c = CGPoint(x: r.width * origin.x, y: r.height * origin.y)
         let far = max(hypot(c.x, c.y), hypot(r.width - c.x, c.y), hypot(c.x, r.height - c.y), hypot(r.width - c.x, r.height - c.y))
-        let radius = 24 + (far * 1.05 - 24) * progress
+        let radius = 24 + (far * 1.25 - 24) * progress
         return Path(ellipseIn: CGRect(x: c.x - radius, y: c.y - radius, width: radius * 2, height: radius * 2))
     }
 }

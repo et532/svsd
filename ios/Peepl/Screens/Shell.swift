@@ -42,7 +42,12 @@ struct PeopleFilter: Equatable { var ids: [String]; var label: String }
     func push(_ l: Layer) { if layers.last != l { dragProgress = 0; layers.append(l) } } // a double tap must not stack the same screen twice
     /// Resigning in the same transaction as the removal makes the system keyboard slide down with the layer's shrink, not after it.
     func pop() { UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil); _ = layers.popLast() }
-    func replaceTop(_ l: Layer) { if layers.isEmpty { layers.append(l) } else { layers[layers.count - 1] = l } }
+    func replaceTop(_ l: Layer) {
+        if layers.isEmpty { layers.append(l); return }
+        layers[layers.count - 1] = l
+        // a fresh key, or the new screen is the old view in place and keeps Add's circle clip (a sliver cut off the profile banner's corner)
+        serial += 1; keys[keys.count - 1] = serial
+    }
     func viewConnections(_ p: Person) { layers = []; tab = .mindmap; focus = (p.id, p.firstName) }
     /// A person is being deleted: nothing may still point at them.
     func forget(_ id: String) {

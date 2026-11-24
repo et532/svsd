@@ -46,10 +46,23 @@ private struct DemoNote: View {
                 Text(String(Step5Note.heard.dropFirst(typed.count))).foregroundStyle(Theme.ink.opacity(0.3))
             }
             .font(Theme.font(16)).padding(.horizontal, 3).overlay(RoundedRectangle(cornerRadius: 6).stroke(Theme.ink, lineWidth: 1))
+                .overlay(alignment: .bottomTrailing) { cursor }
         } else {
             Text(stage >= 5 ? Step5Note.meant : Step5Note.heard).font(Theme.font(16)).foregroundStyle(Theme.ink).padding(.horizontal, 3)
                 .overlay(RoundedRectangle(cornerRadius: 6).stroke(Theme.ink.opacity(0.25), lineWidth: 1))
+                .overlay(alignment: .bottomTrailing) { cursor }
         }
+    }
+
+    /// A pointer that glides to "Jorden" once the note is done and taps it as the typing starts.
+    private var cursor: some View {
+        let on = stage == 3 || stage == 4
+        return Image(systemName: "cursorarrow").font(.system(size: 24)).foregroundStyle(Theme.ink)
+            .shadow(color: .white, radius: 1)
+            .scaleEffect(stage == 4 ? 0.85 : 1)
+            .offset(x: on ? 8 : 70, y: on ? 14 : 60).opacity(on ? 1 : 0)
+            .animation(.easeInOut(duration: 0.9), value: on).animation(.easeOut(duration: 0.15), value: stage)
+            .allowsHitTesting(false)
     }
 }
 
@@ -76,16 +89,6 @@ private struct DemoPersonCard: View {
             }
         }
         .clipShape(.rect(cornerRadius: 24))
-    }
-}
-
-private struct CaptionChip: View {
-    let text: String
-    let on: Bool
-    var body: some View {
-        Text(text).font(Theme.font(15, .medium)).foregroundStyle(Theme.ink).fixedSize(horizontal: false, vertical: true)
-            .padding(.horizontal, 14).padding(.vertical, 8).pastel(in: Capsule()).opacity(on ? 1 : 0)
-            .animation(.easeInOut(duration: 0.4), value: on)
     }
 }
 
@@ -116,13 +119,6 @@ struct Step5Demo: View {
                     }
                     .padding(18).glass(24).tilted3D(10, layer: 1)
                     ZStack {
-                        if stage == 5 && !reduce {
-                            ZStack(alignment: .leading) {
-                                Shimmer().clipShape(.rect(cornerRadius: 24))
-                                Text("Creating a new profile for Jordan Lee...").font(Theme.font(15)).foregroundStyle(Theme.inkMuted).padding(.leading, 18)
-                            }
-                            .transition(.opacity)
-                        }
                         if reduce || stage >= 6 {
                             DemoPersonCard().tilted3D(stage >= 7 ? 6 : 10, layer: 2, lift: stage >= 7 ? 1 : 0).floatLayer(2)
                                 .transition(.offset(y: 40).combined(with: .opacity))
@@ -130,11 +126,9 @@ struct Step5Demo: View {
                     }
                     .frame(height: 100)
                     .animation(Motion.animation(Motion.pop, reduce: reduce), value: stage >= 6)
-                    .animation(.easeInOut(duration: 0.4), value: stage == 5)
                 }
             }
-            CaptionChip(text: "I heard Jorden. Tap a name to fix it, once.", on: stage == 4 || stage == 5)
-            PipView(blob: Pip.pick(excludingBlobs: []), line: "Misheard a name? Tap it later to fix it.")
+            Text("Tap a name to change the spelling.").font(Theme.font(17)).foregroundStyle(Theme.inkMuted)
         }
         .task(id: stage >= 2) { // the words stream in, as if spoken
             guard stage >= 2, !reduce else { return }

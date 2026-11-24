@@ -126,6 +126,8 @@ private struct OutlineRenderer: TextRenderer {
 struct NameOutlines: View {
     let text: String
     let people: [any Named]
+    // A text field's lines are one font "leading" (1.6 pt for Geist 16) taller than Text's; without it the outlines drift down a line at a time.
+    @ScaledMetric(relativeTo: .body) private var leading = 1.6
 
     var body: some View {
         let segs = NameFixes.splitNames(text, names: NameFixes.outlines(text, people: people))
@@ -137,7 +139,7 @@ struct NameOutlines: View {
                 $0 + Text($1.offset > 0 ? " " : "") + Text($1.element).customAttribute(OutlinedWord())
             }
         }
-        .font(Theme.font(16)).foregroundStyle(.clear)
+        .font(Theme.font(16)).lineSpacing(leading).padding(.bottom, leading).foregroundStyle(.clear)
         .textRenderer(OutlineRenderer())
         .accessibilityElement().accessibilityLabel(names.isEmpty ? "" : "Names found: " + names.joined(separator: ", "))
         .accessibilityHidden(names.isEmpty)

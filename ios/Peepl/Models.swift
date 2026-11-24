@@ -63,7 +63,15 @@ struct Place: Codable, Hashable {
 
     var firstName: String { name.split(separator: " ").first.map(String.init) ?? name }
     /// "job · city", without the parts a new person doesn't have yet.
-    var subtitle: String { [profession, livesNow.city].filter { !$0.isEmpty && $0 != "Unknown" }.joined(separator: " · ") }
+    var subtitle: String {
+        let known = { (s: String) in !s.isEmpty && s != "Unknown" }
+        let main = [profession, livesNow.city].filter(known).joined(separator: " · ")
+        if !main.isEmpty { return main }
+        // no job or city yet: say where they are from or where you met, so a row is never blank
+        if known(from.city) { return "From \(from.city)" }
+        let met = met.context ?? met.city
+        return known(met) ? "Met at \(met)" : ""
+    }
     var initials: String {
         let p = name.split(separator: " ")
         return ((p.first?.first.map(String.init) ?? "") + (p.count > 1 ? String(p.last!.first!) : "")).uppercased()

@@ -119,23 +119,25 @@ private struct PrivacyStep: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             Heading(text: "Your notes on people. No one else sees them.").appear(0)
-            VStack(alignment: .leading, spacing: 6) {
-                row("iphone", "Everything stays on this phone").appear(1)
-                // REQUIRED: voice may leave the phone where on-device recognition is unsupported (spec 3.8). Do not remove.
-                Text("Voice notes are turned into text on your phone when your iPhone supports it.").font(Theme.mono(12)).foregroundStyle(Theme.inkMuted)
-                    .padding(.leading, 40).fadeIn(0.9, 0.4)
-            }
-            row("person.crop.circle.badge.xmark", "No account, nothing to sign up for").appear(2)
-            row("switch.2", "AI help from OpenAI is off until you turn it on in Settings").appear(3)
+            row("iphone", "Everything stays on this phone", "Your people and notes are stored on this device only.").appear(1)
+            row("person.crop.circle.badge.xmark", "No account", "Nothing to sign up for.").appear(2)
+            row("switch.2", "LLM help is off", "Turn it on in Settings if you want smarter search and drafts.").appear(3)
+            // REQUIRED: voice may leave the phone where on-device recognition is unsupported (spec 3.8). Do not remove.
+            Text("Voice notes are turned into text on your phone when your iPhone supports it.").font(Theme.mono(12)).foregroundStyle(Theme.inkMuted)
+                .fadeIn(0.9, 0.4)
             Text("Moving to a new phone? Back up from Settings and restore the file there.").font(Theme.mono(12)).foregroundStyle(Theme.inkMuted)
                 .padding(.top, 8).fadeIn(1.4, 0.4)
         }
     }
 
-    private func row(_ symbol: String, _ text: String) -> some View {
-        HStack(spacing: 14) {
-            Image(systemName: symbol).font(.system(size: 18)).foregroundStyle(Theme.ink).frame(width: 26)
-            Text(text).font(Theme.font(17)).foregroundStyle(Theme.ink).fixedSize(horizontal: false, vertical: true)
+    private func row(_ symbol: String, _ title: String, _ detail: String) -> some View {
+        HStack(alignment: .top, spacing: 14) {
+            Image(systemName: symbol).font(.system(size: 18)).foregroundStyle(Theme.ink).frame(width: 26).padding(.top, 2)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(Theme.font(17, .medium)).foregroundStyle(Theme.ink)
+                Text(detail).font(Theme.font(15)).foregroundStyle(Theme.inkMuted)
+            }
+            .fixedSize(horizontal: false, vertical: true)
         }
     }
 }
