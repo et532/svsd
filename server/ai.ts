@@ -65,13 +65,15 @@ const TASKS: Record<string, Task> = {
 // script. Counted in memory, so it is per server instance: a good brake, not a hard wall (the OpenAI spending limit is).
 const WINDOW_MS = 10 * 60 * 1000
 const LIMITS: Record<string, number> = { parse: 30, rank: 60, draft: 60, transcribe: 20, live: 15, attest: 10, 'attest-challenge': 20 }
+// The attested iOS app may search more: it sends the whole list, 20 people per call. The public web limit stays as it is.
+const NATIVE_LIMITS: Record<string, number> = { rank: 300 }
 const hits = new Map<string, number[]>()
 
 // Seconds until this visitor may call `task` again, or 0 when they may now (and counts this call).
-export function rateLimited(ip: string, task: string, now = Date.now()): number {
+export function rateLimited(ip: string, task: string, now = Date.now(), native = false): number {
   const key = `${task}:${ip}`
   const recent = (hits.get(key) ?? []).filter((t) => now - t < WINDOW_MS)
-  if (recent.length >= (LIMITS[task] ?? 30)) {
+  if (recent.length >= ((native && NATIVE_LIMITS[task]) || (LIMITS[task] ?? 30))) {
     hits.set(key, recent)
     return Math.max(1, Math.ceil((recent[0] + WINDOW_MS - now) / 1000))
   }
@@ -227,7 +229,8 @@ export async function handleAi(req: IncomingMessage, res: ServerResponse, env: A
   }
   if (!env.key) return send(503, { error: 'Set OPENAI_API_KEY (.env.local locally, Environment Variables on Vercel)' })
   if (crossSite(req.headers)) return send(403, { error: 'Not allowed from another site' })
-  const wait = Math.max(rateLimited(clientIp(req), name), device ? rateLimited(`dev:${device}`, name) : 0)
+  // `device` is only set once the token checked out, so a bare script can't claim the app's limits
+  const wait = Math.max(rateLimited(clientIp(req), name, Date.now(), !!device), device ? rateLimited(`dev:${device}`, name, Date.now(), true) : 0)
   if (wait) return send(429, { error: 'Too many requests, try again in a moment' }, { 'retry-after': String(wait) })
   try {
     const out =

@@ -42,7 +42,7 @@
 <p>Settings has a switch, "Use OpenAI". It is off by default. While it is on, and only then, Peepl sends these to OpenAI, through Peepl's own server:</p>
 <ul>
   <li>Add: the note text you write about a person. A note you type can contain names;</li>
-  <li>Find: your question, plus for up to 12 candidate people these facts: job, where they live, where they are from, where you met, tags, the first 240 characters of their story, and their 2 most recent moments (up to 120 characters each). Names and ids are not sent for search, although a story or moment you wrote may contain names;</li>
+  <li>Find: your question, plus these facts about each person in your list (all of them, apart from any the phone already matched exactly): job, where they live, where they are from, where you met, tags, the first 600 characters of their story, and their 2 most recent moments (up to 120 characters each). Names and ids are not sent for search, although a story or moment you wrote may contain names;</li>
   <li>Draft a message: the person's first name, the same facts as above (job, where they live, where they are from, where you met, tags, story, 2 recent moments), the kind of message, and what the message should say. When the draft comes from a Find result, that includes your question and why the person fits. For an introduction or a trip, the message text can also include another person's name.</li>
 </ul>
 <p>To prove the request comes from a genuine Peepl install, the app uses Apple's App Attest while the switch is on. It sends Peepl's server a device key id and an attestation from Apple, and gets back a short-lived token. This identifies the install, not you.</p>

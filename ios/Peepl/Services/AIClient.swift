@@ -87,7 +87,7 @@ extension AIClient {
     /// What the model may know about someone: their profile, never their id.
     private static func facts(_ p: PersonInfo) -> [String: Any] {
         ["job": p.profession, "lives": p.livesNow.city, "from": p.from.city, "met": p.met.context ?? "", "tags": p.tags,
-         "story": clip(p.story, 240), "recent": p.moments.prefix(2).map { clip($0.transcript ?? $0.text ?? $0.title, 120) }]
+         "story": clip(p.story, 600), "recent": p.moments.prefix(2).map { clip($0.transcript ?? $0.text ?? $0.title, 120) }]
     }
 
     /// POST /api/ai/<task>; nil on any failure. 503 / 404 turn the AI off for the session.
@@ -102,20 +102,19 @@ extension AIClient {
         // A relaxed answer (groups + note) already explains itself; the AI's flat list would drop that.
         guard enabled, case .people(let a) = result, a.groups == nil else { return result }
         var seen = Set(a.matches.map(\.person.id))
-        var pool: [Match] = []
-        for m in (a.near ?? []) + (await Semantic.closestMatches(query, people: people, n: 12, embedder: embedder))
-        where pool.count < 12 && seen.insert(m.person.id).inserted { pool.append(m) }
-        guard !pool.isEmpty,
-              let out = await post("rank", ["query": query, "candidates": pool.enumerated().map { ["i": $0.offset].merging(facts($0.element.person)) { a, _ in a } }], timeout: 10),
-              let results = out["results"] as? [[String: Any]] else { return result }
+        // Everyone, closest first (the last term catches anyone the embedder skipped). No cap on how many are judged.
+        let closest = await Semantic.closestMatches(query, people: people, n: people.count, embedder: embedder)
+        let pool = ((a.near ?? []) + closest + people.map { Match(person: $0, why: $0.profession) }).filter { seen.insert($0.person.id).inserted }
+        guard !pool.isEmpty else { return result }
 
-        var verdict: [Int: (fits: Bool, why: String)] = [:]
-        for r in results { if let i = r["i"] as? Int { verdict[i] = (r["fits"] as? Bool ?? false, r["why"] as? String ?? "") } }
+        let verdict = await judge(query, pool)
+        guard !verdict.isEmpty else { return result }
         var fit: [Match] = [], notQuite: [Match] = []
         for (i, var m) in pool.enumerated() {
-            if let v = verdict[i], v.fits { if !v.why.isEmpty { m.why = v.why }; fit.append(m) } else { notQuite.append(m) }
+            guard let v = verdict[i] else { continue } // its batch failed: not judged either way
+            if v.fits { if !v.why.isEmpty { m.why = v.why }; fit.append(m) } else { notQuite.append(m) }
         }
-        let matches = (a.matches + fit).prefix(10).map { m -> Match in
+        let matches = (a.matches + fit).map { m -> Match in
             var m = m
             if m.action == nil {
                 let first = m.person.firstName
@@ -126,7 +125,33 @@ extension AIClient {
         }
         return .people(PeopleAnswer(
             title: matches.isEmpty ? "No one matches “\(query)” yet" : "\(matches.count) \(matches.count == 1 ? "person" : "people") for “\(query)”",
-            matches: Array(matches), near: matches.isEmpty ? Array(notQuite.prefix(2)) : nil))
+            matches: matches, near: matches.isEmpty ? Array(notQuite.prefix(2)) : nil,
+            note: verdict.count < pool.count ? "OpenAI could only check \(verdict.count) of \(pool.count) people." : nil))
+    }
+
+    private static let batch = 20 // the server's limit per request (server/ai.ts)
+
+    /// Each pool index the AI answered for. The first batch goes alone (it fetches the token and finds out whether the AI
+    /// is off), the rest together.
+    // shortcut: the server allows the app 300 rank calls per 10 minutes, so past ~6000 people (or many searches in a big list) some batches get 429; raise NATIVE_LIMITS in server/ai.ts then.
+    private static func judge(_ query: String, _ pool: [Match]) async -> [Int: (fits: Bool, why: String)] {
+        @Sendable func send(_ start: Int) async -> [(Int, Bool, String)] {
+            let candidates = pool[start..<min(start + batch, pool.count)].enumerated().map { ["i": $0.offset].merging(facts($0.element.person)) { a, _ in a } }
+            guard let out = await post("rank", ["query": query, "candidates": candidates], timeout: 10),
+                  let results = out["results"] as? [[String: Any]] else { return [] }
+            return results.compactMap { r in
+                guard let i = r["i"] as? Int, candidates.indices.contains(i) else { return nil }
+                return (start + i, r["fits"] as? Bool ?? false, r["why"] as? String ?? "")
+            }
+        }
+        var rows = await send(0)
+        await withTaskGroup(of: [(Int, Bool, String)].self) { group in
+            for start in stride(from: batch, to: pool.count, by: batch) { group.addTask { await send(start) } }
+            for await r in group { rows += r }
+        }
+        var verdict: [Int: (fits: Bool, why: String)] = [:]
+        for (i, fits, why) in rows { verdict[i] = (fits, why) }
+        return verdict
     }
 
     static func draft(_ person: PersonInfo, action: Action) async -> String {

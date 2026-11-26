@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Agreement to send data to OpenAI. Stored as a version so a changed text can ask again.
 enum Consent {
-    static let currentVersion = 1
+    static let currentVersion = 2 // 2: Find sends everyone, not 12 people
     static let key = "consentVersion"
     /// Tests swap this for their own suite.
     static var defaults = UserDefaults.standard
@@ -22,7 +22,7 @@ struct ConsentView: View {
                 .font(Theme.font(15)).foregroundStyle(Theme.ink)
             VStack(alignment: .leading, spacing: 6) {
                 Text("• The note you type when you add someone")
-                Text("• Your question, with short facts about up to 12 people")
+                Text("• Your question, with short facts about everyone in your list")
                 Text("• For a message draft: the person's first name and what you know about them, and for an introduction the other person's name")
             }.font(Theme.font(15)).foregroundStyle(Theme.ink)
             Text("Nothing is sent while the switch is off. You can turn it off any time in Settings.")

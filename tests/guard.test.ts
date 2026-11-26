@@ -23,6 +23,10 @@ describe('AI endpoint guards', () => {
     expect(rateLimited('5.6.7.8', 'live', t0 + 20)).toBe(0) // someone else is unaffected
     expect(rateLimited('1.2.3.4', 'parse', t0 + 20)).toBe(0) // and other tasks have their own count
     expect(rateLimited('1.2.3.4', 'live', t0 + 11 * 60 * 1000)).toBe(0) // after 10 minutes it is free again
+    for (let i = 0; i < 300; i++) expect(rateLimited('app', 'rank', t0, true)).toBe(0) // the attested app searches whole lists
+    expect(rateLimited('app', 'rank', t0, true)).toBeGreaterThan(0)
+    for (let i = 0; i < 60; i++) rateLimited('web', 'rank', t0)
+    expect(rateLimited('web', 'rank', t0)).toBeGreaterThan(0) // the public limit did not move
   })
 })
 

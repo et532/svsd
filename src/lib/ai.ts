@@ -157,7 +157,7 @@ const facts = (p: Person) => ({
   from: p.from.city,
   met: p.met.context,
   tags: p.tags,
-  story: clip(p.story, 240),
+  story: clip(p.story, 600),
   recent: (p.moments ?? []).slice(0, 2).map((m) => clip(m.transcript ?? m.text ?? m.title, 120)),
 })
 

@@ -7,6 +7,8 @@ struct ProfileView: View {
     @Environment(\.modelContext) private var context
     @Query private var everyone: [Person]
     @State private var scrolled: CGFloat = 0
+    @State private var heroHeight: CGFloat = 0
+    @State private var safeTop: CGFloat = 0
     @State private var openMoment: String?
     @State private var addingTag = false
     @State private var addingTodo = false
@@ -36,7 +38,8 @@ struct ProfileView: View {
             ScrollViewReader { proxy in
             ScrollView {
                 VStack(spacing: 0) {
-                    hero
+                    // only holds the banner's room: the one you see is pinned above the scroll and shrinks
+                    hero().hidden().onGeometryChange(for: CGFloat.self) { $0.size.height } action: { heroHeight = $0 }
                     VStack(alignment: .leading, spacing: 24) {
                         touch
                         summary.appear(0)
@@ -47,8 +50,9 @@ struct ProfileView: View {
                     }
                     .padding(.horizontal, 16).padding(.top, 20).padding(.bottom, 100)
                 }
-                .offset(y: min(scrolled, 0)) // the banner stays put: pulling down at the top can't reveal what is behind it
+                .offset(y: min(scrolled, 0)) // the page stays put: pulling down at the top can't open a gap under the banner
             }
+            .scrollTargetBehavior(SnapBanner(travel: pin.travel))
             .scrollDismissesKeyboard(.immediately) // leaving an inline field saves it
             .ignoresSafeArea(edges: .top) // hero runs under the status bar
             .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y + $0.contentInsets.top } action: { _, y in scrolled = y }
@@ -58,6 +62,7 @@ struct ProfileView: View {
                 newMoment = nil
             }
             }
+            hero(pin).ignoresSafeArea(edges: .top).allowsHitTesting(false) // scrolls start on it too
             topBar
         }
         .safeAreaInset(edge: .bottom) {
@@ -159,29 +164,22 @@ struct ProfileView: View {
             .equatable()
     }
 
-    private var heroFade: CGFloat { min(max((scrolled - 40) / 80, 0), 1) }
+    private var pin: HeroPin { HeroPin(height: heroHeight, top: safeTop, scrolled: scrolled) }
 
-    private var hero: some View {
-        ProfileHero(id: person.id, name: person.name, subtitle: person.subtitle, met: metDate, fade: heroFade)
+    private func hero(_ pin: HeroPin? = nil) -> ProfileHero {
+        ProfileHero(id: person.id, name: person.name, subtitle: person.subtitle, met: metDate, pin: pin)
     }
 
     private var topBar: some View {
-        let p = min(max((scrolled - 90) / 40, 0), 1)
-        return ZStack {
-            Text(person.name).font(Theme.font(16, .medium)).foregroundStyle(.white).opacity(p)
-            HStack {
-                iconButton("chevron.left", label: "Back", id: nil, glass: 1 - p) { nav.pop() }
-                Spacer()
-                iconButton("trash", label: "Delete person", id: "More", glass: 1 - p, tint: Color(hex: "d62839")) { confirmDelete = true }
-            }
-            .padding(.horizontal, 12)
+        let p = pin.progress
+        return HStack {
+            iconButton("chevron.left", label: "Back", id: nil, glass: 1 - p) { nav.pop() }
+            Spacer()
+            iconButton("trash", label: "Delete person", id: "More", glass: 1 - p, tint: Color(hex: "d62839")) { confirmDelete = true }
         }
-        .frame(height: 56)
-        .padding(.bottom, 18) // room under the buttons before the colour ends
-        .background(alignment: .top) {
-            UnevenRoundedRectangle(bottomLeadingRadius: 28, bottomTrailingRadius: 28)
-                .fill(Color(hex: blob.base)).opacity(p).ignoresSafeArea(edges: .top)
-        }
+        .padding(.horizontal, 12)
+        .frame(height: HeroPin.bar)
+        .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).minY } action: { safeTop = $0 }
     }
 
     /// Pastel circle behind the icon on the expanded banner (`glass` 1), plain icon once the bar has collapsed (0).
@@ -456,33 +454,79 @@ private struct VoiceNote: View {
 
 // MARK: Read-only pieces, shared with the onboarding demos (no store, no actions).
 
-/// The dark hero: blob colours, ringed avatar, name, details, "Met ..." line. `fade` is the scroll fade of the avatar.
+/// Where the pinned banner is between expanded and collapsed.
+struct HeroPin {
+    static let bar: CGFloat = 56 // the row with the buttons
+    static let under: CGFloat = 18 // room under the buttons before the colour ends
+    var height: CGFloat // expanded; 0 until measured
+    var top: CGFloat // top safe area
+    var scrolled: CGFloat
+    var travel: CGFloat { max(height - top - Self.bar - Self.under, 1) }
+    /// How far the bottom edge has come up: 1:1 with the scroll, so it stays on the page's edge.
+    var lift: CGFloat { height == 0 ? 0 : min(max(scrolled, 0), travel) }
+    var progress: CGFloat { lift / travel }
+}
+
+/// Letting go part way finishes the banner: back to expanded or on to collapsed.
+private struct SnapBanner: ScrollTargetBehavior {
+    let travel: CGFloat
+    func updateTarget(_ target: inout ScrollTarget, context: TargetContext) {
+        let y = target.rect.minY
+        if y > 0, y < travel { target.rect.origin.y = y < travel / 2 ? 0 : travel }
+    }
+}
+
+/// The dark hero: blob colours, ringed avatar, name, details, "Met ..." line. With a `pin` it shrinks into the top bar.
 struct ProfileHero: View {
     let id: String
     let name: String
     let subtitle: String
     let met: String
-    var fade: CGFloat = 0
+    var pin: HeroPin? = nil
     var avatarSize: CGFloat = 88
     var topInset: CGFloat = 118
     var dim = 1.0 // text opacity (onboarding demo fades it)
     var avatarSaturation = 1.0
     var rounded = false // all four corners (the onboarding card floats); the profile page runs under the status bar, so only the bottom
+    @State private var nameBox = CGRect.zero // where the name sits when expanded
+    @State private var width: CGFloat = 0
     var body: some View {
         let blob = Blobs.blob(for: id)
+        let p = pin?.progress ?? 0, lift = pin?.lift ?? 0
+        let moving = pin != nil && nameBox.width > 0
+        let title = Text(name).font(Theme.font(20, .medium)).foregroundStyle(.white)
         // Figma "Profile Top": 233 pt tall, avatar left, name and details beside it
         HStack(spacing: 16) {
-            Avatar(id: id, size: avatarSize).saturation(avatarSaturation).scaleEffect(1 - 0.15 * fade).opacity(1 - fade)
+            Avatar(id: id, size: avatarSize).saturation(avatarSaturation)
+                .scaleEffect(1 - 0.5 * p, anchor: .bottomTrailing).opacity(1 - 2 * p) // gone before it reaches the back button
             VStack(alignment: .leading, spacing: 6) {
-                Text(name).font(Theme.font(20, .medium)).foregroundStyle(.white)
-                Text(subtitle).font(Theme.font(13)).foregroundStyle(.white.opacity(0.85))
-                Text(met).font(Theme.font(13)).foregroundStyle(Color(hex: "cccccc"))
+                title.opacity(moving ? 0 : 1).accessibilityHidden(moving) // keeps the name's room
+                    .onGeometryChange(for: CGRect.self) { $0.frame(in: .named("hero")) } action: { nameBox = $0 }
+                Group {
+                    Text(subtitle).font(Theme.font(13)).foregroundStyle(.white.opacity(0.85))
+                    Text(met).font(Theme.font(13)).foregroundStyle(Color(hex: "cccccc"))
+                }
+                .opacity(1 - 2 * p)
             }
             .opacity(dim)
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 22).padding(.top, topInset).padding(.bottom, 22)
         .frame(maxWidth: .infinity, alignment: .leading)
+        .coordinateSpace(.named("hero"))
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
+        .offset(y: -lift) // everything rides up with the bottom edge
+        .frame(height: pin.flatMap { $0.height > 0 ? $0.height - lift : nil }, alignment: .top)
+        .overlay(alignment: .topLeading) {
+            if let pin, moving {
+                // the name travels from beside the avatar to the middle of the bar, clear of both buttons
+                let end = min(0.8, (width - 128) / nameBox.width)
+                let to = CGPoint(x: width / 2, y: pin.top + HeroPin.bar / 2)
+                title.frame(width: nameBox.width, height: nameBox.height, alignment: .leading)
+                    .scaleEffect(1 + (end - 1) * p)
+                    .position(x: nameBox.midX + (to.x - nameBox.midX) * p, y: nameBox.midY + (to.y - nameBox.midY) * p)
+            }
+        }
         .background {
             ZStack {
                 Color(hex: blob.base)

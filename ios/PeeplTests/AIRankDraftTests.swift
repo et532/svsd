@@ -42,10 +42,35 @@ final class AIRankDraftTests: XCTestCase {
         XCTAssertEqual(a.matches[1].action?.label, "Draft a message")
         XCTAssertEqual(a.title, "2 people for “baker”")
         let cands = body["candidates"] as! [[String: Any]]
-        XCTAssertLessThanOrEqual(cands.count, 12)
+        XCTAssertEqual(cands.count, 19) // everyone but the exact match
         let sent = String(data: try JSONSerialization.data(withJSONObject: body), encoding: .utf8)!
         XCTAssertFalse(sent.contains("Zed"))
         XCTAssertFalse(sent.contains("\"id1\""))
+    }
+
+    func testRankJudgesEveryoneInBatches() async {
+        let people = (0..<45).map(person)
+        var sizes: [Int] = []
+        let lock = NSLock()
+        StubProtocol.handler = { req in
+            let n = (try JSONSerialization.jsonObject(with: req.bodyData) as! [String: Any])["candidates"] as! [[String: Any]]
+            lock.withLock { sizes.append(n.count) }
+            let rows = n.indices.map { #"{"i":\#($0),"fits":true,"why":"bakes"}"# }.joined(separator: ",")
+            return (200, Data("{\"results\":[\(rows)]}".utf8))
+        }
+        let out = await AIClient.rank("baker", result: ask([]), people: people, embedder: FakeEmbedder())
+        XCTAssertEqual(sizes.sorted(), [5, 20, 20])
+        XCTAssertEqual(Set(names(out)).count, 45) // each batch's answers land on its own people, none dropped
+        guard case .people(let a) = out else { return XCTFail() }
+        XCTAssertNil(a.note)
+
+        StubProtocol.requests = 0
+        StubProtocol.handler = { _ in
+            StubProtocol.requests == 1 ? (200, Data(#"{"results":[{"i":0,"fits":true,"why":"bakes"}]}"#.utf8)) : (429, Data("{}".utf8))
+        }
+        let part = await AIClient.rank("baker", result: ask([]), people: people, embedder: FakeEmbedder())
+        guard case .people(let b) = part else { return XCTFail() }
+        XCTAssertEqual(b.note, "OpenAI could only check 1 of 45 people.")
     }
 
     func testRank503LeavesInputAndStopsAsking() async {

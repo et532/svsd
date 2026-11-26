@@ -205,7 +205,7 @@ Vercel  /api/ai/<task>   headers:  Authorization: Bearer <App Attest token>   X-
   /privacy               -> static policy page
 ```
 
-Only these leave the phone: the Add note (parse), Find question plus up to 12 candidate profile facts (rank), and draft requests. Crash reports go to Apple only (TestFlight / Organizer). Nothing else.
+Only these leave the phone: the Add note (parse), Find question plus profile facts for everyone not already matched exactly (rank; no cap since 2026-11-25), and draft requests. Crash reports go to Apple only (TestFlight / Organizer). Nothing else.
 
 ## 11.3 Workstreams
 

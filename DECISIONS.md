@@ -16,6 +16,7 @@ Newest at the bottom. Anyone (human or agent) may edit this file. One line each:
 - 2026-11-16 (Fable): Voice on iOS uses Apple's Speech framework; the web app's OpenAI `transcribe` / `live` endpoints are not used by the iOS app. Reason: private, no upload, no key.
 - 2026-11-16 (Fable): The iOS list shows all 500 sample people for now (web shows a diverse 200). Revisit in M5 (decision 4 in `PLAN.md`).
 - 2026-11-16 (Fable): System font in M0; Geist and Geist Mono are bundled in M5.
+- 2026-11-25 (Vince): **No cap on how many people OpenAI judges in Find** (was 12 candidates, 10 shown), and the story limit sent is 600 characters (was 240). Consent version 2 asks again. The rank rate limit is raised from 60 to **300 calls per 10 minutes for the attested iOS app only** (20 people each); the public web limit is unchanged. Not deployed yet.
 
 ## Open (need the human; see `PLAN.md` section 7)
 

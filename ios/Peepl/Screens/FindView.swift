@@ -89,6 +89,7 @@ struct FindView: View {
         case .none(let title): note("\(title). Try “who’s into music?”, “people I met at Config” or “who lives in London?”")
         case .people(let a) where a.matches.isEmpty:
             note("\(a.title). None of the \(people.count) \(people.count == 1 ? "person" : "people") in your list fit, so I won’t guess.")
+            if let n = a.note { note(n) }
             if let near = a.near, !near.isEmpty {
                 group("Closest, but not quite", near)
             }
