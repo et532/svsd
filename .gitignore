@@ -28,3 +28,6 @@ dist-ssr
 
 ios/Peepl.xcodeproj
 ios/build
+
+# graphify knowledge graph (generated)
+graphify-out/
